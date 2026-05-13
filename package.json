@@ -4,26 +4,29 @@
   "main": "src/index.ts",
   "type": "module",
   "scripts": {
-    "dev": "ts-node-esm src/index.ts",
+    "dev": "tsx src/index.ts",
     "build": "tsc",
     "start": "node dist/index.js",
     "migrate:dev": "npx prisma migrate dev",
-    "studio": "npx prisma studio"
+    "studio": "npx prisma studio",
+    "generate": "npx prisma generate",
+    "db:reset": "npx prisma migrate reset"
   },
-  "keywords": [],
-  "author": "",
-  "license": "ISC",
-  "description": "GraphQL API with Prisma and PostgreSQL",
   "dependencies": {
     "@prisma/client": "^7.7.0",
     "apollo-server": "^3.13.0",
+    "bcryptjs": "^2.4.3",
     "dotenv": "^16.4.7",
-    "graphql": "^16.13.2"
+    "graphql": "^16.13.2",
+    "jsonwebtoken": "^9.0.2"
   },
   "devDependencies": {
+    "@types/bcryptjs": "^2.4.6",
+    "@types/jsonwebtoken": "^9.0.7",
     "@types/node": "^22.10.0",
     "prisma": "^7.7.0",
     "ts-node": "^10.9.2",
+    "tsx": "^4.19.2",
     "typescript": "^5.7.0"
   }
 }

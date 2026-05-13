@@ -1,17 +1,73 @@
-// prisma/schema.prisma
-
 generator client {
   provider = "prisma-client-js"
 }
 
 datasource db {
   provider = "postgresql"
-  // url remove from here and placed in prisma.config.ts
+  url      = env("DATABASE_URL")
 }
 
-// Example model (Aap apna table yahan define karein)
-model Specialty {
-  id        String   @id @default(uuid())
-  name      String   @unique
+// ==================== User Model ====================
+model User {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  name      String?
+  password  String   // hashed
+  role      Role     @default(USER)
+  posts     Post[]
+  profile   Profile?
   createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([email])
+  @@map("users")
+}
+
+// ==================== Profile Model ====================
+model Profile {
+  id         String   @id @default(cuid())
+  bio        String?
+  avatar     String?
+  phone      String?
+  address    String?
+  userId     String   @unique
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@map("profiles")
+}
+
+// ==================== Post Model ====================
+model Post {
+  id        String   @id @default(cuid())
+  title     String
+  content   String?
+  published Boolean  @default(false)
+  authorId  String
+  author    User     @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  tags      Tag[]    @relation("PostToTag")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([authorId])
+  @@index([published])
+  @@map("posts")
+}
+
+// ==================== Tag Model ====================
+model Tag {
+  id        String   @id @default(cuid())
+  name      String   @unique
+  posts     Post[]   @relation("PostToTag")
+  createdAt DateTime @default(now())
+
+  @@map("tags")
+}
+
+// ==================== Enums ====================
+enum Role {
+  USER
+  ADMIN
+  MODERATOR
 }

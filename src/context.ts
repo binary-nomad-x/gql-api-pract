@@ -1,8 +1,22 @@
 import { PrismaClient } from "@prisma/client";
-import { Request } from "express";
+import type { Request } from "express";
 import jwt from "jsonwebtoken";
 
-const prisma = new PrismaClient();
+// Database URL from environment
+const databaseUrl = process.env.DATABASE_URL;
+
+if (!databaseUrl) {
+  throw new Error("DATABASE_URL is not defined in environment variables");
+}
+
+// Pass database URL to PrismaClient constructor
+const prisma = new PrismaClient({
+  datasources: {
+    db: {
+      url: databaseUrl,
+    },
+  },
+});
 
 export interface Context {
   prisma: PrismaClient;
@@ -21,7 +35,6 @@ export async function createContext({
   req: Request;
 }): Promise<Context> {
   const token = req.headers.authorization?.replace("Bearer ", "");
-
   let userId: string | undefined;
 
   if (token) {
@@ -32,7 +45,7 @@ export async function createContext({
       ) as JwtPayload;
       userId = decoded.userId;
     } catch (error) {
-      // Invalid token
+      // Invalid token - ignore
     }
   }
 
@@ -42,3 +55,8 @@ export async function createContext({
     req,
   };
 }
+
+// Graceful shutdown
+process.on("beforeExit", async () => {
+  await prisma.$disconnect();
+});

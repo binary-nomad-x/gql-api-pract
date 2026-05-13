@@ -1,3 +1,4 @@
+import "dotenv/config";
 import { ApolloServer } from "apollo-server";
 import { readFileSync } from "fs";
 import { fileURLToPath } from "url";
@@ -18,12 +19,10 @@ const server = new ApolloServer({
   resolvers,
   context: createContext,
   introspection: true,
-  playground: true,
 });
 
 const port = process.env.PORT || 4000;
 
 server.listen(port).then(({ url }) => {
   console.log(`🚀 Server ready at ${url}`);
-  console.log(`📊 GraphQL Playground available`);
 });

@@ -11,12 +11,15 @@ model User {
   id        String    @id @default(cuid())
   email     String    @unique
   name      String?
-  password  String    // hashed
+  password  String
   role      Role      @default(USER)
   posts     Post[]
   profile   Profile?
   comments  Comment[]
   likes     Like[]
+  products  Product[]
+  orders    Order[]
+  reviews   Review[]
   createdAt DateTime  @default(now())
   updatedAt DateTime  @updatedAt
 
@@ -41,18 +44,18 @@ model Profile {
 
 // ==================== Post Model ====================
 model Post {
-  id        String     @id @default(cuid())
-  title     String
-  content   String?
-  published Boolean    @default(false)
-  authorId  String
-  author    User       @relation(fields: [authorId], references: [id], onDelete: Cascade)
-  tags      Tag[]      @relation("PostToTag")
+  id         String     @id @default(cuid())
+  title      String
+  content    String?
+  published  Boolean    @default(false)
+  authorId   String
+  author     User       @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  tags       Tag[]      @relation("PostToTag")
   categories Category[] @relation("PostToCategory")
-  comments  Comment[]
-  likes     Like[]
-  createdAt DateTime   @default(now())
-  updatedAt DateTime   @updatedAt
+  comments   Comment[]
+  likes      Like[]
+  createdAt  DateTime   @default(now())
+  updatedAt  DateTime   @updatedAt
 
   @@index([authorId])
   @@index([published])
@@ -71,13 +74,14 @@ model Tag {
 
 // ==================== Category Model ====================
 model Category {
-  id        String   @id @default(cuid())
-  name      String   @unique
-  slug      String   @unique
+  id          String    @id @default(cuid())
+  name        String    @unique
+  slug        String    @unique
   description String?
-  posts     Post[]   @relation("PostToCategory")
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  posts       Post[]    @relation("PostToCategory")
+  products    Product[]
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
 
   @@map("categories")
 }
@@ -111,9 +115,152 @@ model Like {
   @@map("likes")
 }
 
+// ==================== Product Model ====================
+model Product {
+  id          String       @id @default(cuid())
+  name        String
+  description String?
+  price       Float
+  stock       Int          @default(0)
+  sku         String       @unique
+  imageUrl    String?
+  isActive    Boolean      @default(true)
+  sellerId    String
+  seller      User         @relation(fields: [sellerId], references: [id], onDelete: Cascade)
+  categoryId  String?
+  category    Category?    @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+  orderItems  OrderItem[]
+  reviews     Review[]
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+
+  @@index([sellerId])
+  @@index([categoryId])
+  @@index([sku])
+  @@map("products")
+}
+
+// ==================== Order Model ====================
+model Order {
+  id              String      @id @default(cuid())
+  userId          String
+  user            User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  status          OrderStatus @default(PENDING)
+  totalAmount     Float       @default(0)
+  shippingAddress String?
+  items           OrderItem[]
+  payment         Payment?
+  refunds         Refund[]
+  createdAt       DateTime    @default(now())
+  updatedAt       DateTime    @updatedAt
+
+  @@index([userId])
+  @@index([status])
+  @@map("orders")
+}
+
+// ==================== OrderItem Model ====================
+model OrderItem {
+  id        String  @id @default(cuid())
+  orderId   String
+  order     Order   @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  productId String
+  product   Product @relation(fields: [productId], references: [id], onDelete: Restrict)
+  quantity  Int     @default(1)
+  unitPrice Float
+
+  @@index([orderId])
+  @@index([productId])
+  @@map("order_items")
+}
+
+// ==================== Payment Model ====================
+model Payment {
+  id            String         @id @default(cuid())
+  orderId       String         @unique
+  order         Order          @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  amount        Float
+  method        PaymentMethod
+  status        PaymentStatus  @default(PENDING)
+  transactionId String         @unique
+  refunds       Refund[]
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+
+  @@map("payments")
+}
+
+// ==================== Refund Model ====================
+model Refund {
+  id        String        @id @default(cuid())
+  paymentId String
+  payment   Payment       @relation(fields: [paymentId], references: [id], onDelete: Cascade)
+  orderId   String
+  order     Order         @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  amount    Float
+  reason    String?
+  status    RefundStatus  @default(PENDING)
+  createdAt DateTime      @default(now())
+  updatedAt DateTime      @updatedAt
+
+  @@index([paymentId])
+  @@index([orderId])
+  @@map("refunds")
+}
+
+// ==================== Review Model ====================
+model Review {
+  id        String   @id @default(cuid())
+  rating    Int
+  title     String?
+  content   String?
+  productId String
+  product   Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([productId, userId])
+  @@index([productId])
+  @@index([userId])
+  @@map("reviews")
+}
+
 // ==================== Enums ====================
 enum Role {
   USER
   ADMIN
   MODERATOR
+}
+
+enum OrderStatus {
+  PENDING
+  CONFIRMED
+  PROCESSING
+  SHIPPED
+  DELIVERED
+  CANCELLED
+}
+
+enum PaymentMethod {
+  CREDIT_CARD
+  DEBIT_CARD
+  PAYPAL
+  BANK_TRANSFER
+  CASH_ON_DELIVERY
+}
+
+enum PaymentStatus {
+  PENDING
+  COMPLETED
+  FAILED
+  REFUNDED
+}
+
+enum RefundStatus {
+  PENDING
+  APPROVED
+  REJECTED
+  COMPLETED
 }

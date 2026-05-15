@@ -11,6 +11,37 @@ enum Role {
     MODERATOR
 }
 
+enum OrderStatus {
+    PENDING
+    CONFIRMED
+    PROCESSING
+    SHIPPED
+    DELIVERED
+    CANCELLED
+}
+
+enum PaymentMethod {
+    CREDIT_CARD
+    DEBIT_CARD
+    PAYPAL
+    BANK_TRANSFER
+    CASH_ON_DELIVERY
+}
+
+enum PaymentStatus {
+    PENDING
+    COMPLETED
+    FAILED
+    REFUNDED
+}
+
+enum RefundStatus {
+    PENDING
+    APPROVED
+    REJECTED
+    COMPLETED
+}
+
 # ==================== Types ====================
 type User {
     id: ID!
@@ -21,6 +52,9 @@ type User {
     posts: [Post!]!
     comments: [Comment!]!
     likes: [Like!]!
+    products: [Product!]!
+    orders: [Order!]!
+    reviews: [Review!]!
     createdAt: DateTime!
     updatedAt: DateTime!
 }
@@ -65,7 +99,9 @@ type Category {
     slug: String!
     description: String
     posts: [Post!]!
+    products: [Product!]!
     postCount: Int!
+    productCount: Int!
     createdAt: DateTime!
     updatedAt: DateTime!
 }
@@ -84,6 +120,82 @@ type Like {
     user: User!
     post: Post!
     createdAt: DateTime!
+}
+
+type Product {
+    id: ID!
+    name: String!
+    description: String
+    price: Float!
+    stock: Int!
+    sku: String!
+    imageUrl: String
+    isActive: Boolean!
+    seller: User!
+    category: Category
+    orderItems: [OrderItem!]!
+    reviews: [Review!]!
+    reviewCount: Int!
+    averageRating: Float
+    createdAt: DateTime!
+    updatedAt: DateTime!
+}
+
+type OrderItem {
+    id: ID!
+    order: Order!
+    product: Product!
+    quantity: Int!
+    unitPrice: Float!
+    createdAt: DateTime!
+}
+
+type Order {
+    id: ID!
+    user: User!
+    status: OrderStatus!
+    totalAmount: Float!
+    shippingAddress: String
+    items: [OrderItem!]!
+    payment: Payment
+    refunds: [Refund!]!
+    itemCount: Int!
+    createdAt: DateTime!
+    updatedAt: DateTime!
+}
+
+type Payment {
+    id: ID!
+    order: Order!
+    amount: Float!
+    method: PaymentMethod!
+    status: PaymentStatus!
+    transactionId: String!
+    refunds: [Refund!]!
+    createdAt: DateTime!
+    updatedAt: DateTime!
+}
+
+type Refund {
+    id: ID!
+    payment: Payment!
+    order: Order!
+    amount: Float!
+    reason: String
+    status: RefundStatus!
+    createdAt: DateTime!
+    updatedAt: DateTime!
+}
+
+type Review {
+    id: ID!
+    rating: Int!
+    title: String
+    content: String
+    product: Product!
+    user: User!
+    createdAt: DateTime!
+    updatedAt: DateTime!
 }
 
 # ==================== Inputs ====================
@@ -124,6 +236,55 @@ input CreateCategoryInput {
     description: String
 }
 
+input CreateProductInput {
+    name: String!
+    description: String
+    price: Float!
+    stock: Int!
+    sku: String!
+    imageUrl: String
+    categorySlug: String
+}
+
+input UpdateProductInput {
+    name: String
+    description: String
+    price: Float
+    stock: Int
+    imageUrl: String
+    isActive: Boolean
+    categorySlug: String
+}
+
+input CreateReviewInput {
+    rating: Int!
+    title: String
+    content: String
+    productId: ID!
+}
+
+input PlaceOrderInput {
+    items: [OrderItemInput!]!
+    shippingAddress: String
+}
+
+input OrderItemInput {
+    productId: ID!
+    quantity: Int!
+}
+
+input ProcessPaymentInput {
+    orderId: ID!
+    method: PaymentMethod!
+}
+
+input CreateRefundInput {
+    paymentId: ID!
+    orderId: ID!
+    amount: Float!
+    reason: String
+}
+
 # ==================== Queries ====================
 type Query {
     # Users
@@ -157,6 +318,50 @@ type Query {
     # Likes
     likes(postId: ID!): [Like!]!
 
+    # Products
+    products(
+        categorySlug: String
+        search: String
+        minPrice: Float
+        maxPrice: Float
+        limit: Int = 20
+        offset: Int = 0
+    ): [Product!]!
+    product(id: ID!): Product
+    productBySku(sku: String!): Product
+
+    # Orders
+    orders(
+        status: OrderStatus
+        limit: Int = 20
+        offset: Int = 0
+    ): [Order!]! @auth
+    order(id: ID!): Order @auth
+
+    # Payments
+    payments(
+        status: PaymentStatus
+        limit: Int = 20
+        offset: Int = 0
+    ): [Payment!]! @auth
+    payment(id: ID!): Payment @auth
+
+    # Refunds
+    refunds(
+        status: RefundStatus
+        limit: Int = 20
+        offset: Int = 0
+    ): [Refund!]! @auth
+    refund(id: ID!): Refund @auth
+
+    # Reviews
+    reviews(
+        productId: ID!
+        limit: Int = 20
+        offset: Int = 0
+    ): [Review!]!
+    review(id: ID!): Review
+
     # Stats
     stats: Stats!
 }
@@ -169,6 +374,11 @@ type Stats {
     totalCategories: Int!
     totalComments: Int!
     totalLikes: Int!
+    totalProducts: Int!
+    totalOrders: Int!
+    totalPayments: Int!
+    totalRefunds: Int!
+    totalReviews: Int!
 }
 
 # ==================== Mutations ====================
@@ -208,6 +418,27 @@ type Mutation {
 
     # Likes
     toggleLike(postId: ID!): Like!
+
+    # Products
+    createProduct(input: CreateProductInput!): Product! @auth
+    updateProduct(id: ID!, input: UpdateProductInput!): Product! @auth
+    deleteProduct(id: ID!): Boolean! @auth
+
+    # Orders
+    placeOrder(input: PlaceOrderInput!): Order! @auth
+    cancelOrder(id: ID!): Order! @auth
+    updateOrderStatus(id: ID!, status: OrderStatus!): Order! @auth
+
+    # Payments
+    processPayment(input: ProcessPaymentInput!): Payment! @auth
+
+    # Refunds
+    createRefund(input: CreateRefundInput!): Refund! @auth
+    updateRefundStatus(id: ID!, status: RefundStatus!): Refund! @auth
+
+    # Reviews
+    createReview(input: CreateReviewInput!): Review! @auth
+    deleteReview(id: ID!): Boolean! @auth
 }
 
 type AuthPayload {

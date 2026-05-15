@@ -1,16 +1,31 @@
 # GraphQL Prisma API
 
-A GraphQL API built with Apollo Server, Prisma (v7), and PostgreSQL.
+A GraphQL API built with Apollo Server, Prisma (v7), and PostgreSQL. Features a blog domain plus a full e-commerce domain with products, orders, payments, and refunds.
 
 ## Models
 
+### Blog Domain
 - **User** — Authentication, roles (USER, ADMIN, MODERATOR)
 - **Profile** — One-to-one with User
 - **Post** — Belongs to User; has many Tags, Categories, Comments, and Likes
 - **Tag** — Many-to-many with Post
-- **Category** — Many-to-many with Post
+- **Category** — Many-to-many with Post, also linked to Products
 - **Comment** — Belongs to User and Post
 - **Like** — Belongs to User and Post (unique per user+post)
+
+### E-Commerce Domain
+- **Product** — Belongs to a seller (User) and a Category; has many OrderItems and Reviews
+- **Order** — Belongs to a buyer (User); has many OrderItems, one Payment, and many Refunds
+- **OrderItem** — Line items linking Order and Product (quantity + unit price)
+- **Payment** — One-to-one with Order; supports multiple payment methods and statuses
+- **Refund** — Belongs to Payment and Order; tracks refund lifecycle
+- **Review** — Belongs to Product and User; includes rating 1-5 (unique per user+product)
+
+### Key Relations
+- User → Products (as seller), Orders (as buyer), Reviews
+- Product → Category, Seller, OrderItems, Reviews
+- Order → User, Items, Payment, Refunds
+- Payment → Order (unique), Refunds
 
 ## Prerequisites
 
@@ -59,13 +74,30 @@ npm run setup
 | `npm run studio` | Open Prisma Studio |
 | `npm run setup` | Full setup: install + generate + migrate + seed |
 
-## Seed Command Flags
+## Seed Data
 
-The seed script (`prisma/seed.ts`) accepts optional flags:
+The seed script (`prisma/seed.ts`) uses `@faker-js/faker` to generate realistic data:
 
-- No flag — Append seed data to existing database
-- `--reset` or `-r` — Delete all data, do not re-seed
-- `--fresh` or `-f` — Delete all data, then re-seed
+| Table | Records |
+|-------|---------|
+| Users | 50 (5 fixed + 45 random) |
+| Products | 500 |
+| Orders | 500 |
+| Order Items | ~2000 (avg 4 per order) |
+| Payments | ~450 (one per non-cancelled order) |
+| Refunds | ~100 |
+| Reviews | ~1500 (avg 3-4 per product) |
+| Posts | 50 |
+| Comments | 200 |
+| Likes | ~300 |
+
+### Flags
+
+```
+npm run seed          — Append seed data to existing database
+npm run seed:reset    — Delete all data, do not re-seed
+npm run seed:fresh    — Delete all data, then re-seed
+```
 
 ## Environment Variables
 

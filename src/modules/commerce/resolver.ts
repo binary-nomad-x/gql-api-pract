@@ -1,41 +1,60 @@
 import type { Context } from "../../types/context.js";
+import type { Parent, IdArg, ProductFilterArgs, PaginationArgs } from "../../types/graphql.js";
+import type {
+  CreateProductInput, UpdateProductInput, PlaceOrderInput,
+  ProcessPaymentInput, CreateRefundInput,
+} from "../../types/inputs.js";
 import { requireAuth, requireOwner } from "../../utils/errors.js";
+import { clean } from "../../utils/clean.js";
 
 export const ProductResolver = {
-  seller: (parent: any, _args: unknown, ctx: Context) =>
-    ctx.prisma.user.findUnique({ where: { id: parent.sellerId } }),
-  category: (parent: any, _args: unknown, ctx: Context) =>
-    parent.categoryId ? ctx.prisma.category.findUnique({ where: { id: parent.categoryId } }) : null,
-  orderItems: (parent: any, _args: unknown, ctx: Context) =>
+  seller: (parent: Parent, _args: unknown, ctx: Context) =>
+    ctx.prisma.user.findUnique({ where: { id: parent.sellerId as string } }),
+  category: (parent: Parent, _args: unknown, ctx: Context) =>
+    parent.categoryId ? ctx.prisma.category.findUnique({ where: { id: parent.categoryId as string } }) : null,
+  orderItems: (parent: Parent, _args: unknown, ctx: Context) =>
     ctx.prisma.orderItem.findMany({ where: { productId: parent.id } }),
-  reviews: (parent: any, _args: unknown, ctx: Context) =>
+  reviews: (parent: Parent, _args: unknown, ctx: Context) =>
     ctx.prisma.review.findMany({ where: { productId: parent.id } }),
-  images: (parent: any, _args: unknown, ctx: Context) =>
+  images: (parent: Parent, _args: unknown, ctx: Context) =>
     ctx.prisma.productImage.findMany({ where: { productId: parent.id }, orderBy: { sortOrder: "asc" } }),
-  wishlistItems: (parent: any, _args: unknown, ctx: Context) =>
+  wishlistItems: (parent: Parent, _args: unknown, ctx: Context) =>
     ctx.prisma.wishlistItem.findMany({ where: { productId: parent.id } }),
-  reviewCount: (parent: any, _args: unknown, ctx: Context) =>
+  reviewCount: (parent: Parent, _args: unknown, ctx: Context) =>
     ctx.prisma.review.count({ where: { productId: parent.id } }),
-  averageRating: async (parent: any, _args: unknown, ctx: Context) => {
-    const agg = await ctx.prisma.review.aggregate({ where: { productId: parent.id }, _avg: { rating: true } });
+  averageRating: async (parent: Parent, _args: unknown, ctx: Context) => {
+    const agg = await ctx.prisma.review.aggregate({
+      where: { productId: parent.id },
+      _avg: { rating: true },
+    });
     return agg._avg.rating;
   },
 };
 
 export const CommerceQueries = {
-  products: async (_parent: unknown, { categorySlug, search, minPrice, maxPrice, limit = 20, offset = 0 }: any, ctx: Context) => {
-    const where: any = {};
-    if (categorySlug) where.category = { slug: categorySlug };
-    if (search) where.OR = [{ name: { contains: search, mode: "insensitive" } }, { description: { contains: search, mode: "insensitive" } }];
-    if (minPrice !== undefined || maxPrice !== undefined) {
-      where.price = {};
-      if (minPrice !== undefined) where.price.gte = minPrice;
-      if (maxPrice !== undefined) where.price.lte = maxPrice;
+  products: async (_parent: unknown, args: ProductFilterArgs, ctx: Context) => {
+    const where: Record<string, unknown> = {};
+    if (args.categorySlug) where.category = { slug: args.categorySlug };
+    if (args.search) {
+      where.OR = [
+        { name: { contains: args.search, mode: "insensitive" as const } },
+        { description: { contains: args.search, mode: "insensitive" as const } },
+      ];
     }
-    return ctx.prisma.product.findMany({ where, take: limit, skip: offset, orderBy: { createdAt: "desc" } });
+    if (args.minPrice !== undefined || args.maxPrice !== undefined) {
+      where.price = {};
+      if (args.minPrice !== undefined) (where.price as Record<string, unknown>).gte = args.minPrice;
+      if (args.maxPrice !== undefined) (where.price as Record<string, unknown>).lte = args.maxPrice;
+    }
+    return ctx.prisma.product.findMany({
+      where,
+      take: args.limit ?? 20,
+      skip: args.offset ?? 0,
+      orderBy: { createdAt: "desc" },
+    });
   },
 
-  product: (_parent: unknown, { id }: { id: string }, ctx: Context) =>
+  product: (_parent: unknown, { id }: IdArg, ctx: Context) =>
     ctx.prisma.product.findUnique({ where: { id } }),
 
   productBySku: (_parent: unknown, { sku }: { sku: string }, ctx: Context) =>
@@ -43,26 +62,36 @@ export const CommerceQueries = {
 };
 
 export const CommerceMutations = {
-  createProduct: async (_parent: unknown, { input }: any, ctx: Context) => {
+  createProduct: async (_parent: unknown, { input }: { input: CreateProductInput }, ctx: Context) => {
     requireAuth(ctx.userId);
     const { categorySlug, ...data } = input;
     return ctx.prisma.product.create({
-      data: { ...data, sellerId: ctx.userId!, ...(categorySlug ? { category: { connect: { slug: categorySlug } } } : {}) },
+      data: clean({
+        ...data,
+        stock: input.stock ?? 0,
+        sellerId: ctx.userId!,
+        category: categorySlug ? { connect: { slug: categorySlug } } : undefined,
+      }) as any,
     });
   },
 
-  updateProduct: async (_parent: unknown, { id, input }: any, ctx: Context) => {
+  updateProduct: async (_parent: unknown, { id, input }: { id: string; input: UpdateProductInput }, ctx: Context) => {
     const product = await ctx.prisma.product.findUnique({ where: { id } });
     if (!product) throw new Error("Product not found");
     requireOwner(product.sellerId, ctx.userId);
     const { categorySlug, ...data } = input;
     return ctx.prisma.product.update({
       where: { id },
-      data: { ...data, ...(categorySlug !== undefined ? { category: categorySlug ? { connect: { slug: categorySlug } } : { disconnect: true } } : {}) },
+      data: clean({
+        ...data,
+        ...(categorySlug !== undefined
+          ? { category: categorySlug ? { connect: { slug: categorySlug } } : { disconnect: true } }
+          : {}),
+      }) as any,
     });
   },
 
-  deleteProduct: async (_parent: unknown, { id }: any, ctx: Context) => {
+  deleteProduct: async (_parent: unknown, { id }: IdArg, ctx: Context) => {
     const product = await ctx.prisma.product.findUnique({ where: { id } });
     if (!product) throw new Error("Product not found");
     requireOwner(product.sellerId, ctx.userId);
@@ -70,15 +99,16 @@ export const CommerceMutations = {
     return true;
   },
 
-  placeOrder: async (_parent: unknown, { input }: any, ctx: Context) => {
+  placeOrder: async (_parent: unknown, { input }: { input: PlaceOrderInput }, ctx: Context) => {
     requireAuth(ctx.userId);
-    const { items, shippingAddress, couponCode } = input;
 
-    const products = await ctx.prisma.product.findMany({ where: { id: { in: items.map((i: any) => i.productId) } } });
-    const productMap = new Map(products.map((p: any) => [p.id, p]));
+    const products = await ctx.prisma.product.findMany({
+      where: { id: { in: input.items.map((i) => i.productId) } },
+    });
+    const productMap = new Map(products.map((p) => [p.id, p]));
 
     let totalAmount = 0;
-    for (const item of items) {
+    for (const item of input.items) {
       const p = productMap.get(item.productId);
       if (!p) throw new Error(`Product ${item.productId} not found`);
       if (!p.isActive) throw new Error(`${p.name} is inactive`);
@@ -87,12 +117,12 @@ export const CommerceMutations = {
     }
 
     let discountAmount = 0;
-    if (couponCode) {
-      const coupon = await ctx.prisma.coupon.findUnique({ where: { code: couponCode } });
-      if (coupon && coupon.isActive && coupon.usedCount < coupon.maxUses) {
-        if (totalAmount >= coupon.minPurchase) {
-          discountAmount = coupon.discountAmount > 0 ? coupon.discountAmount : totalAmount * (coupon.discountPercent / 100);
-        }
+    if (input.couponCode) {
+      const coupon = await ctx.prisma.coupon.findUnique({ where: { code: input.couponCode } });
+      if (coupon?.isActive && coupon.usedCount < coupon.maxUses && totalAmount >= coupon.minPurchase) {
+        discountAmount = coupon.discountAmount > 0
+          ? coupon.discountAmount
+          : totalAmount * (coupon.discountPercent / 100);
       }
     }
 
@@ -102,75 +132,90 @@ export const CommerceMutations = {
           userId: ctx.userId!,
           totalAmount,
           discountAmount,
-          shippingAddress,
-          ...(couponCode ? { coupon: { connect: { code: couponCode } } } : {}),
-          items: { create: items.map((i: any) => ({ productId: i.productId, quantity: i.quantity, unitPrice: productMap.get(i.productId).price })) },
+          shippingAddress: input.shippingAddress ?? null,
+          ...(input.couponCode ? { coupon: { connect: { code: input.couponCode } } } : {}),
+          items: {
+            create: input.items.map((item) => ({
+              productId: item.productId,
+              quantity: item.quantity,
+              unitPrice: productMap.get(item.productId)!.price,
+            })),
+          },
         },
         include: { items: { include: { product: true } } },
       });
 
-      for (const item of items) {
-        await tx.product.update({ where: { id: item.productId }, data: { stock: { decrement: item.quantity } } });
+      for (const item of input.items) {
+        await tx.product.update({
+          where: { id: item.productId },
+          data: { stock: { decrement: item.quantity } },
+        });
       }
 
-      if (couponCode) {
-        await tx.coupon.update({ where: { code: couponCode }, data: { usedCount: { increment: 1 } } });
+      if (input.couponCode) {
+        await tx.coupon.update({
+          where: { code: input.couponCode },
+          data: { usedCount: { increment: 1 } },
+        });
       }
 
       return order;
     });
   },
 
-  cancelOrder: async (_parent: unknown, { id }: any, ctx: Context) => {
+  cancelOrder: async (_parent: unknown, { id }: IdArg, ctx: Context) => {
     requireAuth(ctx.userId);
     const order = await ctx.prisma.order.findUnique({ where: { id }, include: { items: true } });
     if (!order) throw new Error("Order not found");
     requireOwner(order.userId, ctx.userId);
-    if (["DELIVERED", "SHIPPED"].includes(order.status)) throw new Error("Cannot cancel shipped/delivered order");
+    if (["DELIVERED", "SHIPPED"].includes(order.status)) {
+      throw new Error("Cannot cancel shipped or delivered order");
+    }
 
     return ctx.prisma.$transaction(async (tx: any) => {
       const updated = await tx.order.update({ where: { id }, data: { status: "CANCELLED" } });
       for (const item of order.items) {
-        await tx.product.update({ where: { id: item.productId }, data: { stock: { increment: item.quantity } } });
+        await tx.product.update({
+          where: { id: item.productId },
+          data: { stock: { increment: item.quantity } },
+        });
       }
       return updated;
     });
   },
 
-  updateOrderStatus: async (_parent: unknown, { id, status }: any, ctx: Context) => {
+  updateOrderStatus: async (_parent: unknown, { id, status }: { id: string; status: string }, ctx: Context) => {
     requireAuth(ctx.userId);
     const order = await ctx.prisma.order.findUnique({ where: { id } });
     if (!order) throw new Error("Order not found");
     requireOwner(order.userId, ctx.userId);
-    return ctx.prisma.order.update({ where: { id }, data: { status } });
+    return ctx.prisma.order.update({ where: { id }, data: { status } as any });
   },
 
-  processPayment: async (_parent: unknown, { input }: any, ctx: Context) => {
+  processPayment: async (_parent: unknown, { input }: { input: ProcessPaymentInput }, ctx: Context) => {
     requireAuth(ctx.userId);
-    const { orderId, method } = input;
-    const order = await ctx.prisma.order.findUnique({ where: { id: orderId } });
+    const order = await ctx.prisma.order.findUnique({ where: { id: input.orderId } });
     if (!order) throw new Error("Order not found");
     requireOwner(order.userId, ctx.userId);
 
-    const existing = await ctx.prisma.payment.findUnique({ where: { orderId } });
+    const existing = await ctx.prisma.payment.findUnique({ where: { orderId: input.orderId } });
     if (existing) throw new Error("Payment already exists");
 
     const transactionId = `TXN-${Date.now()}-${Math.random().toString(36).slice(2, 8).toUpperCase()}`;
     return ctx.prisma.payment.create({
-      data: { orderId, amount: order.totalAmount, method, status: "COMPLETED", transactionId },
+      data: { orderId: input.orderId, amount: order.totalAmount, method: input.method as any, status: "COMPLETED" as any, transactionId },
     });
   },
 
-  createRefund: async (_parent: unknown, { input }: any, ctx: Context) => {
+  createRefund: async (_parent: unknown, { input }: { input: CreateRefundInput }, ctx: Context) => {
     requireAuth(ctx.userId);
-    const { paymentId, orderId, amount, reason } = input;
-    const order = await ctx.prisma.order.findUnique({ where: { id: orderId } });
+    const order = await ctx.prisma.order.findUnique({ where: { id: input.orderId } });
     if (!order) throw new Error("Order not found");
     requireOwner(order.userId, ctx.userId);
-    return ctx.prisma.refund.create({ data: { paymentId, orderId, amount, reason } });
+    return ctx.prisma.refund.create({ data: { paymentId: input.paymentId, orderId: input.orderId, amount: input.amount, reason: input.reason ?? null } });
   },
 
-  updateRefundStatus: async (_parent: unknown, { id, status }: any, ctx: Context) => {
+  updateRefundStatus: async (_parent: unknown, { id, status }: { id: string; status: string }, ctx: Context) => {
     requireAuth(ctx.userId);
     const refund = await ctx.prisma.refund.findUnique({
       where: { id },
@@ -179,11 +224,13 @@ export const CommerceMutations = {
     if (!refund) throw new Error("Refund not found");
     requireOwner(refund.order.userId, ctx.userId);
 
-    const updated = await ctx.prisma.refund.update({ where: { id }, data: { status } });
+    const updated = await ctx.prisma.refund.update({ where: { id }, data: { status } as any });
 
     if (status === "COMPLETED") {
-      const completedRefunds = await ctx.prisma.refund.findMany({ where: { paymentId: refund.paymentId, status: "COMPLETED" } });
-      const totalRefunded = completedRefunds.reduce((s: number, r: any) => s + r.amount, 0);
+      const completedRefunds = await ctx.prisma.refund.findMany({
+        where: { paymentId: refund.paymentId, status: "COMPLETED" },
+      });
+      const totalRefunded = completedRefunds.reduce((s, r) => s + r.amount, 0);
       if (totalRefunded >= refund.payment.amount) {
         await ctx.prisma.payment.update({ where: { id: refund.paymentId }, data: { status: "REFUNDED" } });
       }
@@ -193,76 +240,75 @@ export const CommerceMutations = {
 };
 
 export const PaymentResolver = {
-  order: (parent: any, _args: unknown, ctx: Context) =>
-    ctx.prisma.order.findUnique({ where: { id: parent.orderId } }),
-  refunds: (parent: any, _args: unknown, ctx: Context) =>
+  order: (parent: Parent, _args: unknown, ctx: Context) =>
+    ctx.prisma.order.findUnique({ where: { id: parent.orderId as string } }),
+  refunds: (parent: Parent, _args: unknown, ctx: Context) =>
     ctx.prisma.refund.findMany({ where: { paymentId: parent.id } }),
 };
 
 export const RefundResolver = {
-  payment: (parent: any, _args: unknown, ctx: Context) =>
-    ctx.prisma.payment.findUnique({ where: { id: parent.paymentId } }),
-  order: (parent: any, _args: unknown, ctx: Context) =>
-    ctx.prisma.order.findUnique({ where: { id: parent.orderId } }),
+  payment: (parent: Parent, _args: unknown, ctx: Context) =>
+    ctx.prisma.payment.findUnique({ where: { id: parent.paymentId as string } }),
+  order: (parent: Parent, _args: unknown, ctx: Context) =>
+    ctx.prisma.order.findUnique({ where: { id: parent.orderId as string } }),
 };
 
 export const OrderResolver = {
-  user: (parent: any, _args: unknown, ctx: Context) =>
-    ctx.prisma.user.findUnique({ where: { id: parent.userId } }),
-  items: (parent: any, _args: unknown, ctx: Context) =>
+  user: (parent: Parent, _args: unknown, ctx: Context) =>
+    ctx.prisma.user.findUnique({ where: { id: parent.userId as string } }),
+  items: (parent: Parent, _args: unknown, ctx: Context) =>
     ctx.prisma.orderItem.findMany({ where: { orderId: parent.id } }),
-  payment: (parent: any, _args: unknown, ctx: Context) =>
+  payment: (parent: Parent, _args: unknown, ctx: Context) =>
     ctx.prisma.payment.findUnique({ where: { orderId: parent.id } }),
-  refunds: (parent: any, _args: unknown, ctx: Context) =>
+  refunds: (parent: Parent, _args: unknown, ctx: Context) =>
     ctx.prisma.refund.findMany({ where: { orderId: parent.id } }),
-  shipments: (parent: any, _args: unknown, ctx: Context) =>
+  shipments: (parent: Parent, _args: unknown, ctx: Context) =>
     ctx.prisma.shipment.findMany({ where: { orderId: parent.id } }),
-  coupon: (parent: any, _args: unknown, ctx: Context) =>
-    parent.couponId ? ctx.prisma.coupon.findUnique({ where: { id: parent.couponId } }) : null,
-  itemCount: (parent: any, _args: unknown, ctx: Context) =>
+  coupon: (parent: Parent, _args: unknown, ctx: Context) =>
+    parent.couponId ? ctx.prisma.coupon.findUnique({ where: { id: parent.couponId as string } }) : null,
+  itemCount: (parent: Parent, _args: unknown, ctx: Context) =>
     ctx.prisma.orderItem.count({ where: { orderId: parent.id } }),
 };
 
 export const OrderItemResolver = {
-  order: (parent: any, _args: unknown, ctx: Context) =>
-    ctx.prisma.order.findUnique({ where: { id: parent.orderId } }),
-  product: (parent: any, _args: unknown, ctx: Context) =>
-    ctx.prisma.product.findUnique({ where: { id: parent.productId } }),
+  order: (parent: Parent, _args: unknown, ctx: Context) =>
+    ctx.prisma.order.findUnique({ where: { id: parent.orderId as string } }),
+  product: (parent: Parent, _args: unknown, ctx: Context) =>
+    ctx.prisma.product.findUnique({ where: { id: parent.productId as string } }),
 };
 
 export const CommerceQueriesExtra = {
-  myOrders: async (_parent: unknown, { status, limit = 20, offset = 0 }: any, ctx: Context) => {
+  myOrders: async (_parent: unknown, args: { status?: string } & PaginationArgs, ctx: Context) => {
     requireAuth(ctx.userId);
-    const where: any = { userId: ctx.userId! };
-    if (status) where.status = status;
-    return ctx.prisma.order.findMany({ where, take: limit, skip: offset, orderBy: { createdAt: "desc" } });
+    const where: Record<string, unknown> = { userId: ctx.userId! };
+    return ctx.prisma.order.findMany({ where, take: args.limit ?? 20, skip: args.offset ?? 0, orderBy: { createdAt: "desc" } });
   },
 
-  order: async (_parent: unknown, { id }: { id: string }, ctx: Context) => {
+  order: async (_parent: unknown, { id }: IdArg, ctx: Context) => {
     requireAuth(ctx.userId);
     return ctx.prisma.order.findFirst({ where: { id, userId: ctx.userId! } });
   },
 
-  myPayments: async (_parent: unknown, { status, limit = 20, offset = 0 }: any, ctx: Context) => {
+  myPayments: async (_parent: unknown, args: { status?: string } & PaginationArgs, ctx: Context) => {
     requireAuth(ctx.userId);
-    const where: any = { order: { userId: ctx.userId! } };
-    if (status) where.status = status;
-    return ctx.prisma.payment.findMany({ where, take: limit, skip: offset, orderBy: { createdAt: "desc" } });
+    const where: Record<string, unknown> = { order: { userId: ctx.userId! } };
+    if (args.status) where.status = args.status;
+    return ctx.prisma.payment.findMany({ where, take: args.limit ?? 20, skip: args.offset ?? 0, orderBy: { createdAt: "desc" } });
   },
 
-  payment: async (_parent: unknown, { id }: { id: string }, ctx: Context) => {
+  payment: async (_parent: unknown, { id }: IdArg, ctx: Context) => {
     requireAuth(ctx.userId);
     return ctx.prisma.payment.findFirst({ where: { id, order: { userId: ctx.userId! } } });
   },
 
-  myRefunds: async (_parent: unknown, { status, limit = 20, offset = 0 }: any, ctx: Context) => {
+  myRefunds: async (_parent: unknown, args: { status?: string } & PaginationArgs, ctx: Context) => {
     requireAuth(ctx.userId);
-    const where: any = { order: { userId: ctx.userId! } };
-    if (status) where.status = status;
-    return ctx.prisma.refund.findMany({ where, take: limit, skip: offset, orderBy: { createdAt: "desc" } });
+    const where: Record<string, unknown> = { order: { userId: ctx.userId! } };
+    if (args.status) where.status = args.status;
+    return ctx.prisma.refund.findMany({ where, take: args.limit ?? 20, skip: args.offset ?? 0, orderBy: { createdAt: "desc" } });
   },
 
-  refund: async (_parent: unknown, { id }: { id: string }, ctx: Context) => {
+  refund: async (_parent: unknown, { id }: IdArg, ctx: Context) => {
     requireAuth(ctx.userId);
     return ctx.prisma.refund.findFirst({ where: { id, order: { userId: ctx.userId! } } });
   },

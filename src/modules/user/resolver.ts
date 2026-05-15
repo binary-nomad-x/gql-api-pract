@@ -1,37 +1,39 @@
 import type { Context } from "../../types/context.js";
-import { requireAuth, requireOwner } from "../../utils/errors.js";
+import type { Parent, IdArg } from "../../types/graphql.js";
+import type { UpdateUserInput } from "../../types/inputs.js";
 import { hashPassword } from "../../utils/auth.js";
+import { requireAuth, requireOwner } from "../../utils/errors.js";
 
 export const UserResolver = {
-  profile: (parent: any, _args: unknown, ctx: Context) =>
+  profile: (parent: Parent, _args: unknown, ctx: Context) =>
     ctx.prisma.profile.findUnique({ where: { userId: parent.id } }),
-  posts: (parent: any, _args: unknown, ctx: Context) =>
+  posts: (parent: Parent, _args: unknown, ctx: Context) =>
     ctx.prisma.post.findMany({ where: { authorId: parent.id } }),
-  comments: (parent: any, _args: unknown, ctx: Context) =>
+  comments: (parent: Parent, _args: unknown, ctx: Context) =>
     ctx.prisma.comment.findMany({ where: { authorId: parent.id } }),
-  likes: (parent: any, _args: unknown, ctx: Context) =>
+  likes: (parent: Parent, _args: unknown, ctx: Context) =>
     ctx.prisma.like.findMany({ where: { userId: parent.id } }),
-  products: (parent: any, _args: unknown, ctx: Context) =>
+  products: (parent: Parent, _args: unknown, ctx: Context) =>
     ctx.prisma.product.findMany({ where: { sellerId: parent.id } }),
-  orders: (parent: any, _args: unknown, ctx: Context) =>
+  orders: (parent: Parent, _args: unknown, ctx: Context) =>
     ctx.prisma.order.findMany({ where: { userId: parent.id } }),
-  reviews: (parent: any, _args: unknown, ctx: Context) =>
+  reviews: (parent: Parent, _args: unknown, ctx: Context) =>
     ctx.prisma.review.findMany({ where: { userId: parent.id } }),
-  addresses: (parent: any, _args: unknown, ctx: Context) =>
+  addresses: (parent: Parent, _args: unknown, ctx: Context) =>
     ctx.prisma.address.findMany({ where: { userId: parent.id } }),
-  wishlists: (parent: any, _args: unknown, ctx: Context) =>
+  wishlists: (parent: Parent, _args: unknown, ctx: Context) =>
     ctx.prisma.wishlist.findMany({ where: { userId: parent.id } }),
-  cart: (parent: any, _args: unknown, ctx: Context) =>
+  cart: (parent: Parent, _args: unknown, ctx: Context) =>
     ctx.prisma.cart.findUnique({ where: { userId: parent.id } }),
-  notifications: (parent: any, _args: unknown, ctx: Context) =>
+  notifications: (parent: Parent, _args: unknown, ctx: Context) =>
     ctx.prisma.notification.findMany({ where: { userId: parent.id } }),
-  followers: (parent: any, _args: unknown, ctx: Context) =>
+  followers: (parent: Parent, _args: unknown, ctx: Context) =>
     ctx.prisma.follow.findMany({ where: { followingId: parent.id } }),
-  following: (parent: any, _args: unknown, ctx: Context) =>
+  following: (parent: Parent, _args: unknown, ctx: Context) =>
     ctx.prisma.follow.findMany({ where: { followerId: parent.id } }),
-  savedPosts: (parent: any, _args: unknown, ctx: Context) =>
+  savedPosts: (parent: Parent, _args: unknown, ctx: Context) =>
     ctx.prisma.savedPost.findMany({ where: { userId: parent.id } }),
-  postViews: (parent: any, _args: unknown, ctx: Context) =>
+  postViews: (parent: Parent, _args: unknown, ctx: Context) =>
     ctx.prisma.postView.findMany({ where: { userId: parent.id } }),
 };
 
@@ -39,7 +41,7 @@ export const UserQueries = {
   users: (_parent: unknown, _args: unknown, ctx: Context) =>
     ctx.prisma.user.findMany(),
 
-  user: (_parent: unknown, { id }: { id: string }, ctx: Context) =>
+  user: (_parent: unknown, { id }: IdArg, ctx: Context) =>
     ctx.prisma.user.findUnique({ where: { id } }),
 
   me: (_parent: unknown, _args: unknown, ctx: Context) => {
@@ -49,27 +51,28 @@ export const UserQueries = {
 };
 
 export const UserMutations = {
-  updateUser: async (_parent: unknown, { id, input }: any, ctx: Context) => {
-    requireOwner(id, ctx.userId);
-    const data: any = {};
-    if (input.name) data.name = input.name;
-    if (input.email) data.email = input.email;
-    if (input.password) data.password = await hashPassword(input.password);
-    return ctx.prisma.user.update({ where: { id }, data });
+  updateUser: async (_parent: unknown, args: { id: string; input: UpdateUserInput }, ctx: Context) => {
+    requireOwner(args.id, ctx.userId);
+    const data: Record<string, unknown> = {};
+    const { name, email, password } = args.input;
+    if (name) data.name = name;
+    if (email) data.email = email;
+    if (password) data.password = await hashPassword(password);
+    return ctx.prisma.user.update({ where: { id: args.id }, data });
   },
 
-  deleteUser: async (_parent: unknown, { id }: any, ctx: Context) => {
+  deleteUser: async (_parent: unknown, { id }: IdArg, ctx: Context) => {
     requireOwner(id, ctx.userId);
     await ctx.prisma.user.delete({ where: { id } });
     return true;
   },
 
-  updateProfile: async (_parent: unknown, input: any, ctx: Context) => {
+  updateProfile: async (_parent: unknown, args: Record<string, unknown>, ctx: Context) => {
     requireAuth(ctx.userId);
     return ctx.prisma.profile.upsert({
-      where: { userId: ctx.userId },
-      update: input,
-      create: { userId: ctx.userId!, ...input },
+      where: { userId: ctx.userId! },
+      update: args,
+      create: { userId: ctx.userId!, ...args },
     });
   },
 };

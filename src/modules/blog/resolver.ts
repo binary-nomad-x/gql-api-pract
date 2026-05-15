@@ -1,75 +1,86 @@
 import type { Context } from "../../types/context.js";
+import type { Parent, IdArg, PostFilterArgs } from "../../types/graphql.js";
+import type { CreatePostInput, UpdatePostInput, CreateCommentInput, CreateCategoryInput } from "../../types/inputs.js";
 import { requireAuth, requireOwner } from "../../utils/errors.js";
+import { clean } from "../../utils/clean.js";
 
 export const PostResolver = {
-  author: (parent: any, _args: unknown, ctx: Context) =>
-    ctx.prisma.user.findUnique({ where: { id: parent.authorId } }),
-  tags: (parent: any, _args: unknown, ctx: Context) =>
+  author: (parent: Parent, _args: unknown, ctx: Context) =>
+    ctx.prisma.user.findUnique({ where: { id: parent.authorId as string } }),
+  tags: (parent: Parent, _args: unknown, ctx: Context) =>
     ctx.prisma.tag.findMany({ where: { posts: { some: { id: parent.id } } } }),
-  categories: (parent: any, _args: unknown, ctx: Context) =>
+  categories: (parent: Parent, _args: unknown, ctx: Context) =>
     ctx.prisma.category.findMany({ where: { posts: { some: { id: parent.id } } } }),
-  comments: (parent: any, _args: unknown, ctx: Context) =>
+  comments: (parent: Parent, _args: unknown, ctx: Context) =>
     ctx.prisma.comment.findMany({ where: { postId: parent.id } }),
-  likes: (parent: any, _args: unknown, ctx: Context) =>
+  likes: (parent: Parent, _args: unknown, ctx: Context) =>
     ctx.prisma.like.findMany({ where: { postId: parent.id } }),
-  savedBy: (parent: any, _args: unknown, ctx: Context) =>
+  savedBy: (parent: Parent, _args: unknown, ctx: Context) =>
     ctx.prisma.savedPost.findMany({ where: { postId: parent.id } }),
-  views: (parent: any, _args: unknown, ctx: Context) =>
+  views: (parent: Parent, _args: unknown, ctx: Context) =>
     ctx.prisma.postView.findMany({ where: { postId: parent.id } }),
-  likeCount: (parent: any, _args: unknown, ctx: Context) =>
+  likeCount: (parent: Parent, _args: unknown, ctx: Context) =>
     ctx.prisma.like.count({ where: { postId: parent.id } }),
-  commentCount: (parent: any, _args: unknown, ctx: Context) =>
+  commentCount: (parent: Parent, _args: unknown, ctx: Context) =>
     ctx.prisma.comment.count({ where: { postId: parent.id } }),
-  viewCount: (parent: any, _args: unknown, ctx: Context) =>
+  viewCount: (parent: Parent, _args: unknown, ctx: Context) =>
     ctx.prisma.postView.count({ where: { postId: parent.id } }),
-  saveCount: (parent: any, _args: unknown, ctx: Context) =>
+  saveCount: (parent: Parent, _args: unknown, ctx: Context) =>
     ctx.prisma.savedPost.count({ where: { postId: parent.id } }),
 };
 
 export const PostQueries = {
-  posts: async (
-    _parent: unknown,
-    { published, search, limit = 10, offset = 0 }: any,
-    ctx: Context,
-  ) => {
-    const where: any = {};
-    if (published !== undefined) where.published = published;
-    if (search) {
+  posts: async (_parent: unknown, args: PostFilterArgs, ctx: Context) => {
+    const where: Record<string, unknown> = {};
+    if (args.published !== undefined) where.published = args.published;
+    if (args.search) {
       where.OR = [
-        { title: { contains: search, mode: "insensitive" } },
-        { content: { contains: search, mode: "insensitive" } },
+        { title: { contains: args.search, mode: "insensitive" } },
+        { content: { contains: args.search, mode: "insensitive" } },
       ];
     }
-    return ctx.prisma.post.findMany({ where, take: limit, skip: offset, orderBy: { createdAt: "desc" } });
+    return ctx.prisma.post.findMany({
+      where,
+      take: args.limit ?? 10,
+      skip: args.offset ?? 0,
+      orderBy: { createdAt: "desc" },
+    });
   },
 
-  post: (_parent: unknown, { id }: { id: string }, ctx: Context) =>
+  post: (_parent: unknown, { id }: IdArg, ctx: Context) =>
     ctx.prisma.post.findUnique({ where: { id } }),
 };
 
 export const PostMutations = {
-  createPost: async (_parent: unknown, { input }: any, ctx: Context) => {
+  createPost: async (_parent: unknown, { input }: { input: CreatePostInput }, ctx: Context) => {
     requireAuth(ctx.userId);
-    const { tags = [], categories: categorySlugs = [], ...data } = input;
     return ctx.prisma.post.create({
       data: {
-        ...data,
-        published: data.published ?? false,
+        title: input.title,
+        content: input.content ?? null,
+        published: input.published ?? false,
         authorId: ctx.userId!,
-        tags: { connectOrCreate: tags.map((t: string) => ({ where: { name: t }, create: { name: t } })) },
-        categories: { connect: categorySlugs.map((s: string) => ({ slug: s })) },
+        tags: {
+          connectOrCreate: (input.tags ?? []).map((t: string) => ({
+            where: { name: t },
+            create: { name: t },
+          })),
+        },
+        categories: {
+          connect: (input.categories ?? []).map((s: string) => ({ slug: s })),
+        },
       },
     });
   },
 
-  updatePost: async (_parent: unknown, { id, input }: any, ctx: Context) => {
+  updatePost: async (_parent: unknown, { id, input }: { id: string; input: UpdatePostInput }, ctx: Context) => {
     const post = await ctx.prisma.post.findUnique({ where: { id } });
     if (!post) throw new Error("Post not found");
     requireOwner(post.authorId, ctx.userId);
-    return ctx.prisma.post.update({ where: { id }, data: input });
+    return ctx.prisma.post.update({ where: { id }, data: clean(input as any) });
   },
 
-  deletePost: async (_parent: unknown, { id }: any, ctx: Context) => {
+  deletePost: async (_parent: unknown, { id }: IdArg, ctx: Context) => {
     const post = await ctx.prisma.post.findUnique({ where: { id } });
     if (!post) throw new Error("Post not found");
     requireOwner(post.authorId, ctx.userId);
@@ -77,31 +88,31 @@ export const PostMutations = {
     return true;
   },
 
-  publishPost: async (_parent: unknown, { id }: any, ctx: Context) => {
+  publishPost: async (_parent: unknown, { id }: IdArg, ctx: Context) => {
     const post = await ctx.prisma.post.findUnique({ where: { id } });
     if (!post) throw new Error("Post not found");
     requireOwner(post.authorId, ctx.userId);
     return ctx.prisma.post.update({ where: { id }, data: { published: true } });
   },
 
-  unpublishPost: async (_parent: unknown, { id }: any, ctx: Context) => {
+  unpublishPost: async (_parent: unknown, { id }: IdArg, ctx: Context) => {
     const post = await ctx.prisma.post.findUnique({ where: { id } });
     if (!post) throw new Error("Post not found");
     requireOwner(post.authorId, ctx.userId);
     return ctx.prisma.post.update({ where: { id }, data: { published: false } });
   },
 
-  createTag: (_parent: unknown, { name }: any, ctx: Context) =>
+  createTag: (_parent: unknown, { name }: { name: string }, ctx: Context) =>
     ctx.prisma.tag.upsert({ where: { name }, update: {}, create: { name } }),
 
-  createCategory: (_parent: unknown, { input }: any, ctx: Context) =>
+  createCategory: (_parent: unknown, { input }: { input: CreateCategoryInput }, ctx: Context) =>
     ctx.prisma.category.upsert({
       where: { slug: input.slug },
-      update: { name: input.name, description: input.description },
+      update: { name: input.name, description: input.description ?? null },
       create: input,
     }),
 
-  createComment: async (_parent: unknown, { input }: any, ctx: Context) => {
+  createComment: async (_parent: unknown, { input }: { input: CreateCommentInput }, ctx: Context) => {
     requireAuth(ctx.userId);
     const post = await ctx.prisma.post.findUnique({ where: { id: input.postId } });
     if (!post) throw new Error("Post not found");
@@ -110,7 +121,7 @@ export const PostMutations = {
     });
   },
 
-  deleteComment: async (_parent: unknown, { id }: any, ctx: Context) => {
+  deleteComment: async (_parent: unknown, { id }: IdArg, ctx: Context) => {
     requireAuth(ctx.userId);
     const comment = await ctx.prisma.comment.findUnique({ where: { id } });
     if (!comment) throw new Error("Comment not found");
@@ -119,7 +130,7 @@ export const PostMutations = {
     return true;
   },
 
-  toggleLike: async (_parent: unknown, { postId }: any, ctx: Context) => {
+  toggleLike: async (_parent: unknown, { postId }: { postId: string }, ctx: Context) => {
     requireAuth(ctx.userId);
     const existing = await ctx.prisma.like.findUnique({
       where: { userId_postId: { userId: ctx.userId!, postId } },
@@ -133,13 +144,17 @@ export const PostMutations = {
 };
 
 export const TagResolver = {
-  postCount: (parent: any, _args: unknown, ctx: Context) =>
+  postCount: (parent: Parent, _args: unknown, ctx: Context) =>
     ctx.prisma.post.count({ where: { tags: { some: { id: parent.id } } } }),
 };
 
 export const CategoryResolver = {
-  postCount: (parent: any, _args: unknown, ctx: Context) =>
+  posts: (parent: Parent, _args: unknown, ctx: Context) =>
+    ctx.prisma.post.findMany({ where: { categories: { some: { id: parent.id } } } }),
+  products: (parent: Parent, _args: unknown, ctx: Context) =>
+    ctx.prisma.product.findMany({ where: { categoryId: parent.id } }),
+  postCount: (parent: Parent, _args: unknown, ctx: Context) =>
     ctx.prisma.post.count({ where: { categories: { some: { id: parent.id } } } }),
-  productCount: (parent: any, _args: unknown, ctx: Context) =>
+  productCount: (parent: Parent, _args: unknown, ctx: Context) =>
     ctx.prisma.product.count({ where: { categoryId: parent.id } }),
 };

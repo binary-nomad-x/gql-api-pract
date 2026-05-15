@@ -1,19 +1,21 @@
 import type { Context } from "../../types/context.js";
+import type { Parent, PaginationArgs } from "../../types/graphql.js";
 import { requireAuth } from "../../utils/errors.js";
 
 export const SavedPostResolver = {
-  user: (parent: any, _args: unknown, ctx: Context) =>
-    ctx.prisma.user.findUnique({ where: { id: parent.userId } }),
-  post: (parent: any, _args: unknown, ctx: Context) =>
-    ctx.prisma.post.findUnique({ where: { id: parent.postId } }),
+  user: (parent: Parent, _args: unknown, ctx: Context) =>
+    ctx.prisma.user.findUnique({ where: { id: parent.userId as string } }),
+  post: (parent: Parent, _args: unknown, ctx: Context) =>
+    ctx.prisma.post.findUnique({ where: { id: parent.postId as string } }),
 };
 
 export const SavedPostQueries = {
-  mySavedPosts: (_parent: unknown, { limit = 20, offset = 0 }: any, ctx: Context) => {
+  mySavedPosts: (_parent: unknown, args: PaginationArgs, ctx: Context) => {
     requireAuth(ctx.userId);
     return ctx.prisma.savedPost.findMany({
       where: { userId: ctx.userId! },
-      take: limit, skip: offset,
+      take: args.limit ?? 20,
+      skip: args.offset ?? 0,
       orderBy: { createdAt: "desc" },
     });
   },

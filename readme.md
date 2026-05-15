@@ -1,126 +1,367 @@
 # GraphQL Prisma API
 
-A GraphQL API built with Apollo Server, Prisma (v7), and PostgreSQL. Features a blog domain plus a full e-commerce domain with products, orders, payments, and refunds.
+A GraphQL API built with Apollo Server, Prisma (v7), and PostgreSQL. Blog + e-commerce with 23 models.
 
-## Models (23 tables)
+## Project Structure
 
-### Core / Auth
-- **User** — roles (USER, ADMIN, MODERATOR)
-- **Profile** — One-to-one with User
-
-### Blog / Content
-- **Post** — Belongs to User; has Tags, Categories, Comments, Likes, SavedPosts, PostViews
-- **Tag** — Many-to-many with Post
-- **Category** — Many-to-many with Post; also linked to Products
-- **Comment** — Belongs to User and Post
-- **Like** — Belongs to User and Post (unique pair)
-- **SavedPost** — Bookmark posts (unique per user+post)
-- **PostView** — Anonymous or user-tracked post views
-
-### E-Commerce
-- **Product** — Belongs to Seller (User) and Category; has Images, OrderItems, Reviews
-- **ProductImage** — Multiple images per Product
-- **Order** — Belongs to Buyer (User); has Items, Payment, Refunds, Shipments, Coupon
-- **OrderItem** — Line items (quantity + unitPrice)
-- **Payment** — One-to-one per Order; supports multiple methods
-- **Refund** — Belongs to Payment and Order
-- **Review** — Belongs to Product and User (unique pair, rating 1-5)
-- **Coupon** — Discount codes applied to Orders
-- **Shipment** — Tracking per Order
-
-### Social / Account
-- **Address** — User has many (Home/Work/Other)
-- **Wishlist** — User has many; WishlistItem links to Products
-- **Cart** — One per User; CartItem links to Products
-- **Notification** — User notifications with types (ORDER_UPDATE, NEW_FOLLOWER, etc.)
-- **Follow** — User follows User (self-referential, unique pair)
-
-## Prerequisites
-
-- Node.js >= 18
-- PostgreSQL running on `localhost:5433` (or update `.env`)
-
-## Quick Start
-
-```bash
-# 1. Install dependencies
-npm install
-
-# 2. Generate Prisma client
-npm run generate
-
-# 3. Run migrations
-npm run migrate:dev
-
-# 4. Seed the database
-npm run seed
-
-# 5. Start dev server
-npm run dev
+```
+src/
+  index.ts              # Server entry - ApolloServer setup
+  context.ts            # Prisma adapter + auth context
+  schema/
+    typeDefs.ts         # Loads all .graphql files
+    types/              # 23 type definitions (one per model)
+    inputs.graphql      # All input types for mutations
+    queries.graphql     # All Query operations
+    mutations.graphql   # All Mutation operations
+    fragments.graphql   # Reusable field fragments
+  modules/              # Domain modules
+    auth/               # signup, login
+    user/               # User CRUD + Profile
+    blog/               # Post, Tag, Category, Comment, Like
+    commerce/           # Product, Order, Payment, Refund
+    address/ cart/ wishlist/ coupon/ shipment/
+    notification/ follow/ savedPost/ postView/ productImage/
+    stats/              # Aggregate counts
+    index.ts            # Merges all resolvers
+  types/                # TS types (context, graphql helpers, input shapes)
+    context.ts          # Context interface
+    graphql.ts          # Parent, PaginationArgs, IdArg, etc.
+    inputs.ts           # CreateUserInput, CreatePostInput, etc.
+  utils/
+    auth.ts             # JWT, bcrypt helpers
+    errors.ts           # AppError, requireAuth, requireOwner
+    clean.ts            # Clean null values for Prisma
+API.md                  # Complete API reference with examples
 ```
 
-Or use the all-in-one setup:
+## Making API Calls
 
-```bash
-npm run setup
+The API is a single GraphQL endpoint:
+
+**Endpoint:** `POST http://localhost:4000/`
+
+**Headers:**
+```json
+{
+  "Content-Type": "application/json"
+}
 ```
 
-## Available Scripts
+**Authenticated requests** (add JWT token from `login` or `signup`):
+```json
+{
+  "Content-Type": "application/json",
+  "Authorization": "Bearer <your-jwt-token>"
+}
+```
 
-| Script | Description |
-|--------|-------------|
-| `npm run dev` | Start development server with hot reload |
-| `npm run build` | Compile TypeScript to `dist/` |
-| `npm run start` | Start compiled server |
-| `npm run seed` | Seed database with sample data |
-| `npm run seed:reset` | Delete all data (no re-seed) |
-| `npm run seed:fresh` | Reset + re-seed database |
-| `npm run db:reset` | Reset database via Prisma migrate |
-| `npm run db:rebuild` | Full reset + migrate + seed |
-| `npm run generate` | Regenerate Prisma client |
-| `npm run migrate:dev` | Run pending migrations |
-| `npm run studio` | Open Prisma Studio |
-| `npm run setup` | Full setup: install + generate + migrate + seed |
+### Request Shape
+
+Every GraphQL request follows this structure:
+
+```json
+{
+  "query": "mutation { login(email:\"...\", password:\"...\") { token user { id email name role } } }",
+  "variables": {}
+}
+```
+
+Or with variables:
+
+```json
+{
+  "query": "mutation Login($email: String!, $password: String!) { login(email: $email, password: $password) { token user { id email name role } } }",
+  "variables": {
+    "email": "alice@test.com",
+    "password": "password123"
+  }
+}
+```
+
+### Response Shape
+
+Every response follows this structure:
+
+```json
+{
+  "data": {
+    "login": {
+      "token": "eyJhbGci...",
+      "user": {
+        "id": "cmpxxx...",
+        "email": "alice@test.com",
+        "name": "Alice Johnson",
+        "role": "ADMIN"
+      }
+    }
+  }
+}
+```
+
+Error response:
+
+```json
+{
+  "errors": [
+    {
+      "message": "Email already in use",
+      "extensions": { "code": "BAD_REQUEST" }
+    }
+  ]
+}
+```
+
+## Quick Examples
+
+### 1. Login (get a JWT token)
+
+```graphql
+mutation Login {
+  login(email: "alice@test.com", password: "password123") {
+    token
+    user { id email name role }
+  }
+}
+```
+
+### 2. Get my orders (authenticated)
+
+```graphql
+query MyOrders {
+  myOrders(limit: 5) {
+    id status totalAmount itemCount
+    items { id quantity product { name price } }
+    payment { id amount method status }
+  }
+}
+```
+
+### 3. Create a product (authenticated, seller role)
+
+```graphql
+mutation CreateProduct {
+  createProduct(input: {
+    name: "Wireless Headphones",
+    price: 79.99,
+    stock: 100,
+    sku: "WH-001",
+    categorySlug: "electronics"
+  }) {
+    id name price sku
+    category { name slug }
+  }
+}
+```
+
+### 4. Place an order (authenticated)
+
+```graphql
+mutation PlaceOrder {
+  placeOrder(input: {
+    items: [{ productId: "<product-id>", quantity: 2 }],
+    shippingAddress: "123 Main St, New York, NY 10001"
+  }) {
+    id status totalAmount
+    items { id quantity unitPrice product { name } }
+  }
+}
+```
+
+### 5. Using fragments
+
+```graphql
+fragment UserInfo on User {
+  id email name role
+}
+
+fragment ProductInfo on Product {
+  id name price stock sku
+  seller { ...UserInfo }
+  category { id name slug }
+}
+
+query GetProducts {
+  products(limit: 3) {
+    ...ProductInfo
+  }
+}
+```
+
+## Input Shapes (for mutations)
+
+All mutation inputs follow the `input` keyword in GraphQL. Here are the key ones:
+
+### CreateUserInput
+```graphql
+input CreateUserInput {
+  email: String!
+  name: String
+  password: String!
+}
+```
+
+### CreatePostInput
+```graphql
+input CreatePostInput {
+  title: String!
+  content: String
+  published: Boolean
+  tags: [String!]
+  categories: [String!]
+}
+```
+
+### CreateProductInput
+```graphql
+input CreateProductInput {
+  name: String!
+  description: String
+  price: Float!
+  stock: Int!
+  sku: String!
+  imageUrl: String
+  categorySlug: String
+}
+```
+
+### PlaceOrderInput
+```graphql
+input PlaceOrderInput {
+  items: [OrderItemInput!]!
+  shippingAddress: String
+  couponCode: String
+}
+
+input OrderItemInput {
+  productId: ID!
+  quantity: Int!
+}
+```
+
+### CreateReviewInput
+```graphql
+input CreateReviewInput {
+  rating: Int!        # 1-5
+  title: String
+  content: String
+  productId: ID!
+}
+```
+
+See [API.md](./API.md) for the full input reference.
+
+## Response Shapes (types)
+
+### User
+```graphql
+type User {
+  id: ID!
+  email: String!
+  name: String
+  role: Role!
+  profile: Profile
+  posts: [Post!]!
+  products: [Product!]!
+  orders: [Order!]!
+  addresses: [Address!]!
+  cart: Cart
+  notifications: [Notification!]!
+  followers: [Follow!]!
+  following: [Follow!]!
+  createdAt: DateTime!
+  updatedAt: DateTime!
+}
+```
+
+### Product
+```graphql
+type Product {
+  id: ID!
+  name: String!
+  price: Float!
+  stock: Int!
+  sku: String!
+  isActive: Boolean!
+  seller: User!
+  category: Category
+  images: [ProductImage!]!
+  reviews: [Review!]!
+  reviewCount: Int!
+  averageRating: Float
+}
+```
+
+### Order
+```graphql
+type Order {
+  id: ID!
+  status: OrderStatus!
+  totalAmount: Float!
+  discountAmount: Float!
+  items: [OrderItem!]!
+  payment: Payment
+  shipments: [Shipment!]!
+  coupon: Coupon
+  itemCount: Int!
+}
+```
+
+### AuthPayload
+```graphql
+type AuthPayload {
+  token: String!
+  user: User!
+}
+```
+
+## Query Parameters
+
+Most list queries accept pagination and filters:
+
+```graphql
+# Pagination args (available on all list queries)
+limit: Int   # default varies (10-20)
+offset: Int  # default 0
+
+# Post filters
+posts(published: Boolean, search: String, limit: Int, offset: Int): [Post!]!
+
+# Product filters
+products(categorySlug: String, search: String, minPrice: Float, maxPrice: Float, limit: Int, offset: Int): [Product!]!
+
+# Order filters
+myOrders(status: OrderStatus, limit: Int, offset: Int): [Order!]!
+```
 
 ## Seed Data
 
-The seed script (`prisma/seed.ts`) uses `@faker-js/faker` to generate realistic data:
+`npm run seed:fresh` generates 10K+ records:
 
 | Table | Records |
 |-------|---------|
-| Users | 50 (5 fixed + 45 random) |
+| Users | 50 |
 | Products | 500 |
+| ProductImages | ~1500 |
 | Orders | 500 |
-| Order Items | ~2000 (avg 4 per order) |
-| Payments | ~450 (one per non-cancelled order) |
+| OrderItems | ~2000 |
+| Payments | ~400 |
 | Refunds | ~100 |
-| Reviews | ~1500 (avg 3-4 per product) |
-| Posts | 50 |
-| Comments | 200 |
-| Likes | ~300 |
-
-### Flags
-
-```
-npm run seed          — Append seed data to existing database
-npm run seed:reset    — Delete all data, do not re-seed
-npm run seed:fresh    — Delete all data, then re-seed
-```
-
-## Environment Variables
-
-See `.env.example`:
-
-```
-DATABASE_URL="postgresql://postgres:admin@localhost:5433/graphql_api?schema=public"
-PORT=4000
-NODE_ENV=development
-JWT_SECRET=your-secret-key
-```
+| Reviews | ~1200 |
+| Addresses | ~120 |
+| Wishlists | ~30 |
+| Carts | ~40 |
+| Coupons | 8 |
+| Shipments | ~150 |
+| Notifications | ~250 |
+| Follows | ~150 |
+| SavedPosts | ~200 |
+| PostViews | ~1300 |
+| Posts/Comments/Likes | 50/200/280 |
 
 ## Test Accounts
 
-All seeded accounts use password `password123`:
+All use password `password123`:
 
 | Email | Role |
 |-------|------|
@@ -130,6 +371,32 @@ All seeded accounts use password `password123`:
 | diana@test.com | MODERATOR |
 | eve@test.com | USER |
 
-## API Reference
+## Available Scripts
 
-See [API.md](./API.md) for the full API reference with all queries, mutations, examples, and fragments.
+| Script | Description |
+|--------|-------------|
+| `npm run dev` | Start dev server |
+| `npm run seed` | Seed with sample data |
+| `npm run seed:fresh` | Reset + re-seed |
+| `npm run seed:reset` | Delete all data |
+| `npm run db:rebuild` | Full reset + migrate + seed |
+| `npm run setup` | Install + generate + migrate + seed |
+| `npm run studio` | Open Prisma Studio |
+| `npm run migrate:dev` | Run pending migrations |
+| `npm run generate` | Regenerate Prisma client |
+
+## Enums
+
+```
+Role: USER | ADMIN | MODERATOR
+OrderStatus: PENDING | CONFIRMED | PROCESSING | SHIPPED | DELIVERED | CANCELLED
+PaymentMethod: CREDIT_CARD | DEBIT_CARD | PAYPAL | BANK_TRANSFER | CASH_ON_DELIVERY
+PaymentStatus: PENDING | COMPLETED | FAILED | REFUNDED
+RefundStatus: PENDING | APPROVED | REJECTED | COMPLETED
+ShipmentStatus: PENDING | PICKED_UP | IN_TRANSIT | OUT_FOR_DELIVERY | DELIVERED | FAILED
+NotificationType: SYSTEM | ORDER_UPDATE | PAYMENT_RECEIVED | SHIPMENT_UPDATE | NEW_FOLLOWER | NEW_COMMENT | NEW_LIKE | REVIEW_REPLY | PROMOTION
+```
+
+## Full API Reference
+
+See [API.md](./API.md) for every query, mutation, and fragment with examples.

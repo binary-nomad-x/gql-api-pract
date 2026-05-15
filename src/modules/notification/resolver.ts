@@ -1,17 +1,19 @@
 import type { Context } from "../../types/context.js";
+import type { Parent, IdArg, PaginationArgs } from "../../types/graphql.js";
 import { requireAuth } from "../../utils/errors.js";
 
 export const NotificationResolver = {
-  user: (parent: any, _args: unknown, ctx: Context) =>
-    ctx.prisma.user.findUnique({ where: { id: parent.userId } }),
+  user: (parent: Parent, _args: unknown, ctx: Context) =>
+    ctx.prisma.user.findUnique({ where: { id: parent.userId as string } }),
 };
 
 export const NotificationQueries = {
-  myNotifications: async (_parent: unknown, { limit = 20, offset = 0 }: any, ctx: Context) => {
+  myNotifications: async (_parent: unknown, args: PaginationArgs, ctx: Context) => {
     requireAuth(ctx.userId);
     return ctx.prisma.notification.findMany({
       where: { userId: ctx.userId! },
-      take: limit, skip: offset,
+      take: args.limit ?? 20,
+      skip: args.offset ?? 0,
       orderBy: { createdAt: "desc" },
     });
   },
@@ -23,7 +25,7 @@ export const NotificationQueries = {
 };
 
 export const NotificationMutations = {
-  markNotificationRead: async (_parent: unknown, { id }: any, ctx: Context) => {
+  markNotificationRead: async (_parent: unknown, { id }: IdArg, ctx: Context) => {
     requireAuth(ctx.userId);
     return ctx.prisma.notification.update({
       where: { id },

@@ -1,20 +1,22 @@
 import type { Context } from "../../types/context.js";
+import type { Parent, IdArg } from "../../types/graphql.js";
+import type { CreateWishlistInput, AddToWishlistInput } from "../../types/inputs.js";
 import { requireAuth } from "../../utils/errors.js";
 
 export const WishlistResolver = {
-  user: (parent: any, _args: unknown, ctx: Context) =>
-    ctx.prisma.user.findUnique({ where: { id: parent.userId } }),
-  items: (parent: any, _args: unknown, ctx: Context) =>
+  user: (parent: Parent, _args: unknown, ctx: Context) =>
+    ctx.prisma.user.findUnique({ where: { id: parent.userId as string } }),
+  items: (parent: Parent, _args: unknown, ctx: Context) =>
     ctx.prisma.wishlistItem.findMany({ where: { wishlistId: parent.id }, include: { product: true } }),
-  itemCount: (parent: any, _args: unknown, ctx: Context) =>
+  itemCount: (parent: Parent, _args: unknown, ctx: Context) =>
     ctx.prisma.wishlistItem.count({ where: { wishlistId: parent.id } }),
 };
 
 export const WishlistItemResolver = {
-  wishlist: (parent: any, _args: unknown, ctx: Context) =>
-    ctx.prisma.wishlist.findUnique({ where: { id: parent.wishlistId } }),
-  product: (parent: any, _args: unknown, ctx: Context) =>
-    ctx.prisma.product.findUnique({ where: { id: parent.productId } }),
+  wishlist: (parent: Parent, _args: unknown, ctx: Context) =>
+    ctx.prisma.wishlist.findUnique({ where: { id: parent.wishlistId as string } }),
+  product: (parent: Parent, _args: unknown, ctx: Context) =>
+    ctx.prisma.product.findUnique({ where: { id: parent.productId as string } }),
 };
 
 export const WishlistQueries = {
@@ -22,40 +24,44 @@ export const WishlistQueries = {
     requireAuth(ctx.userId);
     return ctx.prisma.wishlist.findMany({ where: { userId: ctx.userId! } });
   },
-  wishlist: async (_parent: unknown, { id }: { id: string }, ctx: Context) => {
+
+  wishlist: async (_parent: unknown, { id }: IdArg, ctx: Context) => {
     requireAuth(ctx.userId);
     return ctx.prisma.wishlist.findFirst({ where: { id, userId: ctx.userId! } });
   },
 };
 
 export const WishlistMutations = {
-  createWishlist: async (_parent: unknown, { input }: any, ctx: Context) => {
+  createWishlist: async (_parent: unknown, { input }: { input: CreateWishlistInput }, ctx: Context) => {
     requireAuth(ctx.userId);
-    return ctx.prisma.wishlist.create({ data: { ...input, userId: ctx.userId! } });
+    return ctx.prisma.wishlist.create({ data: { name: input.name ?? "Default", userId: ctx.userId! } });
   },
 
-  addToWishlist: async (_parent: unknown, { input }: any, ctx: Context) => {
+  addToWishlist: async (_parent: unknown, { input }: { input: AddToWishlistInput }, ctx: Context) => {
     requireAuth(ctx.userId);
-    const wishlist = await ctx.prisma.wishlist.findFirst({ where: { id: input.wishlistId, userId: ctx.userId! } });
+    const wishlist = await ctx.prisma.wishlist.findFirst({
+      where: { id: input.wishlistId, userId: ctx.userId! },
+    });
     if (!wishlist) throw new Error("Wishlist not found");
+
     await ctx.prisma.wishlistItem.upsert({
       where: { wishlistId_productId: { wishlistId: input.wishlistId, productId: input.productId } },
-      update: { note: input.note },
-      create: { wishlistId: input.wishlistId, productId: input.productId, note: input.note },
+      update: { note: input.note ?? null },
+      create: { wishlistId: input.wishlistId, productId: input.productId, note: input.note ?? null },
     });
     return ctx.prisma.wishlist.findUnique({ where: { id: input.wishlistId } });
   },
 
-  removeFromWishlist: async (_parent: unknown, { wishlistId, productId }: any, ctx: Context) => {
+  removeFromWishlist: async (_parent: unknown, args: { wishlistId: string; productId: string }, ctx: Context) => {
     requireAuth(ctx.userId);
     const item = await ctx.prisma.wishlistItem.findUnique({
-      where: { wishlistId_productId: { wishlistId, productId } },
+      where: { wishlistId_productId: { wishlistId: args.wishlistId, productId: args.productId } },
     });
     if (item) await ctx.prisma.wishlistItem.delete({ where: { id: item.id } });
-    return ctx.prisma.wishlist.findUnique({ where: { id: wishlistId } });
+    return ctx.prisma.wishlist.findUnique({ where: { id: args.wishlistId } });
   },
 
-  deleteWishlist: async (_parent: unknown, { id }: any, ctx: Context) => {
+  deleteWishlist: async (_parent: unknown, { id }: IdArg, ctx: Context) => {
     requireAuth(ctx.userId);
     await ctx.prisma.wishlist.deleteMany({ where: { id, userId: ctx.userId! } });
     return true;

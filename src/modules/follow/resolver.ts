@@ -1,23 +1,24 @@
 import type { Context } from "../../types/context.js";
+import type { Parent, UserIdArg } from "../../types/graphql.js";
 import { requireAuth } from "../../utils/errors.js";
 
 export const FollowResolver = {
-  follower: (parent: any, _args: unknown, ctx: Context) =>
-    ctx.prisma.user.findUnique({ where: { id: parent.followerId } }),
-  following: (parent: any, _args: unknown, ctx: Context) =>
-    ctx.prisma.user.findUnique({ where: { id: parent.followingId } }),
+  follower: (parent: Parent, _args: unknown, ctx: Context) =>
+    ctx.prisma.user.findUnique({ where: { id: parent.followerId as string } }),
+  following: (parent: Parent, _args: unknown, ctx: Context) =>
+    ctx.prisma.user.findUnique({ where: { id: parent.followingId as string } }),
 };
 
 export const FollowQueries = {
-  followers: (_parent: unknown, { userId }: { userId: string }, ctx: Context) =>
+  followers: (_parent: unknown, { userId }: UserIdArg, ctx: Context) =>
     ctx.prisma.follow.findMany({ where: { followingId: userId }, include: { follower: true } }),
 
-  following: (_parent: unknown, { userId }: { userId: string }, ctx: Context) =>
+  following: (_parent: unknown, { userId }: UserIdArg, ctx: Context) =>
     ctx.prisma.follow.findMany({ where: { followerId: userId }, include: { following: true } }),
 };
 
 export const FollowMutations = {
-  toggleFollow: async (_parent: unknown, { userId }: { userId: string }, ctx: Context) => {
+  toggleFollow: async (_parent: unknown, { userId }: UserIdArg, ctx: Context) => {
     requireAuth(ctx.userId);
     if (userId === ctx.userId) throw new Error("Cannot follow yourself");
 
@@ -29,7 +30,6 @@ export const FollowMutations = {
       await ctx.prisma.follow.delete({ where: { id: existing.id } });
       return existing;
     }
-
     return ctx.prisma.follow.create({ data: { followerId: ctx.userId!, followingId: userId } });
   },
 };

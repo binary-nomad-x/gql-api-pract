@@ -1,6 +1,6 @@
 import jwt from "jsonwebtoken";
 import bcrypt from "bcryptjs";
-import type { JwtPayload } from "@/types/context.js";
+import type { JwtPayload } from "@graphql-prisma-api/types/context.js";
 
 const JWT_SECRET = process.env.JWT_SECRET || "secret";
 

@@ -1,7 +1,7 @@
-import type { Context } from "@/types/context.js";
-import type { CreateUserInput } from "@/types/inputs.js";
-import { hashPassword, comparePassword, generateToken } from "@/utils/auth.js";
-import { AppError } from "@/utils/errors.js";
+import type { Context } from "@graphql-prisma-api/types/context.js";
+import type { CreateUserInput } from "@graphql-prisma-api/types/inputs.js";
+import { hashPassword, comparePassword, generateToken } from "@graphql-prisma-api/utils/auth.js";
+import { AppError } from "@graphql-prisma-api/utils/errors.js";
 
 export const AuthMutations = {
   signup: async (_parent: unknown, { input }: { input: CreateUserInput }, ctx: Context) => {

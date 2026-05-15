@@ -1,6 +1,6 @@
-import type { Context } from "@/types/context.js";
-import type { Parent, IdArg, PaginationArgs } from "@/types/graphql.js";
-import { requireAuth } from "@/utils/errors.js";
+import type { Context } from "@graphql-prisma-api/types/context.js";
+import type { Parent, IdArg, PaginationArgs } from "@graphql-prisma-api/types/graphql.js";
+import { requireAuth } from "@graphql-prisma-api/utils/errors.js";
 
 export const NotificationResolver = {
   user: (parent: Parent, _args: unknown, ctx: Context) =>

@@ -1,7 +1,7 @@
-import type { Context } from "@/types/context.js";
-import type { Parent, IdArg } from "@/types/graphql.js";
-import type { CreateWishlistInput, AddToWishlistInput } from "@/types/inputs.js";
-import { requireAuth } from "@/utils/errors.js";
+import type { Context } from "@graphql-prisma-api/types/context.js";
+import type { Parent, IdArg } from "@graphql-prisma-api/types/graphql.js";
+import type { CreateWishlistInput, AddToWishlistInput } from "@graphql-prisma-api/types/inputs.js";
+import { requireAuth } from "@graphql-prisma-api/utils/errors.js";
 
 export const WishlistResolver = {
   user: (parent: Parent, _args: unknown, ctx: Context) =>

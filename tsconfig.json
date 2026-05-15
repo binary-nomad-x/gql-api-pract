@@ -16,7 +16,7 @@
     "sourceMap": true,
     "baseUrl": ".",
     "paths": {
-      "@/*": ["src/*"]
+      "@graphql-prisma-api/*": ["src/*"]
     }
   },
   "include": ["src/**/*"],

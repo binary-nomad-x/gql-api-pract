@@ -1,8 +1,8 @@
-import type { Context } from "@/types/context.js";
-import type { Parent, IdArg } from "@/types/graphql.js";
-import type { CreateAddressInput, UpdateAddressInput } from "@/types/inputs.js";
-import { requireAuth } from "@/utils/errors.js";
-import { clean } from "@/utils/clean.js";
+import type { Context } from "@graphql-prisma-api/types/context.js";
+import type { Parent, IdArg } from "@graphql-prisma-api/types/graphql.js";
+import type { CreateAddressInput, UpdateAddressInput } from "@graphql-prisma-api/types/inputs.js";
+import { requireAuth } from "@graphql-prisma-api/utils/errors.js";
+import { clean } from "@graphql-prisma-api/utils/clean.js";
 
 export const AddressResolver = {
   user: (parent: Parent, _args: unknown, ctx: Context) =>

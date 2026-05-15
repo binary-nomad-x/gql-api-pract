@@ -1,11 +1,11 @@
-import type { Context } from "@/types/context.js";
-import type { Parent, IdArg, ProductFilterArgs, PaginationArgs } from "@/types/graphql.js";
+import type { Context } from "@graphql-prisma-api/types/context.js";
+import type { Parent, IdArg, ProductFilterArgs, PaginationArgs } from "@graphql-prisma-api/types/graphql.js";
 import type {
   CreateProductInput, UpdateProductInput, PlaceOrderInput,
   ProcessPaymentInput, CreateRefundInput,
-} from "@/types/inputs.js";
-import { requireAuth, requireOwner } from "@/utils/errors.js";
-import { clean } from "@/utils/clean.js";
+} from "@graphql-prisma-api/types/inputs.js";
+import { requireAuth, requireOwner } from "@graphql-prisma-api/utils/errors.js";
+import { clean } from "@graphql-prisma-api/utils/clean.js";
 
 export const ProductResolver = {
   seller: (parent: Parent, _args: unknown, ctx: Context) =>

@@ -1,4 +1,4 @@
-import type { Context } from "@/types/context.js";
+import type { Context } from "@graphql-prisma-api/types/context.js";
 
 // Auth
 import { AuthMutations } from "./auth/resolver.js";

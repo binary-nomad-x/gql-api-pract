@@ -3,6 +3,9 @@
   "version": "1.0.0",
   "main": "src/index.ts",
   "type": "module",
+  "prisma": {
+    "seed": "tsx prisma/seed.ts"
+  },
   "scripts": {
     "dev": "tsx src/index.ts",
     "build": "tsc",
@@ -10,7 +13,12 @@
     "migrate:dev": "npx prisma migrate dev",
     "studio": "npx prisma studio",
     "generate": "npx prisma generate",
-    "db:reset": "npx prisma migrate reset"
+    "db:reset": "npx prisma migrate reset",
+    "seed": "tsx prisma/seed.ts",
+    "seed:reset": "tsx prisma/seed.ts --reset",
+    "seed:fresh": "tsx prisma/seed.ts --fresh",
+    "db:rebuild": "npx prisma migrate reset --force && npm run seed",
+    "setup": "npm install && npx prisma generate && npx prisma migrate dev && npm run seed"
   },
   "dependencies": {
     "@prisma/adapter-pg": "^7.8.0",

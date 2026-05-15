@@ -8,15 +8,17 @@ datasource db {
 
 // ==================== User Model ====================
 model User {
-  id        String   @id @default(cuid())
-  email     String   @unique
+  id        String    @id @default(cuid())
+  email     String    @unique
   name      String?
-  password  String   // hashed
-  role      Role     @default(USER)
+  password  String    // hashed
+  role      Role      @default(USER)
   posts     Post[]
   profile   Profile?
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  comments  Comment[]
+  likes     Like[]
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
 
   @@index([email])
   @@map("users")
@@ -39,15 +41,18 @@ model Profile {
 
 // ==================== Post Model ====================
 model Post {
-  id        String   @id @default(cuid())
+  id        String     @id @default(cuid())
   title     String
   content   String?
-  published Boolean  @default(false)
+  published Boolean    @default(false)
   authorId  String
-  author    User     @relation(fields: [authorId], references: [id], onDelete: Cascade)
-  tags      Tag[]    @relation("PostToTag")
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  author    User       @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  tags      Tag[]      @relation("PostToTag")
+  categories Category[] @relation("PostToCategory")
+  comments  Comment[]
+  likes     Like[]
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
 
   @@index([authorId])
   @@index([published])
@@ -62,6 +67,48 @@ model Tag {
   createdAt DateTime @default(now())
 
   @@map("tags")
+}
+
+// ==================== Category Model ====================
+model Category {
+  id        String   @id @default(cuid())
+  name      String   @unique
+  slug      String   @unique
+  description String?
+  posts     Post[]   @relation("PostToCategory")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("categories")
+}
+
+// ==================== Comment Model ====================
+model Comment {
+  id        String   @id @default(cuid())
+  content   String
+  authorId  String
+  author    User     @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  postId    String
+  post      Post     @relation(fields: [postId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([authorId])
+  @@index([postId])
+  @@map("comments")
+}
+
+// ==================== Like Model ====================
+model Like {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  postId    String
+  post      Post     @relation(fields: [postId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+
+  @@unique([userId, postId])
+  @@map("likes")
 }
 
 // ==================== Enums ====================

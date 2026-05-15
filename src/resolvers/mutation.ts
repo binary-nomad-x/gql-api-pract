@@ -96,7 +96,7 @@ export const Mutation = {
       throw new Error("Not authenticated");
     }
 
-    const { tags = [], ...postData } = input;
+    const { tags = [], categories: categorySlugs = [], ...postData } = input;
 
     const post = await ctx.prisma.post.create({
       data: {
@@ -109,8 +109,11 @@ export const Mutation = {
             create: { name: tagName },
           })),
         },
+        categories: {
+          connect: categorySlugs.map((slug: string) => ({ slug })),
+        },
       },
-      include: { tags: true, author: true },
+      include: { tags: true, author: true, categories: true },
     });
 
     return post;
@@ -167,6 +170,70 @@ export const Mutation = {
       where: { name },
       update: {},
       create: { name },
+    });
+  },
+
+  // Categories
+  createCategory: async (_parent: unknown, { input }: any, ctx: Context) => {
+    if (!ctx.userId) throw new Error("Not authenticated");
+
+    return ctx.prisma.category.upsert({
+      where: { slug: input.slug },
+      update: { name: input.name, description: input.description },
+      create: {
+        name: input.name,
+        slug: input.slug,
+        description: input.description,
+      },
+    });
+  },
+
+  // Comments
+  createComment: async (_parent: unknown, { input }: any, ctx: Context) => {
+    if (!ctx.userId) throw new Error("Not authenticated");
+
+    const post = await ctx.prisma.post.findUnique({
+      where: { id: input.postId },
+    });
+    if (!post) throw new Error("Post not found");
+
+    return ctx.prisma.comment.create({
+      data: {
+        content: input.content,
+        authorId: ctx.userId,
+        postId: input.postId,
+      },
+      include: { author: true, post: true },
+    });
+  },
+
+  deleteComment: async (_parent: unknown, { id }: any, ctx: Context) => {
+    if (!ctx.userId) throw new Error("Not authenticated");
+
+    const comment = await ctx.prisma.comment.findUnique({ where: { id } });
+    if (!comment) throw new Error("Comment not found");
+    if (comment.authorId !== ctx.userId) throw new Error("Not authorized");
+
+    await ctx.prisma.comment.delete({ where: { id } });
+    return true;
+  },
+
+  // Likes
+  toggleLike: async (_parent: unknown, { postId }: any, ctx: Context) => {
+    if (!ctx.userId) throw new Error("Not authenticated");
+
+    const existing = await ctx.prisma.like.findUnique({
+      where: { userId_postId: { userId: ctx.userId, postId } },
+    });
+
+    if (existing) {
+      await ctx.prisma.like.delete({ where: { id: existing.id } });
+      return existing;
+    }
+
+    return ctx.prisma.like.create({
+      data: { userId: ctx.userId, postId },
+      include: { user: true, post: true },
     });
   },
 };

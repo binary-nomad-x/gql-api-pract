@@ -19,6 +19,8 @@ type User {
     role: Role!
     profile: Profile
     posts: [Post!]!
+    comments: [Comment!]!
+    likes: [Like!]!
     createdAt: DateTime!
     updatedAt: DateTime!
 }
@@ -41,6 +43,11 @@ type Post {
     published: Boolean!
     author: User!
     tags: [Tag!]!
+    categories: [Category!]!
+    comments: [Comment!]!
+    likes: [Like!]!
+    likeCount: Int!
+    commentCount: Int!
     createdAt: DateTime!
     updatedAt: DateTime!
 }
@@ -49,6 +56,33 @@ type Tag {
     id: ID!
     name: String!
     posts: [Post!]!
+    createdAt: DateTime!
+}
+
+type Category {
+    id: ID!
+    name: String!
+    slug: String!
+    description: String
+    posts: [Post!]!
+    postCount: Int!
+    createdAt: DateTime!
+    updatedAt: DateTime!
+}
+
+type Comment {
+    id: ID!
+    content: String!
+    author: User!
+    post: Post!
+    createdAt: DateTime!
+    updatedAt: DateTime!
+}
+
+type Like {
+    id: ID!
+    user: User!
+    post: Post!
     createdAt: DateTime!
 }
 
@@ -70,12 +104,24 @@ input CreatePostInput {
     content: String
     published: Boolean
     tags: [String!]
+    categories: [String!]
 }
 
 input UpdatePostInput {
     title: String
     content: String
     published: Boolean
+}
+
+input CreateCommentInput {
+    content: String!
+    postId: ID!
+}
+
+input CreateCategoryInput {
+    name: String!
+    slug: String!
+    description: String
 }
 
 # ==================== Queries ====================
@@ -99,6 +145,18 @@ type Query {
     tag(id: ID!): Tag
     tagByName(name: String!): Tag
 
+    # Categories
+    categories: [Category!]!
+    category(id: ID!): Category
+    categoryBySlug(slug: String!): Category
+
+    # Comments
+    comments(postId: ID!): [Comment!]!
+    comment(id: ID!): Comment
+
+    # Likes
+    likes(postId: ID!): [Like!]!
+
     # Stats
     stats: Stats!
 }
@@ -108,6 +166,9 @@ type Stats {
     totalPosts: Int!
     totalPublishedPosts: Int!
     totalTags: Int!
+    totalCategories: Int!
+    totalComments: Int!
+    totalLikes: Int!
 }
 
 # ==================== Mutations ====================
@@ -137,6 +198,16 @@ type Mutation {
 
     # Tags
     createTag(name: String!): Tag! @auth
+
+    # Categories
+    createCategory(input: CreateCategoryInput!): Category! @auth
+
+    # Comments
+    createComment(input: CreateCommentInput!): Comment! @auth
+    deleteComment(id: ID!): Boolean! @auth
+
+    # Likes
+    toggleLike(postId: ID!): Like!
 }
 
 type AuthPayload {

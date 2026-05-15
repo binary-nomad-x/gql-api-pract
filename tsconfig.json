@@ -14,9 +14,8 @@
     "declaration": true,
     "declarationMap": true,
     "sourceMap": true,
-    "baseUrl": ".",
     "paths": {
-      "@graphql-prisma-api/*": ["src/*"]
+      "@gql-prisma-api/*": ["./src/*"]
     }
   },
   "include": ["src/**/*"],

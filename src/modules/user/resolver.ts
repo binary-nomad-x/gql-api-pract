@@ -1,8 +1,8 @@
-import type { Context } from "@graphql-prisma-api/types/context.js";
-import type { Parent, IdArg } from "@graphql-prisma-api/types/graphql.js";
-import type { UpdateUserInput } from "@graphql-prisma-api/types/inputs.js";
-import { hashPassword } from "@graphql-prisma-api/utils/auth.js";
-import { requireAuth, requireOwner } from "@graphql-prisma-api/utils/errors.js";
+import type { Context } from "@gql-prisma-api/types/context.js";
+import type { Parent, IdArg } from "@gql-prisma-api/types/graphql.js";
+import type { UpdateUserInput } from "@gql-prisma-api/types/inputs.js";
+import { hashPassword } from "@gql-prisma-api/utils/auth.js";
+import { requireAuth, requireOwner } from "@gql-prisma-api/utils/errors.js";
 
 export const UserResolver = {
   profile: (parent: Parent, _args: unknown, ctx: Context) =>

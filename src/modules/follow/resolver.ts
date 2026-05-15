@@ -1,6 +1,6 @@
-import type { Context } from "@graphql-prisma-api/types/context.js";
-import type { Parent, UserIdArg } from "@graphql-prisma-api/types/graphql.js";
-import { requireAuth } from "@graphql-prisma-api/utils/errors.js";
+import type { Context } from "@gql-prisma-api/types/context.js";
+import type { Parent, UserIdArg } from "@gql-prisma-api/types/graphql.js";
+import { requireAuth } from "@gql-prisma-api/utils/errors.js";
 
 export const FollowResolver = {
   follower: (parent: Parent, _args: unknown, ctx: Context) =>

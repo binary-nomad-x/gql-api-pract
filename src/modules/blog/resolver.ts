@@ -1,8 +1,8 @@
-import type { Context } from "@graphql-prisma-api/types/context.js";
-import type { Parent, IdArg, PostFilterArgs } from "@graphql-prisma-api/types/graphql.js";
-import type { CreatePostInput, UpdatePostInput, CreateCommentInput, CreateCategoryInput } from "@graphql-prisma-api/types/inputs.js";
-import { requireAuth, requireOwner } from "@graphql-prisma-api/utils/errors.js";
-import { clean } from "@graphql-prisma-api/utils/clean.js";
+import type { Context } from "@gql-prisma-api/types/context.js";
+import type { Parent, IdArg, PostFilterArgs } from "@gql-prisma-api/types/graphql.js";
+import type { CreatePostInput, UpdatePostInput, CreateCommentInput, CreateCategoryInput } from "@gql-prisma-api/types/inputs.js";
+import { requireAuth, requireOwner } from "@gql-prisma-api/utils/errors.js";
+import { clean } from "@gql-prisma-api/utils/clean.js";
 
 export const PostResolver = {
   author: (parent: Parent, _args: unknown, ctx: Context) =>

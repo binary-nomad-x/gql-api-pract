@@ -1,6 +1,6 @@
-import type { Context } from "@graphql-prisma-api/types/context.js";
-import type { Parent, PaginationArgs } from "@graphql-prisma-api/types/graphql.js";
-import { requireAuth } from "@graphql-prisma-api/utils/errors.js";
+import type { Context } from "@gql-prisma-api/types/context.js";
+import type { Parent, PaginationArgs } from "@gql-prisma-api/types/graphql.js";
+import { requireAuth } from "@gql-prisma-api/utils/errors.js";
 
 export const SavedPostResolver = {
   user: (parent: Parent, _args: unknown, ctx: Context) =>

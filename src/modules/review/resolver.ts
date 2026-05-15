@@ -1,7 +1,7 @@
-import type { Context } from "@graphql-prisma-api/types/context.js";
-import type { Parent, IdArg, PaginationArgs } from "@graphql-prisma-api/types/graphql.js";
-import type { CreateReviewInput } from "@graphql-prisma-api/types/inputs.js";
-import { requireAuth, requireOwner } from "@graphql-prisma-api/utils/errors.js";
+import type { Context } from "@gql-prisma-api/types/context.js";
+import type { Parent, IdArg, PaginationArgs } from "@gql-prisma-api/types/graphql.js";
+import type { CreateReviewInput } from "@gql-prisma-api/types/inputs.js";
+import { requireAuth, requireOwner } from "@gql-prisma-api/utils/errors.js";
 
 export const ReviewResolver = {
   product: (parent: Parent, _args: unknown, ctx: Context) =>

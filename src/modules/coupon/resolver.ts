@@ -1,8 +1,8 @@
-import type { Context } from "../../types/context.js";
-import type { Parent } from "../../types/graphql.js";
-import type { CreateCouponInput } from "../../types/inputs.js";
-import { requireAuth } from "../../utils/errors.js";
-import { clean } from "../../utils/clean.js";
+import type { Context } from "@/types/context.js";
+import type { Parent } from "@/types/graphql.js";
+import type { CreateCouponInput } from "@/types/inputs.js";
+import { requireAuth } from "@/utils/errors.js";
+import { clean } from "@/utils/clean.js";
 
 export const CouponResolver = {
   orders: (parent: Parent, _args: unknown, ctx: Context) =>

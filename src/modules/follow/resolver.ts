@@ -1,6 +1,6 @@
-import type { Context } from "../../types/context.js";
-import type { Parent, UserIdArg } from "../../types/graphql.js";
-import { requireAuth } from "../../utils/errors.js";
+import type { Context } from "@/types/context.js";
+import type { Parent, UserIdArg } from "@/types/graphql.js";
+import { requireAuth } from "@/utils/errors.js";
 
 export const FollowResolver = {
   follower: (parent: Parent, _args: unknown, ctx: Context) =>

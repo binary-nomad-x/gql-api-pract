@@ -1,7 +1,7 @@
-import type { Context } from "../../types/context.js";
-import type { Parent } from "../../types/graphql.js";
-import type { AddToCartInput, UpdateCartItemInput } from "../../types/inputs.js";
-import { requireAuth } from "../../utils/errors.js";
+import type { Context } from "@/types/context.js";
+import type { Parent } from "@/types/graphql.js";
+import type { AddToCartInput, UpdateCartItemInput } from "@/types/inputs.js";
+import { requireAuth } from "@/utils/errors.js";
 
 export const CartResolver = {
   user: (parent: Parent, _args: unknown, ctx: Context) =>

@@ -1,8 +1,8 @@
-import type { Context } from "../../types/context.js";
-import type { Parent, IdArg } from "../../types/graphql.js";
-import type { CreateAddressInput, UpdateAddressInput } from "../../types/inputs.js";
-import { requireAuth } from "../../utils/errors.js";
-import { clean } from "../../utils/clean.js";
+import type { Context } from "@/types/context.js";
+import type { Parent, IdArg } from "@/types/graphql.js";
+import type { CreateAddressInput, UpdateAddressInput } from "@/types/inputs.js";
+import { requireAuth } from "@/utils/errors.js";
+import { clean } from "@/utils/clean.js";
 
 export const AddressResolver = {
   user: (parent: Parent, _args: unknown, ctx: Context) =>

@@ -1,7 +1,7 @@
-import type { Context } from "../../types/context.js";
-import type { CreateUserInput } from "../../types/inputs.js";
-import { hashPassword, comparePassword, generateToken } from "../../utils/auth.js";
-import { AppError } from "../../utils/errors.js";
+import type { Context } from "@/types/context.js";
+import type { CreateUserInput } from "@/types/inputs.js";
+import { hashPassword, comparePassword, generateToken } from "@/utils/auth.js";
+import { AppError } from "@/utils/errors.js";
 
 export const AuthMutations = {
   signup: async (_parent: unknown, { input }: { input: CreateUserInput }, ctx: Context) => {

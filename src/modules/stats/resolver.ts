@@ -1,4 +1,4 @@
-import type { Context } from "../../types/context.js";
+import type { Context } from "@/types/context.js";
 
 export const StatsQueries = {
   stats: async (_parent: unknown, _args: unknown, ctx: Context) => {

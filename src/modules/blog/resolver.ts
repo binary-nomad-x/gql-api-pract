@@ -1,8 +1,8 @@
-import type { Context } from "../../types/context.js";
-import type { Parent, IdArg, PostFilterArgs } from "../../types/graphql.js";
-import type { CreatePostInput, UpdatePostInput, CreateCommentInput, CreateCategoryInput } from "../../types/inputs.js";
-import { requireAuth, requireOwner } from "../../utils/errors.js";
-import { clean } from "../../utils/clean.js";
+import type { Context } from "@/types/context.js";
+import type { Parent, IdArg, PostFilterArgs } from "@/types/graphql.js";
+import type { CreatePostInput, UpdatePostInput, CreateCommentInput, CreateCategoryInput } from "@/types/inputs.js";
+import { requireAuth, requireOwner } from "@/utils/errors.js";
+import { clean } from "@/utils/clean.js";
 
 export const PostResolver = {
   author: (parent: Parent, _args: unknown, ctx: Context) =>

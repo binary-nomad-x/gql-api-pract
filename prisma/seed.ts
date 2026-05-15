@@ -39,7 +39,11 @@ async function main() {
     { email: "alice@test.com", name: "Alice Johnson", role: "ADMIN" as const },
     { email: "bob@test.com", name: "Bob Smith", role: "USER" as const },
     { email: "charlie@test.com", name: "Charlie Brown", role: "USER" as const },
-    { email: "diana@test.com", name: "Diana Prince", role: "MODERATOR" as const },
+    {
+      email: "diana@test.com",
+      name: "Diana Prince",
+      role: "MODERATOR" as const,
+    },
     { email: "eve@test.com", name: "Eve Adams", role: "USER" as const },
   ];
 
@@ -54,7 +58,13 @@ async function main() {
           email: faker.internet.email().toLowerCase(),
           name: faker.person.fullName(),
           password,
-          role: faker.helpers.arrayElement(["USER", "USER", "USER", "ADMIN", "MODERATOR"] as const),
+          role: faker.helpers.arrayElement([
+            "USER",
+            "USER",
+            "USER",
+            "ADMIN",
+            "MODERATOR",
+          ] as const),
         },
       }),
     );
@@ -77,15 +87,27 @@ async function main() {
 
   // ---- Categories ----
   const categoryData = [
-    { name: "Technology", slug: "technology", description: "Tech, software, and gadgets" },
+    {
+      name: "Technology",
+      slug: "technology",
+      description: "Tech, software, and gadgets",
+    },
     { name: "Science", slug: "science", description: "Scientific discoveries" },
     { name: "Travel", slug: "travel", description: "Travel experiences" },
     { name: "Food", slug: "food", description: "Cooking and food culture" },
     { name: "Health", slug: "health", description: "Health and wellness" },
     { name: "Sports", slug: "sports", description: "Sports news and analysis" },
-    { name: "Electronics", slug: "electronics", description: "Electronic devices and accessories" },
+    {
+      name: "Electronics",
+      slug: "electronics",
+      description: "Electronic devices and accessories",
+    },
     { name: "Clothing", slug: "clothing", description: "Apparel and fashion" },
-    { name: "Home & Garden", slug: "home-garden", description: "Home improvement and gardening" },
+    {
+      name: "Home & Garden",
+      slug: "home-garden",
+      description: "Home improvement and gardening",
+    },
     { name: "Books", slug: "books", description: "Books and literature" },
   ];
 
@@ -97,8 +119,18 @@ async function main() {
 
   // ---- Tags ----
   const tagNames = [
-    "javascript", "typescript", "graphql", "prisma", "react", "nodejs",
-    "python", "ai", "database", "api", "webdev", "tutorial",
+    "javascript",
+    "typescript",
+    "graphql",
+    "prisma",
+    "react",
+    "nodejs",
+    "python",
+    "ai",
+    "database",
+    "api",
+    "webdev",
+    "tutorial",
   ];
   const tags: any[] = [];
   for (const name of tagNames) {
@@ -109,8 +141,14 @@ async function main() {
   // ---- Posts ----
   const posts: any[] = [];
   for (let i = 0; i < SEED_POSTS; i++) {
-    const postTags = faker.helpers.arrayElements(tags, faker.number.int({ min: 1, max: 4 }));
-    const postCategories = faker.helpers.arrayElements(categories.slice(0, 6), faker.number.int({ min: 1, max: 3 }));
+    const postTags = faker.helpers.arrayElements(
+      tags,
+      faker.number.int({ min: 1, max: 4 }),
+    );
+    const postCategories = faker.helpers.arrayElements(
+      categories.slice(0, 6),
+      faker.number.int({ min: 1, max: 3 }),
+    );
     posts.push(
       await prisma.post.create({
         data: {
@@ -119,7 +157,9 @@ async function main() {
           published: faker.datatype.boolean(0.7),
           authorId: faker.helpers.arrayElement(users).id,
           tags: { connect: postTags.map((t: any) => ({ id: t.id })) },
-          categories: { connect: postCategories.map((c: any) => ({ id: c.id })) },
+          categories: {
+            connect: postCategories.map((c: any) => ({ id: c.id })),
+          },
         },
       }),
     );
@@ -187,7 +227,14 @@ async function main() {
   console.log(`Created ${products.length} products`);
 
   // ---- Orders ----
-  const orderStatuses = ["PENDING", "CONFIRMED", "PROCESSING", "SHIPPED", "DELIVERED", "CANCELLED"] as const;
+  const orderStatuses = [
+    "PENDING",
+    "CONFIRMED",
+    "PROCESSING",
+    "SHIPPED",
+    "DELIVERED",
+    "CANCELLED",
+  ] as const;
   const orders: any[] = [];
 
   console.log("Seeding orders...");
@@ -200,7 +247,10 @@ async function main() {
       quantity: faker.number.int({ min: 1, max: 4 }),
       unitPrice: p.price,
     }));
-    const totalAmount = items.reduce((sum: number, item: any) => sum + item.unitPrice * item.quantity, 0);
+    const totalAmount = items.reduce(
+      (sum: number, item: any) => sum + item.unitPrice * item.quantity,
+      0,
+    );
 
     const order = await prisma.order.create({
       data: {
@@ -230,7 +280,13 @@ async function main() {
   }
 
   // ---- Payments ----
-  const paymentMethods = ["CREDIT_CARD", "DEBIT_CARD", "PAYPAL", "BANK_TRANSFER", "CASH_ON_DELIVERY"] as const;
+  const paymentMethods = [
+    "CREDIT_CARD",
+    "DEBIT_CARD",
+    "PAYPAL",
+    "BANK_TRANSFER",
+    "CASH_ON_DELIVERY",
+  ] as const;
   let paymentCount = 0;
 
   for (const order of orders) {
@@ -240,7 +296,13 @@ async function main() {
         orderId: order.id,
         amount: order.totalAmount,
         method: faker.helpers.arrayElement(paymentMethods),
-        status: faker.helpers.arrayElement(["COMPLETED", "COMPLETED", "COMPLETED", "FAILED", "REFUNDED"] as const),
+        status: faker.helpers.arrayElement([
+          "COMPLETED",
+          "COMPLETED",
+          "COMPLETED",
+          "FAILED",
+          "REFUNDED",
+        ] as const),
         transactionId: `TXN-${faker.string.alphanumeric({ length: 12, casing: "upper" })}`,
       },
     });
@@ -256,17 +318,27 @@ async function main() {
 
   let refundCount = 0;
   for (const payment of deliveredPayments) {
-    const refundAmount = parseFloat(faker.commerce.price({ min: 10, max: payment.amount }));
+    const refundAmount = parseFloat(
+      faker.commerce.price({ min: 10, max: payment.amount }),
+    );
     await prisma.refund.create({
       data: {
         paymentId: payment.id,
         orderId: payment.orderId,
         amount: Math.min(refundAmount, payment.amount),
         reason: faker.helpers.arrayElement([
-          "Defective product", "Wrong item shipped", "Changed mind",
-          "Item not as described", "Damaged during shipping",
+          "Defective product",
+          "Wrong item shipped",
+          "Changed mind",
+          "Item not as described",
+          "Damaged during shipping",
         ]),
-        status: faker.helpers.arrayElement(["PENDING", "APPROVED", "COMPLETED", "REJECTED"] as const),
+        status: faker.helpers.arrayElement([
+          "PENDING",
+          "APPROVED",
+          "COMPLETED",
+          "REJECTED",
+        ] as const),
       },
     });
     refundCount++;
@@ -283,8 +355,12 @@ async function main() {
         await prisma.review.create({
           data: {
             rating: faker.number.int({ min: 1, max: 5 }),
-            title: faker.helpers.maybe(() => faker.lorem.sentence({ min: 3, max: 8 })) ?? undefined,
-            content: faker.helpers.maybe(() => faker.lorem.paragraph()) ?? undefined,
+            title:
+              faker.helpers.maybe(() =>
+                faker.lorem.sentence({ min: 3, max: 8 }),
+              ) ?? undefined,
+            content:
+              faker.helpers.maybe(() => faker.lorem.paragraph()) ?? undefined,
             productId: product.id,
             userId: reviewer.id,
           },
@@ -322,14 +398,27 @@ async function main() {
   let wishlistItemCount = 0;
   for (const user of users.slice(0, 30)) {
     const wl = await prisma.wishlist.create({
-      data: { userId: user.id, name: faker.helpers.arrayElement(["Default", "Wishlist", "Favorites", "Gifts", "Dream Shopping"]) },
+      data: {
+        userId: user.id,
+        name: faker.helpers.arrayElement([
+          "Default",
+          "Wishlist",
+          "Favorites",
+          "Gifts",
+          "Dream Shopping",
+        ]),
+      },
     });
     wishlistCount++;
     const numItems = faker.number.int({ min: 1, max: 5 });
     const wlProducts = faker.helpers.arrayElements(products, numItems);
     for (const p of wlProducts) {
       await prisma.wishlistItem.create({
-        data: { wishlistId: wl.id, productId: p.id, note: faker.helpers.maybe(() => faker.lorem.sentence()) ?? undefined },
+        data: {
+          wishlistId: wl.id,
+          productId: p.id,
+          note: faker.helpers.maybe(() => faker.lorem.sentence()) ?? undefined,
+        },
       });
       wishlistItemCount++;
     }
@@ -345,14 +434,27 @@ async function main() {
     const cartProducts = faker.helpers.arrayElements(products, numItems);
     for (const p of cartProducts) {
       await prisma.cartItem.create({
-        data: { cartId: cart.id, productId: p.id, quantity: faker.number.int({ min: 1, max: 3 }) },
+        data: {
+          cartId: cart.id,
+          productId: p.id,
+          quantity: faker.number.int({ min: 1, max: 3 }),
+        },
       });
       cartItemCount++;
     }
   }
 
   // ---- Coupons ----
-  const couponCodes = ["WELCOME10", "SAVE20", "FREESHIP", "HOLIDAY25", "FLASH50", "NEWUSER", "LOYALTY", "VIP15"];
+  const couponCodes = [
+    "WELCOME10",
+    "SAVE20",
+    "FREESHIP",
+    "HOLIDAY25",
+    "FLASH50",
+    "NEWUSER",
+    "LOYALTY",
+    "VIP15",
+  ];
   let couponCount = 0;
   for (const code of couponCodes) {
     await prisma.coupon.create({
@@ -373,23 +475,43 @@ async function main() {
   // ---- Shipments ----
   const carriers = ["UPS", "FedEx", "USPS", "DHL", "Amazon Logistics"];
   let shipmentCount = 0;
-  const shippedOrders = orders.filter((o: any) => ["SHIPPED", "DELIVERED"].includes(o.status));
+  const shippedOrders = orders.filter((o: any) =>
+    ["SHIPPED", "DELIVERED"].includes(o.status),
+  );
   for (const order of shippedOrders.slice(0, 200)) {
     await prisma.shipment.create({
       data: {
         orderId: order.id,
         carrier: faker.helpers.arrayElement(carriers),
-        trackingNumber: faker.string.alphanumeric({ length: 15, casing: "upper" }),
-        status: faker.helpers.arrayElement(["PICKED_UP", "IN_TRANSIT", "OUT_FOR_DELIVERY", "DELIVERED"] as const),
+        trackingNumber: faker.string.alphanumeric({
+          length: 15,
+          casing: "upper",
+        }),
+        status: faker.helpers.arrayElement([
+          "PICKED_UP",
+          "IN_TRANSIT",
+          "OUT_FOR_DELIVERY",
+          "DELIVERED",
+        ] as const),
         estimatedDelivery: faker.date.future(),
-        deliveredAt: faker.datatype.boolean(0.4) ? faker.date.recent() : undefined,
+        deliveredAt: faker.datatype.boolean(0.4)
+          ? faker.date.recent()
+          : undefined,
       },
     });
     shipmentCount++;
   }
 
   // ---- Notifications ----
-  const notifTypes = ["SYSTEM", "ORDER_UPDATE", "PAYMENT_RECEIVED", "SHIPMENT_UPDATE", "NEW_FOLLOWER", "NEW_COMMENT", "PROMOTION"] as const;
+  const notifTypes = [
+    "SYSTEM",
+    "ORDER_UPDATE",
+    "PAYMENT_RECEIVED",
+    "SHIPMENT_UPDATE",
+    "NEW_FOLLOWER",
+    "NEW_COMMENT",
+    "PROMOTION",
+  ] as const;
   let notificationCount = 0;
   for (const user of users) {
     const numNotifs = faker.number.int({ min: 2, max: 8 });
@@ -399,8 +521,14 @@ async function main() {
           userId: user.id,
           type: faker.helpers.arrayElement(notifTypes),
           title: faker.lorem.sentence({ min: 3, max: 6 }),
-          message: faker.helpers.maybe(() => faker.lorem.paragraph()) ?? undefined,
-          link: faker.helpers.maybe(() => "/" + faker.helpers.arrayElement(["orders", "posts", "products"])) ?? undefined,
+          message:
+            faker.helpers.maybe(() => faker.lorem.paragraph()) ?? undefined,
+          link:
+            faker.helpers.maybe(
+              () =>
+                "/" +
+                faker.helpers.arrayElement(["orders", "posts", "products"]),
+            ) ?? undefined,
           isRead: faker.datatype.boolean(0.5),
           readAt: faker.datatype.boolean(0.3) ? faker.date.recent() : undefined,
         },
@@ -419,7 +547,9 @@ async function main() {
     const key = `${follower.id}_${following.id}`;
     if (followPairs.has(key)) continue;
     followPairs.add(key);
-    await prisma.follow.create({ data: { followerId: follower.id, followingId: following.id } });
+    await prisma.follow.create({
+      data: { followerId: follower.id, followingId: following.id },
+    });
     followCount++;
   }
 
@@ -432,7 +562,9 @@ async function main() {
     const key = `${user.id}_${post.id}`;
     if (savedPostPairs.has(key)) continue;
     savedPostPairs.add(key);
-    await prisma.savedPost.create({ data: { userId: user.id, postId: post.id } });
+    await prisma.savedPost.create({
+      data: { userId: user.id, postId: post.id },
+    });
     savedPostCount++;
   }
 
@@ -444,7 +576,9 @@ async function main() {
       await prisma.postView.create({
         data: {
           postId: post.id,
-          userId: faker.datatype.boolean(0.7) ? faker.helpers.arrayElement(users).id : undefined,
+          userId: faker.datatype.boolean(0.7)
+            ? faker.helpers.arrayElement(users).id
+            : undefined,
           ip: faker.internet.ip(),
         },
       });
@@ -472,9 +606,13 @@ async function main() {
   // ---- Summary ----
   const elapsed = ((Date.now() - start) / 1000).toFixed(1);
   console.log(`Seeding complete in ${elapsed}s`);
-  console.log(`Summary: ${users.length} users, ${products.length} products, ${orders.length} orders, ${reviewCount} reviews, ${notificationCount} notifications, ${postViewCount} post views`);
+  console.log(
+    `Summary: ${users.length} users, ${products.length} products, ${orders.length} orders, ${reviewCount} reviews, ${notificationCount} notifications, ${postViewCount} post views`,
+  );
 
-  console.log("\nTest accounts (password123): alice@test.com (ADMIN), bob@test.com (USER), charlie@test.com (USER), diana@test.com (MODERATOR), eve@test.com (USER)");
+  console.log(
+    "\nTest accounts (password123): alice@test.com (ADMIN), bob@test.com (USER), charlie@test.com (USER), diana@test.com (MODERATOR), eve@test.com (USER)",
+  );
 }
 
 async function resetDatabase() {

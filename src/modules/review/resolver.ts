@@ -1,17 +1,27 @@
 import type { Context } from "@gql-prisma-api/types/context.js";
-import type { Parent, IdArg, PaginationArgs } from "@gql-prisma-api/types/graphql.js";
+import type {
+  Parent,
+  IdArg,
+  PaginationArgs,
+} from "@gql-prisma-api/types/graphql.js";
 import type { CreateReviewInput } from "@gql-prisma-api/types/inputs.js";
 import { requireAuth, requireOwner } from "@gql-prisma-api/utils/errors.js";
 
 export const ReviewResolver = {
   product: (parent: Parent, _args: unknown, ctx: Context) =>
-    ctx.prisma.product.findUnique({ where: { id: parent.productId as string } }),
+    ctx.prisma.product.findUnique({
+      where: { id: parent.productId as string },
+    }),
   user: (parent: Parent, _args: unknown, ctx: Context) =>
     ctx.prisma.user.findUnique({ where: { id: parent.userId as string } }),
 };
 
 export const ReviewQueries = {
-  reviews: (_parent: unknown, args: { productId: string } & PaginationArgs, ctx: Context) =>
+  reviews: (
+    _parent: unknown,
+    args: { productId: string } & PaginationArgs,
+    ctx: Context,
+  ) =>
     ctx.prisma.review.findMany({
       where: { productId: args.productId },
       take: args.limit ?? 20,
@@ -24,15 +34,24 @@ export const ReviewQueries = {
 };
 
 export const ReviewMutations = {
-  createReview: async (_parent: unknown, { input }: { input: CreateReviewInput }, ctx: Context) => {
+  createReview: async (
+    _parent: unknown,
+    { input }: { input: CreateReviewInput },
+    ctx: Context,
+  ) => {
     requireAuth(ctx.userId);
-    if (input.rating < 1 || input.rating > 5) throw new Error("Rating must be between 1 and 5");
+    if (input.rating < 1 || input.rating > 5)
+      throw new Error("Rating must be between 1 and 5");
 
-    const product = await ctx.prisma.product.findUnique({ where: { id: input.productId } });
+    const product = await ctx.prisma.product.findUnique({
+      where: { id: input.productId },
+    });
     if (!product) throw new Error("Product not found");
 
     const existing = await ctx.prisma.review.findUnique({
-      where: { productId_userId: { productId: input.productId, userId: ctx.userId! } },
+      where: {
+        productId_userId: { productId: input.productId, userId: ctx.userId! },
+      },
     });
     if (existing) throw new Error("Already reviewed this product");
 

@@ -8,43 +8,89 @@ import { UserResolver, UserQueries, UserMutations } from "./user/resolver.js";
 
 // Blog
 import {
-  PostResolver, PostQueries, PostMutations,
-  TagResolver, CategoryResolver,
+  PostResolver,
+  PostQueries,
+  PostMutations,
+  TagResolver,
+  CategoryResolver,
 } from "./blog/resolver.js";
 
 // Commerce
 import {
-  ProductResolver, CommerceQueries, CommerceMutations,
-  PaymentResolver, RefundResolver, OrderResolver, OrderItemResolver,
+  ProductResolver,
+  CommerceQueries,
+  CommerceMutations,
+  PaymentResolver,
+  RefundResolver,
+  OrderResolver,
+  OrderItemResolver,
   CommerceQueriesExtra,
 } from "./commerce/resolver.js";
 
 // Review
-import { ReviewResolver, ReviewQueries, ReviewMutations } from "./review/resolver.js";
+import {
+  ReviewResolver,
+  ReviewQueries,
+  ReviewMutations,
+} from "./review/resolver.js";
 
 // Address
-import { AddressResolver, AddressQueries, AddressMutations } from "./address/resolver.js";
+import {
+  AddressResolver,
+  AddressQueries,
+  AddressMutations,
+} from "./address/resolver.js";
 
 // Cart
-import { CartResolver, CartItemResolver, CartQueries, CartMutations } from "./cart/resolver.js";
+import {
+  CartResolver,
+  CartItemResolver,
+  CartQueries,
+  CartMutations,
+} from "./cart/resolver.js";
 
 // Wishlist
-import { WishlistResolver, WishlistItemResolver, WishlistQueries, WishlistMutations } from "./wishlist/resolver.js";
+import {
+  WishlistResolver,
+  WishlistItemResolver,
+  WishlistQueries,
+  WishlistMutations,
+} from "./wishlist/resolver.js";
 
 // Coupon
-import { CouponResolver, CouponQueries, CouponMutations } from "./coupon/resolver.js";
+import {
+  CouponResolver,
+  CouponQueries,
+  CouponMutations,
+} from "./coupon/resolver.js";
 
 // Shipment
-import { ShipmentResolver, ShipmentQueries, ShipmentMutations } from "./shipment/resolver.js";
+import {
+  ShipmentResolver,
+  ShipmentQueries,
+  ShipmentMutations,
+} from "./shipment/resolver.js";
 
 // Notification
-import { NotificationResolver, NotificationQueries, NotificationMutations } from "./notification/resolver.js";
+import {
+  NotificationResolver,
+  NotificationQueries,
+  NotificationMutations,
+} from "./notification/resolver.js";
 
 // Follow
-import { FollowResolver, FollowQueries, FollowMutations } from "./follow/resolver.js";
+import {
+  FollowResolver,
+  FollowQueries,
+  FollowMutations,
+} from "./follow/resolver.js";
 
 // SavedPost
-import { SavedPostResolver, SavedPostQueries, SavedPostMutations } from "./savedPost/resolver.js";
+import {
+  SavedPostResolver,
+  SavedPostQueries,
+  SavedPostMutations,
+} from "./savedPost/resolver.js";
 
 // PostView
 import { PostViewResolver, PostViewMutations } from "./postView/resolver.js";

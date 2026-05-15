@@ -7,8 +7,14 @@ fragment UserBasic on User {
 
 fragment UserFull on User {
   ...UserBasic
-  profile { ...ProfileBasic }
-  posts { id title published }
+  profile {
+    ...ProfileBasic
+  }
+  posts {
+    id
+    title
+    published
+  }
   createdAt
   updatedAt
 }
@@ -32,9 +38,18 @@ fragment PostBasic on Post {
 fragment PostFull on Post {
   ...PostBasic
   content
-  author { ...UserBasic }
-  tags { id name }
-  categories { id name slug }
+  author {
+    ...UserBasic
+  }
+  tags {
+    id
+    name
+  }
+  categories {
+    id
+    name
+    slug
+  }
   viewCount
   saveCount
   updatedAt
@@ -55,9 +70,20 @@ fragment ProductBasic on Product {
 fragment ProductFull on Product {
   ...ProductBasic
   description
-  seller { ...UserBasic }
-  category { id name slug }
-  images { id url alt sortOrder }
+  seller {
+    ...UserBasic
+  }
+  category {
+    id
+    name
+    slug
+  }
+  images {
+    id
+    url
+    alt
+    sortOrder
+  }
   createdAt
   updatedAt
 }
@@ -73,11 +99,34 @@ fragment OrderBasic on Order {
 
 fragment OrderFull on Order {
   ...OrderBasic
-  user { ...UserBasic }
-  items { id quantity unitPrice product { ...ProductBasic } }
-  payment { id amount method status }
-  shipments { id carrier trackingNumber status }
-  coupon { id code discountPercent }
+  user {
+    ...UserBasic
+  }
+  items {
+    id
+    quantity
+    unitPrice
+    product {
+      ...ProductBasic
+    }
+  }
+  payment {
+    id
+    amount
+    method
+    status
+  }
+  shipments {
+    id
+    carrier
+    trackingNumber
+    status
+  }
+  coupon {
+    id
+    code
+    discountPercent
+  }
   shippingAddress
   updatedAt
 }
@@ -107,5 +156,11 @@ fragment CartFull on Cart {
   id
   itemCount
   totalAmount
-  items { id quantity product { ...ProductBasic } }
+  items {
+    id
+    quantity
+    product {
+      ...ProductBasic
+    }
+  }
 }

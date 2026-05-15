@@ -1,6 +1,9 @@
 import type { Context } from "@gql-prisma-api/types/context.js";
 import type { Parent, IdArg } from "@gql-prisma-api/types/graphql.js";
-import type { CreateAddressInput, UpdateAddressInput } from "@gql-prisma-api/types/inputs.js";
+import type {
+  CreateAddressInput,
+  UpdateAddressInput,
+} from "@gql-prisma-api/types/inputs.js";
 import { requireAuth } from "@gql-prisma-api/utils/errors.js";
 import { clean } from "@gql-prisma-api/utils/clean.js";
 
@@ -22,23 +25,43 @@ export const AddressQueries = {
 };
 
 export const AddressMutations = {
-  createAddress: async (_parent: unknown, { input }: { input: CreateAddressInput }, ctx: Context) => {
+  createAddress: async (
+    _parent: unknown,
+    { input }: { input: CreateAddressInput },
+    ctx: Context,
+  ) => {
     requireAuth(ctx.userId);
     return ctx.prisma.address.create({
-      data: clean({ ...input, userId: ctx.userId!, country: input.country ?? "US", label: input.label ?? "Home" }) as any,
+      data: clean({
+        ...input,
+        userId: ctx.userId!,
+        country: input.country ?? "US",
+        label: input.label ?? "Home",
+      }) as any,
     });
   },
 
-  updateAddress: async (_parent: unknown, { id, input }: { id: string; input: UpdateAddressInput }, ctx: Context) => {
+  updateAddress: async (
+    _parent: unknown,
+    { id, input }: { id: string; input: UpdateAddressInput },
+    ctx: Context,
+  ) => {
     requireAuth(ctx.userId);
-    const addr = await ctx.prisma.address.findFirst({ where: { id, userId: ctx.userId! } });
+    const addr = await ctx.prisma.address.findFirst({
+      where: { id, userId: ctx.userId! },
+    });
     if (!addr) throw new Error("Address not found");
-    return ctx.prisma.address.update({ where: { id }, data: clean(input as any) });
+    return ctx.prisma.address.update({
+      where: { id },
+      data: clean(input as any),
+    });
   },
 
   deleteAddress: async (_parent: unknown, { id }: IdArg, ctx: Context) => {
     requireAuth(ctx.userId);
-    const addr = await ctx.prisma.address.findFirst({ where: { id, userId: ctx.userId! } });
+    const addr = await ctx.prisma.address.findFirst({
+      where: { id, userId: ctx.userId! },
+    });
     if (!addr) throw new Error("Address not found");
     await ctx.prisma.address.delete({ where: { id } });
     return true;
@@ -50,6 +73,9 @@ export const AddressMutations = {
       where: { userId: ctx.userId!, isDefault: true },
       data: { isDefault: false },
     });
-    return ctx.prisma.address.update({ where: { id }, data: { isDefault: true } });
+    return ctx.prisma.address.update({
+      where: { id },
+      data: { isDefault: true },
+    });
   },
 };

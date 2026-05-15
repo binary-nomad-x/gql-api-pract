@@ -51,7 +51,11 @@ export const UserQueries = {
 };
 
 export const UserMutations = {
-  updateUser: async (_parent: unknown, args: { id: string; input: UpdateUserInput }, ctx: Context) => {
+  updateUser: async (
+    _parent: unknown,
+    args: { id: string; input: UpdateUserInput },
+    ctx: Context,
+  ) => {
     requireOwner(args.id, ctx.userId);
     const data: Record<string, unknown> = {};
     const { name, email, password } = args.input;
@@ -67,7 +71,11 @@ export const UserMutations = {
     return true;
   },
 
-  updateProfile: async (_parent: unknown, args: Record<string, unknown>, ctx: Context) => {
+  updateProfile: async (
+    _parent: unknown,
+    args: Record<string, unknown>,
+    ctx: Context,
+  ) => {
     requireAuth(ctx.userId);
     return ctx.prisma.profile.upsert({
       where: { userId: ctx.userId! },

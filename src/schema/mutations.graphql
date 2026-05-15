@@ -8,7 +8,12 @@ type Mutation {
   deleteUser(id: ID!): Boolean! @auth
 
   # Profile
-  updateProfile(bio: String, avatar: String, phone: String, address: String): Profile! @auth
+  updateProfile(
+    bio: String
+    avatar: String
+    phone: String
+    address: String
+  ): Profile! @auth
 
   # Posts
   createPost(input: CreatePostInput!): Post! @auth

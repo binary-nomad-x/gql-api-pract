@@ -26,7 +26,14 @@ type Query {
   likes(postId: ID!): [Like!]!
 
   # Products
-  products(categorySlug: String, search: String, minPrice: Float, maxPrice: Float, limit: Int, offset: Int): [Product!]!
+  products(
+    categorySlug: String
+    search: String
+    minPrice: Float
+    maxPrice: Float
+    limit: Int
+    offset: Int
+  ): [Product!]!
   product(id: ID!): Product
   productBySku(sku: String!): Product
 

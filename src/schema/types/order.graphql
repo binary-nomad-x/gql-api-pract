@@ -1,0 +1,16 @@
+type Order {
+  id: ID!
+  user: User!
+  status: OrderStatus!
+  totalAmount: Float!
+  discountAmount: Float!
+  shippingAddress: String
+  items: [OrderItem!]!
+  payment: Payment
+  refunds: [Refund!]!
+  shipments: [Shipment!]!
+  coupon: Coupon
+  itemCount: Int!
+  createdAt: DateTime!
+  updatedAt: DateTime!
+}

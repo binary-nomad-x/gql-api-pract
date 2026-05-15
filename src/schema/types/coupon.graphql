@@ -1,0 +1,15 @@
+type Coupon {
+  id: ID!
+  code: String!
+  description: String
+  discountPercent: Float!
+  discountAmount: Float!
+  minPurchase: Float!
+  maxUses: Int!
+  usedCount: Int!
+  isActive: Boolean!
+  orders: [Order!]!
+  expiresAt: DateTime
+  createdAt: DateTime!
+  updatedAt: DateTime!
+}

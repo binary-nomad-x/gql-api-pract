@@ -1,0 +1,10 @@
+type Review {
+  id: ID!
+  rating: Int!
+  title: String
+  content: String
+  product: Product!
+  user: User!
+  createdAt: DateTime!
+  updatedAt: DateTime!
+}

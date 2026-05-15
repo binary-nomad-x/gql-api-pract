@@ -1,0 +1,149 @@
+input CreateUserInput {
+  email: String!
+  name: String
+  password: String!
+}
+
+input UpdateUserInput {
+  name: String
+  email: String
+  password: String
+}
+
+input CreatePostInput {
+  title: String!
+  content: String
+  published: Boolean
+  tags: [String!]
+  categories: [String!]
+}
+
+input UpdatePostInput {
+  title: String
+  content: String
+  published: Boolean
+}
+
+input CreateCommentInput {
+  content: String!
+  postId: ID!
+}
+
+input CreateCategoryInput {
+  name: String!
+  slug: String!
+  description: String
+}
+
+input CreateProductInput {
+  name: String!
+  description: String
+  price: Float!
+  stock: Int!
+  sku: String!
+  imageUrl: String
+  categorySlug: String
+}
+
+input UpdateProductInput {
+  name: String
+  description: String
+  price: Float
+  stock: Int
+  imageUrl: String
+  isActive: Boolean
+  categorySlug: String
+}
+
+input CreateReviewInput {
+  rating: Int!
+  title: String
+  content: String
+  productId: ID!
+}
+
+input PlaceOrderInput {
+  items: [OrderItemInput!]!
+  shippingAddress: String
+  couponCode: String
+}
+
+input OrderItemInput {
+  productId: ID!
+  quantity: Int!
+}
+
+input ProcessPaymentInput {
+  orderId: ID!
+  method: PaymentMethod!
+}
+
+input CreateRefundInput {
+  paymentId: ID!
+  orderId: ID!
+  amount: Float!
+  reason: String
+}
+
+input CreateAddressInput {
+  label: String
+  street: String!
+  city: String!
+  state: String
+  zip: String!
+  country: String
+  isDefault: Boolean
+}
+
+input UpdateAddressInput {
+  label: String
+  street: String
+  city: String
+  state: String
+  zip: String
+  country: String
+  isDefault: Boolean
+}
+
+input CreateWishlistInput {
+  name: String
+}
+
+input AddToWishlistInput {
+  wishlistId: ID!
+  productId: ID!
+  note: String
+}
+
+input AddToCartInput {
+  productId: ID!
+  quantity: Int
+}
+
+input UpdateCartItemInput {
+  productId: ID!
+  quantity: Int!
+}
+
+input CreateCouponInput {
+  code: String!
+  description: String
+  discountPercent: Float
+  discountAmount: Float
+  minPurchase: Float
+  maxUses: Int
+  isActive: Boolean
+  expiresAt: DateTime
+}
+
+input CreateShipmentInput {
+  orderId: ID!
+  carrier: String!
+  trackingNumber: String!
+  estimatedDelivery: DateTime
+}
+
+input PaginationInput {
+  limit: Int
+  offset: Int
+}

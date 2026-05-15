@@ -1,0 +1,17 @@
+type Cart {
+  id: ID!
+  user: User!
+  items: [CartItem!]!
+  totalAmount: Float!
+  itemCount: Int!
+  createdAt: DateTime!
+  updatedAt: DateTime!
+}
+
+type CartItem {
+  id: ID!
+  cart: Cart!
+  product: Product!
+  quantity: Int!
+  createdAt: DateTime!
+}

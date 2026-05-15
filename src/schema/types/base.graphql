@@ -1,0 +1,61 @@
+scalar DateTime
+
+directive @auth on FIELD_DEFINITION
+
+enum Role {
+  USER
+  ADMIN
+  MODERATOR
+}
+
+enum OrderStatus {
+  PENDING
+  CONFIRMED
+  PROCESSING
+  SHIPPED
+  DELIVERED
+  CANCELLED
+}
+
+enum PaymentMethod {
+  CREDIT_CARD
+  DEBIT_CARD
+  PAYPAL
+  BANK_TRANSFER
+  CASH_ON_DELIVERY
+}
+
+enum PaymentStatus {
+  PENDING
+  COMPLETED
+  FAILED
+  REFUNDED
+}
+
+enum RefundStatus {
+  PENDING
+  APPROVED
+  REJECTED
+  COMPLETED
+}
+
+enum ShipmentStatus {
+  PENDING
+  PICKED_UP
+  IN_TRANSIT
+  OUT_FOR_DELIVERY
+  DELIVERED
+  FAILED
+}
+
+enum NotificationType {
+  SYSTEM
+  ORDER_UPDATE
+  PAYMENT_RECEIVED
+  SHIPMENT_UPDATE
+  NEW_FOLLOWER
+  NEW_COMMENT
+  NEW_LIKE
+  REVIEW_REPLY
+  PROMOTION
+}

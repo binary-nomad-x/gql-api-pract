@@ -1,0 +1,12 @@
+type Category {
+  id: ID!
+  name: String!
+  slug: String!
+  description: String
+  posts: [Post!]!
+  products: [Product!]!
+  postCount: Int!
+  productCount: Int!
+  createdAt: DateTime!
+  updatedAt: DateTime!
+}

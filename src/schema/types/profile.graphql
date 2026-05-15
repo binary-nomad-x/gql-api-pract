@@ -1,0 +1,10 @@
+type Profile {
+  id: ID!
+  bio: String
+  avatar: String
+  phone: String
+  address: String
+  user: User!
+  createdAt: DateTime!
+  updatedAt: DateTime!
+}

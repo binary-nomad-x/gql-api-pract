@@ -1,0 +1,10 @@
+type Refund {
+  id: ID!
+  payment: Payment!
+  order: Order!
+  amount: Float!
+  reason: String
+  status: RefundStatus!
+  createdAt: DateTime!
+  updatedAt: DateTime!
+}

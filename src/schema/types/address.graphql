@@ -1,0 +1,13 @@
+type Address {
+  id: ID!
+  user: User!
+  label: String!
+  street: String!
+  city: String!
+  state: String
+  zip: String!
+  country: String!
+  isDefault: Boolean!
+  createdAt: DateTime!
+  updatedAt: DateTime!
+}

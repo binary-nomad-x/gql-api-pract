@@ -1,0 +1,6 @@
+type Like {
+  id: ID!
+  user: User!
+  post: Post!
+  createdAt: DateTime!
+}

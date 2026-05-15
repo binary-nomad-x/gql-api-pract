@@ -1,0 +1,11 @@
+type Notification {
+  id: ID!
+  user: User!
+  type: NotificationType!
+  title: String!
+  message: String
+  link: String
+  isRead: Boolean!
+  readAt: DateTime
+  createdAt: DateTime!
+}

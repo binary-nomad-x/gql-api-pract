@@ -2,30 +2,38 @@
 
 A GraphQL API built with Apollo Server, Prisma (v7), and PostgreSQL. Features a blog domain plus a full e-commerce domain with products, orders, payments, and refunds.
 
-## Models
+## Models (23 tables)
 
-### Blog Domain
-- **User** — Authentication, roles (USER, ADMIN, MODERATOR)
+### Core / Auth
+- **User** — roles (USER, ADMIN, MODERATOR)
 - **Profile** — One-to-one with User
-- **Post** — Belongs to User; has many Tags, Categories, Comments, and Likes
+
+### Blog / Content
+- **Post** — Belongs to User; has Tags, Categories, Comments, Likes, SavedPosts, PostViews
 - **Tag** — Many-to-many with Post
-- **Category** — Many-to-many with Post, also linked to Products
+- **Category** — Many-to-many with Post; also linked to Products
 - **Comment** — Belongs to User and Post
-- **Like** — Belongs to User and Post (unique per user+post)
+- **Like** — Belongs to User and Post (unique pair)
+- **SavedPost** — Bookmark posts (unique per user+post)
+- **PostView** — Anonymous or user-tracked post views
 
-### E-Commerce Domain
-- **Product** — Belongs to a seller (User) and a Category; has many OrderItems and Reviews
-- **Order** — Belongs to a buyer (User); has many OrderItems, one Payment, and many Refunds
-- **OrderItem** — Line items linking Order and Product (quantity + unit price)
-- **Payment** — One-to-one with Order; supports multiple payment methods and statuses
-- **Refund** — Belongs to Payment and Order; tracks refund lifecycle
-- **Review** — Belongs to Product and User; includes rating 1-5 (unique per user+product)
+### E-Commerce
+- **Product** — Belongs to Seller (User) and Category; has Images, OrderItems, Reviews
+- **ProductImage** — Multiple images per Product
+- **Order** — Belongs to Buyer (User); has Items, Payment, Refunds, Shipments, Coupon
+- **OrderItem** — Line items (quantity + unitPrice)
+- **Payment** — One-to-one per Order; supports multiple methods
+- **Refund** — Belongs to Payment and Order
+- **Review** — Belongs to Product and User (unique pair, rating 1-5)
+- **Coupon** — Discount codes applied to Orders
+- **Shipment** — Tracking per Order
 
-### Key Relations
-- User → Products (as seller), Orders (as buyer), Reviews
-- Product → Category, Seller, OrderItems, Reviews
-- Order → User, Items, Payment, Refunds
-- Payment → Order (unique), Refunds
+### Social / Account
+- **Address** — User has many (Home/Work/Other)
+- **Wishlist** — User has many; WishlistItem links to Products
+- **Cart** — One per User; CartItem links to Products
+- **Notification** — User notifications with types (ORDER_UPDATE, NEW_FOLLOWER, etc.)
+- **Follow** — User follows User (self-referential, unique pair)
 
 ## Prerequisites
 
@@ -121,3 +129,7 @@ All seeded accounts use password `password123`:
 | charlie@test.com | USER |
 | diana@test.com | MODERATOR |
 | eve@test.com | USER |
+
+## API Reference
+
+See [API.md](./API.md) for the full API reference with all queries, mutations, examples, and fragments.

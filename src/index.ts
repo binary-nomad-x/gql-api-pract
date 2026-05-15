@@ -1,18 +1,8 @@
 import "dotenv/config";
 import { ApolloServer } from "apollo-server";
-import { readFileSync } from "fs";
-import { fileURLToPath } from "url";
-import { dirname, join } from "path";
 import { createContext } from "./context.js";
-import { resolvers } from "./resolvers/index.js";
-
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = dirname(__filename);
-
-const typeDefs = readFileSync(
-  join(__dirname, "schema", "schema.graphql"),
-  "utf8",
-);
+import { typeDefs } from "./schema/typeDefs.js";
+import { resolvers } from "./modules/index.js";
 
 const server = new ApolloServer({
   typeDefs,

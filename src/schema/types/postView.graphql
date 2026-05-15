@@ -1,0 +1,7 @@
+type PostView {
+  id: ID!
+  post: Post!
+  user: User
+  ip: String
+  viewedAt: DateTime!
+}

@@ -1,0 +1,6 @@
+type Follow {
+  id: ID!
+  follower: User!
+  following: User!
+  createdAt: DateTime!
+}

@@ -1,0 +1,20 @@
+type Product {
+  id: ID!
+  name: String!
+  description: String
+  price: Float!
+  stock: Int!
+  sku: String!
+  imageUrl: String
+  images: [ProductImage!]!
+  isActive: Boolean!
+  seller: User!
+  category: Category
+  orderItems: [OrderItem!]!
+  reviews: [Review!]!
+  wishlistItems: [WishlistItem!]!
+  reviewCount: Int!
+  averageRating: Float
+  createdAt: DateTime!
+  updatedAt: DateTime!
+}

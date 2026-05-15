@@ -1,0 +1,79 @@
+type Query {
+  # Users
+  users: [User!]! @auth
+  user(id: ID!): User @auth
+  me: User @auth
+
+  # Posts
+  posts(published: Boolean, search: String, limit: Int, offset: Int): [Post!]!
+  post(id: ID!): Post
+
+  # Tags
+  tags: [Tag!]!
+  tag(id: ID!): Tag
+  tagByName(name: String!): Tag
+
+  # Categories
+  categories: [Category!]!
+  category(id: ID!): Category
+  categoryBySlug(slug: String!): Category
+
+  # Comments
+  comments(postId: ID!): [Comment!]!
+  comment(id: ID!): Comment
+
+  # Likes
+  likes(postId: ID!): [Like!]!
+
+  # Products
+  products(categorySlug: String, search: String, minPrice: Float, maxPrice: Float, limit: Int, offset: Int): [Product!]!
+  product(id: ID!): Product
+  productBySku(sku: String!): Product
+
+  # Orders
+  myOrders(status: OrderStatus, limit: Int, offset: Int): [Order!]! @auth
+  order(id: ID!): Order @auth
+
+  # Payments
+  myPayments(status: PaymentStatus, limit: Int, offset: Int): [Payment!]! @auth
+  payment(id: ID!): Payment @auth
+
+  # Refunds
+  myRefunds(status: RefundStatus, limit: Int, offset: Int): [Refund!]! @auth
+  refund(id: ID!): Refund @auth
+
+  # Reviews
+  reviews(productId: ID!, limit: Int, offset: Int): [Review!]!
+  review(id: ID!): Review
+
+  # Addresses
+  myAddresses: [Address!]! @auth
+  address(id: ID!): Address @auth
+
+  # Wishlists
+  myWishlists: [Wishlist!]! @auth
+  wishlist(id: ID!): Wishlist @auth
+
+  # Cart
+  myCart: Cart @auth
+
+  # Coupons
+  couponByCode(code: String!): Coupon
+
+  # Notifications
+  myNotifications(limit: Int, offset: Int): [Notification!]! @auth
+  unreadNotificationCount: Int! @auth
+
+  # Follows
+  followers(userId: ID!): [Follow!]!
+  following(userId: ID!): [Follow!]!
+
+  # SavedPosts
+  mySavedPosts(limit: Int, offset: Int): [SavedPost!]! @auth
+
+  # Shipments
+  orderShipments(orderId: ID!): [Shipment!]! @auth
+
+  # Stats
+  stats: Stats!
+}

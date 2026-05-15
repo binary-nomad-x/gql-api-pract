@@ -13,13 +13,21 @@ model User {
   name      String?
   password  String
   role      Role      @default(USER)
-  posts     Post[]
   profile   Profile?
+  posts     Post[]
   comments  Comment[]
   likes     Like[]
   products  Product[]
   orders    Order[]
   reviews   Review[]
+  postViews PostView[]
+  addresses Address[]
+  wishlists Wishlist[]
+  cart      Cart?
+  notifications Notification[]
+  followers Follow[]  @relation("FollowingRelation")
+  following Follow[]  @relation("FollowerRelation")
+  savedPosts SavedPost[]
   createdAt DateTime  @default(now())
   updatedAt DateTime  @updatedAt
 
@@ -29,17 +37,36 @@ model User {
 
 // ==================== Profile Model ====================
 model Profile {
-  id         String   @id @default(cuid())
-  bio        String?
-  avatar     String?
-  phone      String?
-  address    String?
-  userId     String   @unique
-  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  createdAt  DateTime @default(now())
-  updatedAt  DateTime @updatedAt
+  id        String   @id @default(cuid())
+  bio       String?
+  avatar    String?
+  phone     String?
+  address   String?
+  userId    String   @unique
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   @@map("profiles")
+}
+
+// ==================== Address Model ====================
+model Address {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  label     String   @default("Home")
+  street    String
+  city      String
+  state     String?
+  zip       String
+  country   String   @default("US")
+  isDefault Boolean  @default(false)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([userId])
+  @@map("addresses")
 }
 
 // ==================== Post Model ====================
@@ -54,12 +81,41 @@ model Post {
   categories Category[] @relation("PostToCategory")
   comments   Comment[]
   likes      Like[]
+  savedBy    SavedPost[]
+  views      PostView[]
   createdAt  DateTime   @default(now())
   updatedAt  DateTime   @updatedAt
 
   @@index([authorId])
   @@index([published])
   @@map("posts")
+}
+
+// ==================== SavedPost Model ====================
+model SavedPost {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  postId    String
+  post      Post     @relation(fields: [postId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+
+  @@unique([userId, postId])
+  @@map("saved_posts")
+}
+
+// ==================== PostView Model ====================
+model PostView {
+  id        String   @id @default(cuid())
+  postId    String
+  post      Post     @relation(fields: [postId], references: [id], onDelete: Cascade)
+  userId    String?
+  user      User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+  ip        String?
+  viewedAt  DateTime @default(now())
+
+  @@index([postId])
+  @@map("post_views")
 }
 
 // ==================== Tag Model ====================
@@ -115,6 +171,21 @@ model Like {
   @@map("likes")
 }
 
+// ==================== Follow Model ====================
+model Follow {
+  id          String   @id @default(cuid())
+  followerId  String
+  follower    User     @relation("FollowerRelation", fields: [followerId], references: [id], onDelete: Cascade)
+  followingId String
+  following   User     @relation("FollowingRelation", fields: [followingId], references: [id], onDelete: Cascade)
+  createdAt   DateTime @default(now())
+
+  @@unique([followerId, followingId])
+  @@index([followerId])
+  @@index([followingId])
+  @@map("follows")
+}
+
 // ==================== Product Model ====================
 model Product {
   id          String       @id @default(cuid())
@@ -124,6 +195,7 @@ model Product {
   stock       Int          @default(0)
   sku         String       @unique
   imageUrl    String?
+  images      ProductImage[]
   isActive    Boolean      @default(true)
   sellerId    String
   seller      User         @relation(fields: [sellerId], references: [id], onDelete: Cascade)
@@ -131,6 +203,8 @@ model Product {
   category    Category?    @relation(fields: [categoryId], references: [id], onDelete: SetNull)
   orderItems  OrderItem[]
   reviews     Review[]
+  wishlistItems WishlistItem[]
+  cartItems   CartItem[]
   createdAt   DateTime     @default(now())
   updatedAt   DateTime     @updatedAt
 
@@ -140,6 +214,20 @@ model Product {
   @@map("products")
 }
 
+// ==================== ProductImage Model ====================
+model ProductImage {
+  id        String   @id @default(cuid())
+  productId String
+  product   Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  url       String
+  alt       String?
+  sortOrder Int      @default(0)
+  createdAt DateTime @default(now())
+
+  @@index([productId])
+  @@map("product_images")
+}
+
 // ==================== Order Model ====================
 model Order {
   id              String      @id @default(cuid())
@@ -147,10 +235,14 @@ model Order {
   user            User        @relation(fields: [userId], references: [id], onDelete: Cascade)
   status          OrderStatus @default(PENDING)
   totalAmount     Float       @default(0)
+  discountAmount  Float       @default(0)
   shippingAddress String?
+  couponId        String?
+  coupon          Coupon?     @relation(fields: [couponId], references: [id], onDelete: SetNull)
   items           OrderItem[]
   payment         Payment?
   refunds         Refund[]
+  shipments       Shipment[]
   createdAt       DateTime    @default(now())
   updatedAt       DateTime    @updatedAt
 
@@ -227,6 +319,116 @@ model Review {
   @@map("reviews")
 }
 
+// ==================== Wishlist Model ====================
+model Wishlist {
+  id        String        @id @default(cuid())
+  userId    String
+  user      User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  name      String        @default("Default")
+  items     WishlistItem[]
+  createdAt DateTime      @default(now())
+  updatedAt DateTime      @updatedAt
+
+  @@index([userId])
+  @@map("wishlists")
+}
+
+// ==================== WishlistItem Model ====================
+model WishlistItem {
+  id         String   @id @default(cuid())
+  wishlistId String
+  wishlist   Wishlist @relation(fields: [wishlistId], references: [id], onDelete: Cascade)
+  productId  String
+  product    Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  note       String?
+  createdAt  DateTime @default(now())
+
+  @@unique([wishlistId, productId])
+  @@map("wishlist_items")
+}
+
+// ==================== Cart Model ====================
+model Cart {
+  id        String     @id @default(cuid())
+  userId    String     @unique
+  user      User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  items     CartItem[]
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
+
+  @@map("carts")
+}
+
+// ==================== CartItem Model ====================
+model CartItem {
+  id        String   @id @default(cuid())
+  cartId    String
+  cart      Cart     @relation(fields: [cartId], references: [id], onDelete: Cascade)
+  productId String
+  product   Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  quantity  Int      @default(1)
+  createdAt DateTime @default(now())
+
+  @@unique([cartId, productId])
+  @@map("cart_items")
+}
+
+// ==================== Coupon Model ====================
+model Coupon {
+  id               String         @id @default(cuid())
+  code             String         @unique
+  description      String?
+  discountPercent  Float          @default(0)
+  discountAmount   Float          @default(0)
+  minPurchase      Float          @default(0)
+  maxUses          Int            @default(0)
+  usedCount        Int            @default(0)
+  isActive         Boolean        @default(true)
+  orders           Order[]
+  expiresAt        DateTime?
+  createdAt        DateTime       @default(now())
+  updatedAt        DateTime       @updatedAt
+
+  @@index([code])
+  @@map("coupons")
+}
+
+// ==================== Shipment Model ====================
+model Shipment {
+  id               String         @id @default(cuid())
+  orderId          String
+  order            Order          @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  carrier          String
+  trackingNumber   String
+  status           ShipmentStatus @default(PENDING)
+  estimatedDelivery DateTime?
+  deliveredAt      DateTime?
+  createdAt        DateTime       @default(now())
+  updatedAt        DateTime       @updatedAt
+
+  @@index([orderId])
+  @@index([trackingNumber])
+  @@map("shipments")
+}
+
+// ==================== Notification Model ====================
+model Notification {
+  id        String           @id @default(cuid())
+  userId    String
+  user      User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  type      NotificationType
+  title     String
+  message   String?
+  link      String?
+  isRead    Boolean          @default(false)
+  readAt    DateTime?
+  createdAt DateTime         @default(now())
+
+  @@index([userId])
+  @@index([userId, isRead])
+  @@map("notifications")
+}
+
 // ==================== Enums ====================
 enum Role {
   USER
@@ -263,4 +465,25 @@ enum RefundStatus {
   APPROVED
   REJECTED
   COMPLETED
+}
+
+enum ShipmentStatus {
+  PENDING
+  PICKED_UP
+  IN_TRANSIT
+  OUT_FOR_DELIVERY
+  DELIVERED
+  FAILED
+}
+
+enum NotificationType {
+  SYSTEM
+  ORDER_UPDATE
+  PAYMENT_RECEIVED
+  SHIPMENT_UPDATE
+  NEW_FOLLOWER
+  NEW_COMMENT
+  NEW_LIKE
+  REVIEW_REPLY
+  PROMOTION
 }

@@ -1,0 +1,91 @@
+type Mutation {
+  # Auth
+  signup(input: CreateUserInput!): AuthPayload!
+  login(email: String!, password: String!): AuthPayload!
+
+  # Users
+  updateUser(id: ID!, input: UpdateUserInput!): User! @auth
+  deleteUser(id: ID!): Boolean! @auth
+
+  # Profile
+  updateProfile(bio: String, avatar: String, phone: String, address: String): Profile! @auth
+
+  # Posts
+  createPost(input: CreatePostInput!): Post! @auth
+  updatePost(id: ID!, input: UpdatePostInput!): Post! @auth
+  deletePost(id: ID!): Boolean! @auth
+  publishPost(id: ID!): Post! @auth
+  unpublishPost(id: ID!): Post! @auth
+
+  # Tags
+  createTag(name: String!): Tag! @auth
+
+  # Categories
+  createCategory(input: CreateCategoryInput!): Category! @auth
+
+  # Comments
+  createComment(input: CreateCommentInput!): Comment! @auth
+  deleteComment(id: ID!): Boolean! @auth
+
+  # Likes
+  toggleLike(postId: ID!): Like!
+
+  # Products
+  createProduct(input: CreateProductInput!): Product! @auth
+  updateProduct(id: ID!, input: UpdateProductInput!): Product! @auth
+  deleteProduct(id: ID!): Boolean! @auth
+
+  # Orders
+  placeOrder(input: PlaceOrderInput!): Order! @auth
+  cancelOrder(id: ID!): Order! @auth
+  updateOrderStatus(id: ID!, status: OrderStatus!): Order! @auth
+
+  # Payments
+  processPayment(input: ProcessPaymentInput!): Payment! @auth
+
+  # Refunds
+  createRefund(input: CreateRefundInput!): Refund! @auth
+  updateRefundStatus(id: ID!, status: RefundStatus!): Refund! @auth
+
+  # Reviews
+  createReview(input: CreateReviewInput!): Review! @auth
+  deleteReview(id: ID!): Boolean! @auth
+
+  # Addresses
+  createAddress(input: CreateAddressInput!): Address! @auth
+  updateAddress(id: ID!, input: UpdateAddressInput!): Address! @auth
+  deleteAddress(id: ID!): Boolean! @auth
+  setDefaultAddress(id: ID!): Address! @auth
+
+  # Wishlists
+  createWishlist(input: CreateWishlistInput!): Wishlist! @auth
+  addToWishlist(input: AddToWishlistInput!): Wishlist! @auth
+  removeFromWishlist(wishlistId: ID!, productId: ID!): Wishlist! @auth
+  deleteWishlist(id: ID!): Boolean! @auth
+
+  # Cart
+  addToCart(input: AddToCartInput!): Cart! @auth
+  updateCartItem(input: UpdateCartItemInput!): Cart! @auth
+  removeFromCart(productId: ID!): Cart! @auth
+  clearCart: Cart! @auth
+
+  # Coupons
+  createCoupon(input: CreateCouponInput!): Coupon! @auth
+
+  # Shipments
+  createShipment(input: CreateShipmentInput!): Shipment! @auth
+  updateShipmentStatus(id: ID!, status: ShipmentStatus!): Shipment! @auth
+
+  # Notifications
+  markNotificationRead(id: ID!): Notification! @auth
+  markAllNotificationsRead: Boolean! @auth
+
+  # Follows
+  toggleFollow(userId: ID!): Follow!
+
+  # SavedPosts
+  toggleSavePost(postId: ID!): SavedPost! @auth
+
+  # Record view
+  recordPostView(postId: ID!): PostView!
+}

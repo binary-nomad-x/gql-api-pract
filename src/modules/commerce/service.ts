@@ -1,5 +1,11 @@
 import type { PrismaClient } from "@prisma/client";
-import type { CreateProductInput, UpdateProductInput, PlaceOrderInput, ProcessPaymentInput, CreateRefundInput } from "@gql-prisma-api/types/inputs.js";
+import type {
+  CreateProductInput,
+  UpdateProductInput,
+  PlaceOrderInput,
+  ProcessPaymentInput,
+  CreateRefundInput,
+} from "@gql-prisma-api/types/inputs.js";
 import { requireAuth, requireOwner } from "@gql-prisma-api/utils/errors.js";
 import { triggerNovuWorkflow } from "@gql-prisma-api/utils/novu.js";
 
@@ -37,7 +43,11 @@ export async function updateProduct(
     data: clean({
       ...data,
       ...(categorySlug !== undefined
-        ? { category: categorySlug ? { connect: { slug: categorySlug } } : { disconnect: true } }
+        ? {
+            category: categorySlug
+              ? { connect: { slug: categorySlug } }
+              : { disconnect: true },
+          }
         : {}),
     }) as any,
   });
@@ -72,17 +82,25 @@ export async function placeOrder(
     const p = productMap.get(item.productId);
     if (!p) throw new Error(`Product ${item.productId} not found`);
     if (!p.isActive) throw new Error(`${p.name} is inactive`);
-    if (p.stock < item.quantity) throw new Error(`Insufficient stock for ${p.name}`);
+    if (p.stock < item.quantity)
+      throw new Error(`Insufficient stock for ${p.name}`);
     totalAmount += p.price * item.quantity;
   }
 
   let discountAmount = 0;
   if (input.couponCode) {
-    const coupon = await prisma.coupon.findUnique({ where: { code: input.couponCode } });
-    if (coupon?.isActive && coupon.usedCount < coupon.maxUses && totalAmount >= coupon.minPurchase) {
-      discountAmount = coupon.discountAmount > 0
-        ? coupon.discountAmount
-        : totalAmount * (coupon.discountPercent / 100);
+    const coupon = await prisma.coupon.findUnique({
+      where: { code: input.couponCode },
+    });
+    if (
+      coupon?.isActive &&
+      coupon.usedCount < coupon.maxUses &&
+      totalAmount >= coupon.minPurchase
+    ) {
+      discountAmount =
+        coupon.discountAmount > 0
+          ? coupon.discountAmount
+          : totalAmount * (coupon.discountPercent / 100);
     }
   }
 
@@ -93,7 +111,9 @@ export async function placeOrder(
         totalAmount,
         discountAmount,
         shippingAddress: input.shippingAddress ?? null,
-        ...(input.couponCode ? { coupon: { connect: { code: input.couponCode } } } : {}),
+        ...(input.couponCode
+          ? { coupon: { connect: { code: input.couponCode } } }
+          : {}),
         items: {
           create: input.items.map((item) => ({
             productId: item.productId,
@@ -122,7 +142,11 @@ export async function placeOrder(
     return o;
   });
 
-  await triggerNovuWorkflow(userId!, "order-placed", { orderId: order.id, totalAmount, itemCount: input.items.length });
+  await triggerNovuWorkflow(userId!, "order-placed", {
+    orderId: order.id,
+    totalAmount,
+    itemCount: input.items.length,
+  });
 
   return order;
 }
@@ -133,7 +157,10 @@ export async function cancelOrder(
   id: string,
 ) {
   requireAuth(userId);
-  const order = await prisma.order.findUnique({ where: { id }, include: { items: true } });
+  const order = await prisma.order.findUnique({
+    where: { id },
+    include: { items: true },
+  });
   if (!order) throw new Error("Order not found");
   requireOwner(order.userId, userId);
   if (["DELIVERED", "SHIPPED"].includes(order.status)) {
@@ -141,7 +168,10 @@ export async function cancelOrder(
   }
 
   const updated = await prisma.$transaction(async (tx: any) => {
-    const o = await tx.order.update({ where: { id }, data: { status: "CANCELLED" } });
+    const o = await tx.order.update({
+      where: { id },
+      data: { status: "CANCELLED" },
+    });
     for (const item of order.items) {
       await tx.product.update({
         where: { id: item.productId },
@@ -179,15 +209,27 @@ export async function processPayment(
   if (!order) throw new Error("Order not found");
   requireOwner(order.userId, userId);
 
-  const existing = await prisma.payment.findUnique({ where: { orderId: input.orderId } });
+  const existing = await prisma.payment.findUnique({
+    where: { orderId: input.orderId },
+  });
   if (existing) throw new Error("Payment already exists");
 
   const transactionId = `TXN-${Date.now()}-${Math.random().toString(36).slice(2, 8).toUpperCase()}`;
   const payment = await prisma.payment.create({
-    data: { orderId: input.orderId, amount: order.totalAmount, method: input.method as any, status: "COMPLETED" as any, transactionId },
+    data: {
+      orderId: input.orderId,
+      amount: order.totalAmount,
+      method: input.method as any,
+      status: "COMPLETED" as any,
+      transactionId,
+    },
   });
 
-  await triggerNovuWorkflow(userId!, "payment-processed", { orderId: input.orderId, paymentId: payment.id, amount: order.totalAmount });
+  await triggerNovuWorkflow(userId!, "payment-processed", {
+    orderId: input.orderId,
+    paymentId: payment.id,
+    amount: order.totalAmount,
+  });
 
   return payment;
 }
@@ -201,7 +243,14 @@ export async function createRefund(
   const order = await prisma.order.findUnique({ where: { id: input.orderId } });
   if (!order) throw new Error("Order not found");
   requireOwner(order.userId, userId);
-  return prisma.refund.create({ data: { paymentId: input.paymentId, orderId: input.orderId, amount: input.amount, reason: input.reason ?? null } });
+  return prisma.refund.create({
+    data: {
+      paymentId: input.paymentId,
+      orderId: input.orderId,
+      amount: input.amount,
+      reason: input.reason ?? null,
+    },
+  });
 }
 
 export async function updateRefundStatus(
@@ -218,7 +267,10 @@ export async function updateRefundStatus(
   if (!refund) throw new Error("Refund not found");
   requireOwner(refund.order.userId, userId);
 
-  const updated = await prisma.refund.update({ where: { id }, data: { status } as any });
+  const updated = await prisma.refund.update({
+    where: { id },
+    data: { status } as any,
+  });
 
   if (status === "COMPLETED") {
     const completedRefunds = await prisma.refund.findMany({
@@ -226,10 +278,17 @@ export async function updateRefundStatus(
     });
     const totalRefunded = completedRefunds.reduce((s, r) => s + r.amount, 0);
     if (totalRefunded >= refund.payment.amount) {
-      await prisma.payment.update({ where: { id: refund.paymentId }, data: { status: "REFUNDED" } });
+      await prisma.payment.update({
+        where: { id: refund.paymentId },
+        data: { status: "REFUNDED" },
+      });
     }
 
-    await triggerNovuWorkflow(userId!, "refund-processed", { refundId: id, orderId: refund.orderId, amount: updated.amount });
+    await triggerNovuWorkflow(userId!, "refund-processed", {
+      refundId: id,
+      orderId: refund.orderId,
+      amount: updated.amount,
+    });
   }
 
   return updated;
@@ -256,8 +315,10 @@ export function getProducts(
   }
   if (args.minPrice !== undefined || args.maxPrice !== undefined) {
     where.price = {};
-    if (args.minPrice !== undefined) (where.price as Record<string, unknown>).gte = args.minPrice;
-    if (args.maxPrice !== undefined) (where.price as Record<string, unknown>).lte = args.maxPrice;
+    if (args.minPrice !== undefined)
+      (where.price as Record<string, unknown>).gte = args.minPrice;
+    if (args.maxPrice !== undefined)
+      (where.price as Record<string, unknown>).lte = args.maxPrice;
   }
   return prisma.product.findMany({
     where,
@@ -283,10 +344,19 @@ export async function getMyOrders(
   requireAuth(userId);
   const where: Record<string, unknown> = { userId: userId! };
   if (args.status) where.status = args.status;
-  return prisma.order.findMany({ where, take: args.limit ?? 20, skip: args.offset ?? 0, orderBy: { createdAt: "desc" } });
+  return prisma.order.findMany({
+    where,
+    take: args.limit ?? 20,
+    skip: args.offset ?? 0,
+    orderBy: { createdAt: "desc" },
+  });
 }
 
-export async function getOrder(prisma: PrismaClient, userId: string | undefined, id: string) {
+export async function getOrder(
+  prisma: PrismaClient,
+  userId: string | undefined,
+  id: string,
+) {
   requireAuth(userId);
   return prisma.order.findFirst({ where: { id, userId: userId! } });
 }
@@ -299,12 +369,23 @@ export async function getMyPayments(
   requireAuth(userId);
   const where: Record<string, unknown> = { order: { userId: userId! } };
   if (args.status) where.status = args.status;
-  return prisma.payment.findMany({ where, take: args.limit ?? 20, skip: args.offset ?? 0, orderBy: { createdAt: "desc" } });
+  return prisma.payment.findMany({
+    where,
+    take: args.limit ?? 20,
+    skip: args.offset ?? 0,
+    orderBy: { createdAt: "desc" },
+  });
 }
 
-export async function getPayment(prisma: PrismaClient, userId: string | undefined, id: string) {
+export async function getPayment(
+  prisma: PrismaClient,
+  userId: string | undefined,
+  id: string,
+) {
   requireAuth(userId);
-  return prisma.payment.findFirst({ where: { id, order: { userId: userId! } } });
+  return prisma.payment.findFirst({
+    where: { id, order: { userId: userId! } },
+  });
 }
 
 export async function getMyRefunds(
@@ -315,10 +396,19 @@ export async function getMyRefunds(
   requireAuth(userId);
   const where: Record<string, unknown> = { order: { userId: userId! } };
   if (args.status) where.status = args.status;
-  return prisma.refund.findMany({ where, take: args.limit ?? 20, skip: args.offset ?? 0, orderBy: { createdAt: "desc" } });
+  return prisma.refund.findMany({
+    where,
+    take: args.limit ?? 20,
+    skip: args.offset ?? 0,
+    orderBy: { createdAt: "desc" },
+  });
 }
 
-export async function getRefund(prisma: PrismaClient, userId: string | undefined, id: string) {
+export async function getRefund(
+  prisma: PrismaClient,
+  userId: string | undefined,
+  id: string,
+) {
   requireAuth(userId);
   return prisma.refund.findFirst({ where: { id, order: { userId: userId! } } });
 }

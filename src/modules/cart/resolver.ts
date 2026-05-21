@@ -1,7 +1,10 @@
 import type { Context } from "@gql-prisma-api/types/context.js";
 import type { Parent } from "@gql-prisma-api/types/graphql.js";
 import type { AddToCartInput, UpdateCartItemInput } from "@gql-prisma-api/types/inputs.js";
-import { requireAuth } from "@gql-prisma-api/utils/errors.js";
+import {
+  addToCart, updateCartItem, removeFromCart, clearCart,
+  getMyCart,
+} from "./service.js";
 
 export const CartResolver = {
   user: (parent: Parent, _args: unknown, ctx: Context) =>
@@ -27,63 +30,20 @@ export const CartItemResolver = {
 };
 
 export const CartQueries = {
-  myCart: async (_parent: unknown, _args: unknown, ctx: Context) => {
-    requireAuth(ctx.userId);
-    return ctx.prisma.cart.findUnique({ where: { userId: ctx.userId! } });
-  },
+  myCart: async (_parent: unknown, _args: unknown, ctx: Context) =>
+    getMyCart(ctx.prisma, ctx.userId),
 };
 
-async function getOrCreateCart(ctx: Context) {
-  let cart = await ctx.prisma.cart.findUnique({ where: { userId: ctx.userId! } });
-  if (!cart) cart = await ctx.prisma.cart.create({ data: { userId: ctx.userId! } });
-  return cart;
-}
-
 export const CartMutations = {
-  addToCart: async (_parent: unknown, { input }: { input: AddToCartInput }, ctx: Context) => {
-    requireAuth(ctx.userId);
-    const cart = await getOrCreateCart(ctx);
-    const existing = await ctx.prisma.cartItem.findUnique({
-      where: { cartId_productId: { cartId: cart.id, productId: input.productId } },
-    });
-    if (existing) {
-      await ctx.prisma.cartItem.update({
-        where: { id: existing.id },
-        data: { quantity: existing.quantity + (input.quantity ?? 1) },
-      });
-    } else {
-      await ctx.prisma.cartItem.create({
-        data: { cartId: cart.id, productId: input.productId, quantity: input.quantity ?? 1 },
-      });
-    }
-    return ctx.prisma.cart.findUnique({ where: { id: cart.id } });
-  },
+  addToCart: async (_parent: unknown, { input }: { input: AddToCartInput }, ctx: Context) =>
+    addToCart(ctx.prisma, ctx.userId, input),
 
-  updateCartItem: async (_parent: unknown, { input }: { input: UpdateCartItemInput }, ctx: Context) => {
-    requireAuth(ctx.userId);
-    const cart = await getOrCreateCart(ctx);
-    const item = await ctx.prisma.cartItem.findUnique({
-      where: { cartId_productId: { cartId: cart.id, productId: input.productId } },
-    });
-    if (!item) throw new Error("Item not in cart");
-    await ctx.prisma.cartItem.update({ where: { id: item.id }, data: { quantity: input.quantity } });
-    return ctx.prisma.cart.findUnique({ where: { id: cart.id } });
-  },
+  updateCartItem: async (_parent: unknown, { input }: { input: UpdateCartItemInput }, ctx: Context) =>
+    updateCartItem(ctx.prisma, ctx.userId, input),
 
-  removeFromCart: async (_parent: unknown, { productId }: { productId: string }, ctx: Context) => {
-    requireAuth(ctx.userId);
-    const cart = await getOrCreateCart(ctx);
-    const item = await ctx.prisma.cartItem.findUnique({
-      where: { cartId_productId: { cartId: cart.id, productId } },
-    });
-    if (item) await ctx.prisma.cartItem.delete({ where: { id: item.id } });
-    return ctx.prisma.cart.findUnique({ where: { id: cart.id } });
-  },
+  removeFromCart: async (_parent: unknown, { productId }: { productId: string }, ctx: Context) =>
+    removeFromCart(ctx.prisma, ctx.userId, productId),
 
-  clearCart: async (_parent: unknown, _args: unknown, ctx: Context) => {
-    requireAuth(ctx.userId);
-    const cart = await getOrCreateCart(ctx);
-    await ctx.prisma.cartItem.deleteMany({ where: { cartId: cart.id } });
-    return cart;
-  },
+  clearCart: async (_parent: unknown, _args: unknown, ctx: Context) =>
+    clearCart(ctx.prisma, ctx.userId),
 };

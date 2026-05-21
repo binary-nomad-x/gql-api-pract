@@ -1,11 +1,10 @@
 import type { Context } from "@gql-prisma-api/types/context.js";
 import type { Parent, IdArg } from "@gql-prisma-api/types/graphql.js";
-import type {
-  CreateAddressInput,
-  UpdateAddressInput,
-} from "@gql-prisma-api/types/inputs.js";
-import { requireAuth } from "@gql-prisma-api/utils/errors.js";
-import { clean } from "@gql-prisma-api/utils/clean.js";
+import type { CreateAddressInput, UpdateAddressInput } from "@gql-prisma-api/types/inputs.js";
+import {
+  createAddress, updateAddress, deleteAddress, setDefaultAddress,
+  getMyAddresses, getAddress,
+} from "./service.js";
 
 export const AddressResolver = {
   user: (parent: Parent, _args: unknown, ctx: Context) =>
@@ -13,69 +12,23 @@ export const AddressResolver = {
 };
 
 export const AddressQueries = {
-  myAddresses: (_parent: unknown, _args: unknown, ctx: Context) => {
-    requireAuth(ctx.userId);
-    return ctx.prisma.address.findMany({ where: { userId: ctx.userId! } });
-  },
+  myAddresses: (_parent: unknown, _args: unknown, ctx: Context) =>
+    getMyAddresses(ctx.prisma, ctx.userId),
 
-  address: async (_parent: unknown, { id }: IdArg, ctx: Context) => {
-    requireAuth(ctx.userId);
-    return ctx.prisma.address.findFirst({ where: { id, userId: ctx.userId! } });
-  },
+  address: async (_parent: unknown, { id }: IdArg, ctx: Context) =>
+    getAddress(ctx.prisma, ctx.userId, id),
 };
 
 export const AddressMutations = {
-  createAddress: async (
-    _parent: unknown,
-    { input }: { input: CreateAddressInput },
-    ctx: Context,
-  ) => {
-    requireAuth(ctx.userId);
-    return ctx.prisma.address.create({
-      data: clean({
-        ...input,
-        userId: ctx.userId!,
-        country: input.country ?? "US",
-        label: input.label ?? "Home",
-      }) as any,
-    });
-  },
+  createAddress: async (_parent: unknown, { input }: { input: CreateAddressInput }, ctx: Context) =>
+    createAddress(ctx.prisma, ctx.userId, input),
 
-  updateAddress: async (
-    _parent: unknown,
-    { id, input }: { id: string; input: UpdateAddressInput },
-    ctx: Context,
-  ) => {
-    requireAuth(ctx.userId);
-    const addr = await ctx.prisma.address.findFirst({
-      where: { id, userId: ctx.userId! },
-    });
-    if (!addr) throw new Error("Address not found");
-    return ctx.prisma.address.update({
-      where: { id },
-      data: clean(input as any),
-    });
-  },
+  updateAddress: async (_parent: unknown, { id, input }: { id: string; input: UpdateAddressInput }, ctx: Context) =>
+    updateAddress(ctx.prisma, ctx.userId, id, input),
 
-  deleteAddress: async (_parent: unknown, { id }: IdArg, ctx: Context) => {
-    requireAuth(ctx.userId);
-    const addr = await ctx.prisma.address.findFirst({
-      where: { id, userId: ctx.userId! },
-    });
-    if (!addr) throw new Error("Address not found");
-    await ctx.prisma.address.delete({ where: { id } });
-    return true;
-  },
+  deleteAddress: async (_parent: unknown, { id }: IdArg, ctx: Context) =>
+    deleteAddress(ctx.prisma, ctx.userId, id),
 
-  setDefaultAddress: async (_parent: unknown, { id }: IdArg, ctx: Context) => {
-    requireAuth(ctx.userId);
-    await ctx.prisma.address.updateMany({
-      where: { userId: ctx.userId!, isDefault: true },
-      data: { isDefault: false },
-    });
-    return ctx.prisma.address.update({
-      where: { id },
-      data: { isDefault: true },
-    });
-  },
+  setDefaultAddress: async (_parent: unknown, { id }: IdArg, ctx: Context) =>
+    setDefaultAddress(ctx.prisma, ctx.userId, id),
 };

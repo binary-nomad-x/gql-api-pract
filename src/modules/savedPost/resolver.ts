@@ -1,6 +1,6 @@
 import type { Context } from "@gql-prisma-api/types/context.js";
 import type { Parent, PaginationArgs } from "@gql-prisma-api/types/graphql.js";
-import { requireAuth } from "@gql-prisma-api/utils/errors.js";
+import { toggleSavePost, getMySavedPosts } from "./service.js";
 
 export const SavedPostResolver = {
   user: (parent: Parent, _args: unknown, ctx: Context) =>
@@ -10,27 +10,11 @@ export const SavedPostResolver = {
 };
 
 export const SavedPostQueries = {
-  mySavedPosts: (_parent: unknown, args: PaginationArgs, ctx: Context) => {
-    requireAuth(ctx.userId);
-    return ctx.prisma.savedPost.findMany({
-      where: { userId: ctx.userId! },
-      take: args.limit ?? 20,
-      skip: args.offset ?? 0,
-      orderBy: { createdAt: "desc" },
-    });
-  },
+  mySavedPosts: (_parent: unknown, args: PaginationArgs, ctx: Context) =>
+    getMySavedPosts(ctx.prisma, ctx.userId, args),
 };
 
 export const SavedPostMutations = {
-  toggleSavePost: async (_parent: unknown, { postId }: { postId: string }, ctx: Context) => {
-    requireAuth(ctx.userId);
-    const existing = await ctx.prisma.savedPost.findUnique({
-      where: { userId_postId: { userId: ctx.userId!, postId } },
-    });
-    if (existing) {
-      await ctx.prisma.savedPost.delete({ where: { id: existing.id } });
-      return existing;
-    }
-    return ctx.prisma.savedPost.create({ data: { userId: ctx.userId!, postId } });
-  },
+  toggleSavePost: async (_parent: unknown, { postId }: { postId: string }, ctx: Context) =>
+    toggleSavePost(ctx.prisma, ctx.userId, postId),
 };

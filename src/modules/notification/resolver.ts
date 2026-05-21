@@ -1,6 +1,9 @@
 import type { Context } from "@gql-prisma-api/types/context.js";
 import type { Parent, IdArg, PaginationArgs } from "@gql-prisma-api/types/graphql.js";
-import { requireAuth } from "@gql-prisma-api/utils/errors.js";
+import {
+  markNotificationRead, markAllNotificationsRead,
+  getMyNotifications, getUnreadNotificationCount,
+} from "./service.js";
 
 export const NotificationResolver = {
   user: (parent: Parent, _args: unknown, ctx: Context) =>
@@ -8,37 +11,17 @@ export const NotificationResolver = {
 };
 
 export const NotificationQueries = {
-  myNotifications: async (_parent: unknown, args: PaginationArgs, ctx: Context) => {
-    requireAuth(ctx.userId);
-    return ctx.prisma.notification.findMany({
-      where: { userId: ctx.userId! },
-      take: args.limit ?? 20,
-      skip: args.offset ?? 0,
-      orderBy: { createdAt: "desc" },
-    });
-  },
+  myNotifications: async (_parent: unknown, args: PaginationArgs, ctx: Context) =>
+    getMyNotifications(ctx.prisma, ctx.userId, args),
 
-  unreadNotificationCount: async (_parent: unknown, _args: unknown, ctx: Context) => {
-    requireAuth(ctx.userId);
-    return ctx.prisma.notification.count({ where: { userId: ctx.userId!, isRead: false } });
-  },
+  unreadNotificationCount: async (_parent: unknown, _args: unknown, ctx: Context) =>
+    getUnreadNotificationCount(ctx.prisma, ctx.userId),
 };
 
 export const NotificationMutations = {
-  markNotificationRead: async (_parent: unknown, { id }: IdArg, ctx: Context) => {
-    requireAuth(ctx.userId);
-    return ctx.prisma.notification.update({
-      where: { id },
-      data: { isRead: true, readAt: new Date() },
-    });
-  },
+  markNotificationRead: async (_parent: unknown, { id }: IdArg, ctx: Context) =>
+    markNotificationRead(ctx.prisma, ctx.userId, id),
 
-  markAllNotificationsRead: async (_parent: unknown, _args: unknown, ctx: Context) => {
-    requireAuth(ctx.userId);
-    await ctx.prisma.notification.updateMany({
-      where: { userId: ctx.userId!, isRead: false },
-      data: { isRead: true, readAt: new Date() },
-    });
-    return true;
-  },
+  markAllNotificationsRead: async (_parent: unknown, _args: unknown, ctx: Context) =>
+    markAllNotificationsRead(ctx.prisma, ctx.userId),
 };

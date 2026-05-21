@@ -1,8 +1,7 @@
 import type { Context } from "@gql-prisma-api/types/context.js";
 import type { Parent } from "@gql-prisma-api/types/graphql.js";
 import type { CreateCouponInput } from "@gql-prisma-api/types/inputs.js";
-import { requireAuth } from "@gql-prisma-api/utils/errors.js";
-import { clean } from "@gql-prisma-api/utils/clean.js";
+import { createCoupon, getCouponByCode } from "./service.js";
 
 export const CouponResolver = {
   orders: (parent: Parent, _args: unknown, ctx: Context) =>
@@ -11,12 +10,10 @@ export const CouponResolver = {
 
 export const CouponQueries = {
   couponByCode: (_parent: unknown, { code }: { code: string }, ctx: Context) =>
-    ctx.prisma.coupon.findUnique({ where: { code } }),
+    getCouponByCode(ctx.prisma, code),
 };
 
 export const CouponMutations = {
-  createCoupon: async (_parent: unknown, { input }: { input: CreateCouponInput }, ctx: Context) => {
-    requireAuth(ctx.userId);
-    return ctx.prisma.coupon.create({ data: clean(input as any) as any });
-  },
+  createCoupon: async (_parent: unknown, { input }: { input: CreateCouponInput }, ctx: Context) =>
+    createCoupon(ctx.prisma, ctx.userId, input),
 };

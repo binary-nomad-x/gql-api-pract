@@ -1,5 +1,6 @@
 import type { Context } from "@gql-prisma-api/types/context.js";
 import type { Parent } from "@gql-prisma-api/types/graphql.js";
+import { recordPostView } from "./service.js";
 
 export const PostViewResolver = {
   post: (parent: Parent, _args: unknown, ctx: Context) =>
@@ -10,5 +11,5 @@ export const PostViewResolver = {
 
 export const PostViewMutations = {
   recordPostView: (_parent: unknown, { postId }: { postId: string }, ctx: Context) =>
-    ctx.prisma.postView.create({ data: { postId, userId: ctx.userId } }),
+    recordPostView(ctx.prisma, postId, ctx.userId),
 };

@@ -1,8 +1,11 @@
 import type { Context } from "@gql-prisma-api/types/context.js";
 import type { Parent, IdArg, PostFilterArgs } from "@gql-prisma-api/types/graphql.js";
 import type { CreatePostInput, UpdatePostInput, CreateCommentInput, CreateCategoryInput } from "@gql-prisma-api/types/inputs.js";
-import { requireAuth, requireOwner } from "@gql-prisma-api/utils/errors.js";
-import { clean } from "@gql-prisma-api/utils/clean.js";
+import {
+  createPost, updatePost, deletePost, publishPost, unpublishPost,
+  createTag, createCategory, createComment, deleteComment, toggleLike,
+  getPosts, getPost,
+} from "./service.js";
 
 export const PostResolver = {
   author: (parent: Parent, _args: unknown, ctx: Context) =>
@@ -30,117 +33,43 @@ export const PostResolver = {
 };
 
 export const PostQueries = {
-  posts: async (_parent: unknown, args: PostFilterArgs, ctx: Context) => {
-    const where: Record<string, unknown> = {};
-    if (args.published !== undefined) where.published = args.published;
-    if (args.search) {
-      where.OR = [
-        { title: { contains: args.search, mode: "insensitive" } },
-        { content: { contains: args.search, mode: "insensitive" } },
-      ];
-    }
-    return ctx.prisma.post.findMany({
-      where,
-      take: args.limit ?? 10,
-      skip: args.offset ?? 0,
-      orderBy: { createdAt: "desc" },
-    });
-  },
+  posts: async (_parent: unknown, args: PostFilterArgs, ctx: Context) =>
+    getPosts(ctx.prisma, args),
 
   post: (_parent: unknown, { id }: IdArg, ctx: Context) =>
-    ctx.prisma.post.findUnique({ where: { id } }),
+    getPost(ctx.prisma, id),
 };
 
 export const PostMutations = {
-  createPost: async (_parent: unknown, { input }: { input: CreatePostInput }, ctx: Context) => {
-    requireAuth(ctx.userId);
-    return ctx.prisma.post.create({
-      data: {
-        title: input.title,
-        content: input.content ?? null,
-        published: input.published ?? false,
-        authorId: ctx.userId!,
-        tags: {
-          connectOrCreate: (input.tags ?? []).map((t: string) => ({
-            where: { name: t },
-            create: { name: t },
-          })),
-        },
-        categories: {
-          connect: (input.categories ?? []).map((s: string) => ({ slug: s })),
-        },
-      },
-    });
-  },
+  createPost: async (_parent: unknown, { input }: { input: CreatePostInput }, ctx: Context) =>
+    createPost(ctx.prisma, ctx.userId, input),
 
-  updatePost: async (_parent: unknown, { id, input }: { id: string; input: UpdatePostInput }, ctx: Context) => {
-    const post = await ctx.prisma.post.findUnique({ where: { id } });
-    if (!post) throw new Error("Post not found");
-    requireOwner(post.authorId, ctx.userId);
-    return ctx.prisma.post.update({ where: { id }, data: clean(input as any) });
-  },
+  updatePost: async (_parent: unknown, { id, input }: { id: string; input: UpdatePostInput }, ctx: Context) =>
+    updatePost(ctx.prisma, ctx.userId, id, input),
 
-  deletePost: async (_parent: unknown, { id }: IdArg, ctx: Context) => {
-    const post = await ctx.prisma.post.findUnique({ where: { id } });
-    if (!post) throw new Error("Post not found");
-    requireOwner(post.authorId, ctx.userId);
-    await ctx.prisma.post.delete({ where: { id } });
-    return true;
-  },
+  deletePost: async (_parent: unknown, { id }: IdArg, ctx: Context) =>
+    deletePost(ctx.prisma, ctx.userId, id),
 
-  publishPost: async (_parent: unknown, { id }: IdArg, ctx: Context) => {
-    const post = await ctx.prisma.post.findUnique({ where: { id } });
-    if (!post) throw new Error("Post not found");
-    requireOwner(post.authorId, ctx.userId);
-    return ctx.prisma.post.update({ where: { id }, data: { published: true } });
-  },
+  publishPost: async (_parent: unknown, { id }: IdArg, ctx: Context) =>
+    publishPost(ctx.prisma, ctx.userId, id),
 
-  unpublishPost: async (_parent: unknown, { id }: IdArg, ctx: Context) => {
-    const post = await ctx.prisma.post.findUnique({ where: { id } });
-    if (!post) throw new Error("Post not found");
-    requireOwner(post.authorId, ctx.userId);
-    return ctx.prisma.post.update({ where: { id }, data: { published: false } });
-  },
+  unpublishPost: async (_parent: unknown, { id }: IdArg, ctx: Context) =>
+    unpublishPost(ctx.prisma, ctx.userId, id),
 
   createTag: (_parent: unknown, { name }: { name: string }, ctx: Context) =>
-    ctx.prisma.tag.upsert({ where: { name }, update: {}, create: { name } }),
+    createTag(ctx.prisma, name),
 
   createCategory: (_parent: unknown, { input }: { input: CreateCategoryInput }, ctx: Context) =>
-    ctx.prisma.category.upsert({
-      where: { slug: input.slug },
-      update: { name: input.name, description: input.description ?? null },
-      create: input,
-    }),
+    createCategory(ctx.prisma, input),
 
-  createComment: async (_parent: unknown, { input }: { input: CreateCommentInput }, ctx: Context) => {
-    requireAuth(ctx.userId);
-    const post = await ctx.prisma.post.findUnique({ where: { id: input.postId } });
-    if (!post) throw new Error("Post not found");
-    return ctx.prisma.comment.create({
-      data: { content: input.content, authorId: ctx.userId!, postId: input.postId },
-    });
-  },
+  createComment: async (_parent: unknown, { input }: { input: CreateCommentInput }, ctx: Context) =>
+    createComment(ctx.prisma, ctx.userId, input),
 
-  deleteComment: async (_parent: unknown, { id }: IdArg, ctx: Context) => {
-    requireAuth(ctx.userId);
-    const comment = await ctx.prisma.comment.findUnique({ where: { id } });
-    if (!comment) throw new Error("Comment not found");
-    requireOwner(comment.authorId, ctx.userId);
-    await ctx.prisma.comment.delete({ where: { id } });
-    return true;
-  },
+  deleteComment: async (_parent: unknown, { id }: IdArg, ctx: Context) =>
+    deleteComment(ctx.prisma, ctx.userId, id),
 
-  toggleLike: async (_parent: unknown, { postId }: { postId: string }, ctx: Context) => {
-    requireAuth(ctx.userId);
-    const existing = await ctx.prisma.like.findUnique({
-      where: { userId_postId: { userId: ctx.userId!, postId } },
-    });
-    if (existing) {
-      await ctx.prisma.like.delete({ where: { id: existing.id } });
-      return existing;
-    }
-    return ctx.prisma.like.create({ data: { userId: ctx.userId!, postId } });
-  },
+  toggleLike: async (_parent: unknown, { postId }: { postId: string }, ctx: Context) =>
+    toggleLike(ctx.prisma, ctx.userId, postId),
 };
 
 export const TagResolver = {

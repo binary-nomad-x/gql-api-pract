@@ -1,8 +1,10 @@
 import type { Context } from "@gql-prisma-api/types/context.js";
 import type { Parent, IdArg } from "@gql-prisma-api/types/graphql.js";
 import type { UpdateUserInput } from "@gql-prisma-api/types/inputs.js";
-import { hashPassword } from "@gql-prisma-api/utils/auth.js";
-import { requireAuth, requireOwner } from "@gql-prisma-api/utils/errors.js";
+import {
+  updateUser, deleteUser, updateProfile,
+  getUsers, getUser, getMe,
+} from "./service.js";
 
 export const UserResolver = {
   profile: (parent: Parent, _args: unknown, ctx: Context) =>
@@ -39,15 +41,13 @@ export const UserResolver = {
 
 export const UserQueries = {
   users: (_parent: unknown, _args: unknown, ctx: Context) =>
-    ctx.prisma.user.findMany(),
+    getUsers(ctx.prisma),
 
   user: (_parent: unknown, { id }: IdArg, ctx: Context) =>
-    ctx.prisma.user.findUnique({ where: { id } }),
+    getUser(ctx.prisma, id),
 
-  me: (_parent: unknown, _args: unknown, ctx: Context) => {
-    if (!ctx.userId) return null;
-    return ctx.prisma.user.findUnique({ where: { id: ctx.userId } });
-  },
+  me: (_parent: unknown, _args: unknown, ctx: Context) =>
+    getMe(ctx.prisma, ctx.userId),
 };
 
 export const UserMutations = {
@@ -55,32 +55,14 @@ export const UserMutations = {
     _parent: unknown,
     args: { id: string; input: UpdateUserInput },
     ctx: Context,
-  ) => {
-    requireOwner(args.id, ctx.userId);
-    const data: Record<string, unknown> = {};
-    const { name, email, password } = args.input;
-    if (name) data.name = name;
-    if (email) data.email = email;
-    if (password) data.password = await hashPassword(password);
-    return ctx.prisma.user.update({ where: { id: args.id }, data });
-  },
+  ) => updateUser(ctx.prisma, ctx.userId, args),
 
-  deleteUser: async (_parent: unknown, { id }: IdArg, ctx: Context) => {
-    requireOwner(id, ctx.userId);
-    await ctx.prisma.user.delete({ where: { id } });
-    return true;
-  },
+  deleteUser: async (_parent: unknown, { id }: IdArg, ctx: Context) =>
+    deleteUser(ctx.prisma, ctx.userId, id),
 
   updateProfile: async (
     _parent: unknown,
     args: Record<string, unknown>,
     ctx: Context,
-  ) => {
-    requireAuth(ctx.userId);
-    return ctx.prisma.profile.upsert({
-      where: { userId: ctx.userId! },
-      update: args,
-      create: { userId: ctx.userId!, ...args },
-    });
-  },
+  ) => updateProfile(ctx.prisma, ctx.userId, args),
 };

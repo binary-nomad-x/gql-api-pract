@@ -1,7 +1,9 @@
 import type { Context } from "@gql-prisma-api/types/context.js";
-import type { Parent, IdArg } from "@gql-prisma-api/types/graphql.js";
+import type { Parent } from "@gql-prisma-api/types/graphql.js";
 import type { CreateShipmentInput } from "@gql-prisma-api/types/inputs.js";
-import { requireAuth } from "@gql-prisma-api/utils/errors.js";
+import {
+  createShipment, updateShipmentStatus, getOrderShipments,
+} from "./service.js";
 
 export const ShipmentResolver = {
   order: (parent: Parent, _args: unknown, ctx: Context) =>
@@ -9,22 +11,14 @@ export const ShipmentResolver = {
 };
 
 export const ShipmentQueries = {
-  orderShipments: async (_parent: unknown, { orderId }: { orderId: string }, ctx: Context) => {
-    requireAuth(ctx.userId);
-    return ctx.prisma.shipment.findMany({
-      where: { orderId, order: { userId: ctx.userId! } },
-    });
-  },
+  orderShipments: async (_parent: unknown, { orderId }: { orderId: string }, ctx: Context) =>
+    getOrderShipments(ctx.prisma, ctx.userId, orderId),
 };
 
 export const ShipmentMutations = {
-  createShipment: async (_parent: unknown, { input }: { input: CreateShipmentInput }, ctx: Context) => {
-    requireAuth(ctx.userId);
-    return ctx.prisma.shipment.create({ data: input });
-  },
+  createShipment: async (_parent: unknown, { input }: { input: CreateShipmentInput }, ctx: Context) =>
+    createShipment(ctx.prisma, ctx.userId, input),
 
-  updateShipmentStatus: async (_parent: unknown, { id, status }: { id: string; status: string }, ctx: Context) => {
-    requireAuth(ctx.userId);
-    return ctx.prisma.shipment.update({ where: { id }, data: { status } as any });
-  },
+  updateShipmentStatus: async (_parent: unknown, { id, status }: { id: string; status: string }, ctx: Context) =>
+    updateShipmentStatus(ctx.prisma, ctx.userId, id, status),
 };

@@ -1,5 +1,6 @@
 import "dotenv/config";
 import { ApolloServer } from "apollo-server";
+import { ApolloServerPluginLandingPageLocalDefault } from "apollo-server-core";
 import { createContext } from "./context.js";
 import { typeDefs } from "./schema/typeDefs.js";
 import { resolvers } from "./modules/index.js";
@@ -9,6 +10,7 @@ const server = new ApolloServer({
   resolvers,
   context: createContext,
   introspection: true,
+  plugins: [ApolloServerPluginLandingPageLocalDefault({ embed: true })],
 });
 
 const port = process.env.PORT || 4000;

@@ -6,7 +6,6 @@ const SEED_POSTS = 200;
 const SEED_COMMENTS = 800;
 const SEED_LIKES = 1200;
 
-/** Pre-defined category fixtures mapped to the schema */
 const CATEGORY_DATA: Array<{ name: string; slug: string; description: string }> = [
   { name: "Technology", slug: "technology", description: "Tech, software, and gadgets" },
   { name: "Science", slug: "science", description: "Scientific discoveries" },
@@ -25,36 +24,23 @@ const TAG_NAMES = [
   "nodejs", "python", "ai", "database", "api", "webdev", "tutorial",
 ];
 
-/**
- * Seed categories and tags (independent of other tables).
- */
 export async function seedCategoriesAndTags(
   ctx: SeedContext,
   counts: SeedCounts,
 ): Promise<{ categories: Category[]; tags: Tag[] }> {
-  // Categories
-  const categories: Category[] = [];
-  for (const c of CATEGORY_DATA) {
-    categories.push(await ctx.prisma.category.create({ data: c }));
-  }
+  await ctx.prisma.category.createMany({ data: CATEGORY_DATA });
+  const categories = await ctx.prisma.category.findMany();
   counts.categories = categories.length;
   console.log(`Created ${categories.length} categories`);
 
-  // Tags
-  const tags: Tag[] = [];
-  for (const name of TAG_NAMES) {
-    tags.push(await ctx.prisma.tag.create({ data: { name } }));
-  }
+  await ctx.prisma.tag.createMany({ data: TAG_NAMES.map((n) => ({ name: n })) });
+  const tags = await ctx.prisma.tag.findMany();
   counts.tags = tags.length;
   console.log(`Created ${tags.length} tags`);
 
   return { categories, tags };
 }
 
-/**
- * Seed posts, comments, and likes.
- * Relies on users, categories, and tags already being seeded.
- */
 export async function seedPostsCommentsLikes(
   ctx: SeedContext,
   counts: SeedCounts,
@@ -62,15 +48,14 @@ export async function seedPostsCommentsLikes(
   categories: Category[],
   tags: Tag[],
 ): Promise<Post[]> {
-  // Posts
+  // Build post data in batches with relations handled via connect
   const posts: Post[] = [];
   for (let i = 0; i < SEED_POSTS; i++) {
-    const postTags = faker.helpers.arrayElements(tags, faker.number.int({ min: 1, max: 4 }));
-    const postCategories = faker.helpers.arrayElements(
+    const tagIds = faker.helpers.arrayElements(tags, faker.number.int({ min: 1, max: 4 }));
+    const catIds = faker.helpers.arrayElements(
       categories.slice(0, 6),
       faker.number.int({ min: 1, max: 3 }),
     );
-
     posts.push(
       await ctx.prisma.post.create({
         data: {
@@ -78,8 +63,8 @@ export async function seedPostsCommentsLikes(
           content: faker.lorem.paragraphs({ min: 3, max: 8 }),
           published: faker.datatype.boolean(0.7),
           authorId: faker.helpers.arrayElement(users).id,
-          tags: { connect: postTags.map((t: Tag) => ({ id: t.id })) },
-          categories: { connect: postCategories.map((c: Category) => ({ id: c.id })) },
+          tags: { connect: tagIds.map((t) => ({ id: t.id })) },
+          categories: { connect: catIds.map((c) => ({ id: c.id })) },
         },
       }),
     );
@@ -87,31 +72,30 @@ export async function seedPostsCommentsLikes(
   counts.posts = posts.length;
   console.log(`Created ${posts.length} posts`);
 
-  // Comments
-  for (let i = 0; i < SEED_COMMENTS; i++) {
-    await ctx.prisma.comment.create({
-      data: {
-        content: faker.lorem.sentences({ min: 1, max: 3 }),
-        authorId: faker.helpers.arrayElement(users).id,
-        postId: faker.helpers.arrayElement(posts).id,
-      },
-    });
-  }
+  // Comments — bulk insert
+  const commentData = Array.from({ length: SEED_COMMENTS }, () => ({
+    content: faker.lorem.sentences({ min: 1, max: 3 }),
+    authorId: faker.helpers.arrayElement(users).id,
+    postId: faker.helpers.arrayElement(posts).id,
+  }));
+  await ctx.prisma.comment.createMany({ data: commentData });
   counts.comments = SEED_COMMENTS;
   console.log(`Created ${SEED_COMMENTS} comments`);
 
-  // Likes (enforce unique user+post pairs via Set)
-  const likePairs = new Set<string>();
+  // Likes — generate unique pairs upfront, then bulk insert
+  const likeSet = new Set<string>();
+  const likeData: Array<{ userId: string; postId: string }> = [];
   for (let i = 0; i < SEED_LIKES; i++) {
     const userId = faker.helpers.arrayElement(users).id;
     const postId = faker.helpers.arrayElement(posts).id;
     const key = `${userId}_${postId}`;
-    if (likePairs.has(key)) continue;
-    likePairs.add(key);
-    await ctx.prisma.like.create({ data: { userId, postId } });
+    if (likeSet.has(key)) continue;
+    likeSet.add(key);
+    likeData.push({ userId, postId });
   }
-  counts.likes = likePairs.size;
-  console.log(`Created ${likePairs.size} likes`);
+  await ctx.prisma.like.createMany({ data: likeData });
+  counts.likes = likeData.length;
+  console.log(`Created ${likeData.length} likes`);
 
   return posts;
 }

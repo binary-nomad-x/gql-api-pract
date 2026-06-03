@@ -2,80 +2,91 @@ import { faker } from "@faker-js/faker";
 import type { SeedContext, SeedCounts } from "./types.js";
 import type { User, Product } from "@prisma/client";
 
-/**
- * Seed addresses for every user, plus wishlists (first 30 users) and carts (first 40 users).
- */
+const WISHLIST_NAMES = ["Default", "Wishlist", "Favorites", "Gifts", "Dream Shopping"];
+
 export async function seedAccountRelated(
   ctx: SeedContext,
   counts: SeedCounts,
   users: User[],
   products: Product[],
 ): Promise<void> {
-  // Addresses: 1-3 per user
-  let addressCount = 0;
+  // Addresses — bulk insert
+  const addressData: Array<{
+    userId: string; label: string; street: string; city: string;
+    state: string; zip: string; country: string; isDefault: boolean;
+  }> = [];
   for (const user of users) {
     const numAddresses = faker.number.int({ min: 1, max: 3 });
     for (let i = 0; i < numAddresses; i++) {
-      await ctx.prisma.address.create({
-        data: {
-          userId: user.id,
-          label: i === 0 ? "Home" : i === 1 ? "Work" : "Other",
-          street: faker.location.streetAddress(),
-          city: faker.location.city(),
-          state: faker.location.state({ abbreviated: true }),
-          zip: faker.location.zipCode(),
-          country: "US",
-          isDefault: i === 0,
-        },
+      addressData.push({
+        userId: user.id,
+        label: i === 0 ? "Home" : i === 1 ? "Work" : "Other",
+        street: faker.location.streetAddress(),
+        city: faker.location.city(),
+        state: faker.location.state({ abbreviated: true }),
+        zip: faker.location.zipCode(),
+        country: "US",
+        isDefault: i === 0,
       });
-      addressCount++;
     }
   }
-  counts.addresses = addressCount;
+  await ctx.prisma.address.createMany({ data: addressData });
+  counts.addresses = addressData.length;
 
-  // Wishlists: first 30 users, 1-5 items each
-  let wishlistCount = 0;
-  let wishlistItemCount = 0;
-  const wishlistNames = ["Default", "Wishlist", "Favorites", "Gifts", "Dream Shopping"];
+  // Wishlists — need IDs back for items, so create individually then query back
+  const wishlistUsers = users.slice(0, 30);
+  const wishlistData = wishlistUsers.map((u) => ({
+    userId: u.id,
+    name: faker.helpers.arrayElement(WISHLIST_NAMES),
+  }));
+  await ctx.prisma.wishlist.createMany({ data: wishlistData });
+  const wishlists = await ctx.prisma.wishlist.findMany({
+    where: { userId: { in: wishlistUsers.map((u) => u.id) } },
+  });
+  counts.wishlists = wishlists.length;
 
-  for (const user of users.slice(0, 30)) {
-    const wl = await ctx.prisma.wishlist.create({
-      data: { userId: user.id, name: faker.helpers.arrayElement(wishlistNames) },
-    });
-    wishlistCount++;
-
+  // Wishlist items — bulk insert (ensure unique wishlistId + productId)
+  const wlItemPairSet = new Set<string>();
+  const wlItemData: Array<{ wishlistId: string; productId: string; note?: string }> = [];
+  for (const wl of wishlists) {
     const numItems = faker.number.int({ min: 1, max: 5 });
     const wlProducts = faker.helpers.arrayElements(products, numItems);
     for (const p of wlProducts) {
-      await ctx.prisma.wishlistItem.create({
-        data: {
-          wishlistId: wl.id,
-          productId: p.id,
-          note: faker.helpers.maybe(() => faker.lorem.sentence()) ?? undefined,
-        },
+      const key = `${wl.id}_${p.id}`;
+      if (wlItemPairSet.has(key)) continue;
+      wlItemPairSet.add(key);
+      wlItemData.push({
+        wishlistId: wl.id,
+        productId: p.id,
+        note: faker.helpers.maybe(() => faker.lorem.sentence()) ?? undefined,
       });
-      wishlistItemCount++;
     }
   }
-  counts.wishlists = wishlistCount;
-  counts.wishlistItems = wishlistItemCount;
+  await ctx.prisma.wishlistItem.createMany({ data: wlItemData });
+  counts.wishlistItems = wlItemData.length;
 
-  // Carts: first 40 users, 1-4 items each
-  let cartCount = 0;
-  let cartItemCount = 0;
-  for (const user of users.slice(0, 40)) {
-    const cart = await ctx.prisma.cart.create({ data: { userId: user.id } });
-    cartCount++;
+  // Carts — need IDs back for items
+  const cartUsers = users.slice(0, 40);
+  const cartData = cartUsers.map((u) => ({ userId: u.id }));
+  await ctx.prisma.cart.createMany({ data: cartData });
+  const carts = await ctx.prisma.cart.findMany({
+    where: { userId: { in: cartUsers.map((u) => u.id) } },
+  });
+  counts.carts = carts.length;
 
+  // Cart items — bulk insert (ensure unique cartId + productId)
+  const cartItemPairSet = new Set<string>();
+  const cartItemData: Array<{ cartId: string; productId: string; quantity: number }> = [];
+  for (const cart of carts) {
     const numItems = faker.number.int({ min: 1, max: 4 });
     const cartProducts = faker.helpers.arrayElements(products, numItems);
     for (const p of cartProducts) {
-      await ctx.prisma.cartItem.create({
-        data: { cartId: cart.id, productId: p.id, quantity: faker.number.int({ min: 1, max: 3 }) },
-      });
-      cartItemCount++;
+      const key = `${cart.id}_${p.id}`;
+      if (cartItemPairSet.has(key)) continue;
+      cartItemPairSet.add(key);
+      cartItemData.push({ cartId: cart.id, productId: p.id, quantity: faker.number.int({ min: 1, max: 3 }) });
     }
   }
-  counts.carts = cartCount;
-  counts.cartItems = cartItemCount;
+  await ctx.prisma.cartItem.createMany({ data: cartItemData });
+  counts.cartItems = cartItemData.length;
 }

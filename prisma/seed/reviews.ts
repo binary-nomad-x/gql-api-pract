@@ -3,9 +3,8 @@ import type { SeedContext, SeedCounts } from "./types.js";
 import type { User, Product } from "@prisma/client";
 
 /**
- * Seed product reviews.
- * Creates 1-5 reviewers per product for ~400 products.
- * Skips duplicate (user + product) constraint violations silently.
+ * Seed product reviews using bulk insert.
+ * Generates unique (productId + userId) pairs to avoid constraint violations.
  */
 export async function seedReviews(
   ctx: SeedContext,
@@ -14,29 +13,30 @@ export async function seedReviews(
   products: Product[],
 ): Promise<void> {
   const reviewableProducts = faker.helpers.arrayElements(products, 400);
-  let reviewCount = 0;
+  const usedPairs = new Set<string>();
+  const reviewData: Array<{
+    rating: number; title?: string; content?: string;
+    productId: string; userId: string;
+  }> = [];
 
   for (const product of reviewableProducts) {
     const numReviews = faker.number.int({ min: 1, max: 5 });
     const reviewers = faker.helpers.arrayElements(users, numReviews);
-
     for (const reviewer of reviewers) {
-      try {
-        await ctx.prisma.review.create({
-          data: {
-            rating: faker.number.int({ min: 1, max: 5 }),
-            title: faker.helpers.maybe(() => faker.lorem.sentence({ min: 3, max: 8 })) ?? undefined,
-            content: faker.helpers.maybe(() => faker.lorem.paragraph()) ?? undefined,
-            productId: product.id,
-            userId: reviewer.id,
-          },
-        });
-        reviewCount++;
-      } catch {
-        // Skip duplicate (productId_userId unique constraint)
-      }
+      const key = `${product.id}_${reviewer.id}`;
+      if (usedPairs.has(key)) continue;
+      usedPairs.add(key);
+      reviewData.push({
+        rating: faker.number.int({ min: 1, max: 5 }),
+        title: faker.helpers.maybe(() => faker.lorem.sentence({ min: 3, max: 8 })) ?? undefined,
+        content: faker.helpers.maybe(() => faker.lorem.paragraph()) ?? undefined,
+        productId: product.id,
+        userId: reviewer.id,
+      });
     }
   }
-  counts.reviews = reviewCount;
-  console.log(`Created ${reviewCount} reviews`);
+
+  await ctx.prisma.review.createMany({ data: reviewData });
+  counts.reviews = reviewData.length;
+  console.log(`Created ${reviewData.length} reviews`);
 }

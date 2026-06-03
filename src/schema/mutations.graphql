@@ -93,4 +93,18 @@ type Mutation {
 
   # Record view
   recordPostView(postId: ID!): PostView!
+
+  # Subscriptions
+  createSubscription(plan: SubscriptionPlan!): Subscription! @auth
+  cancelSubscription: Subscription! @auth
+
+  # Discounts
+  createDiscount(input: CreateDiscountInput!): Discount! @auth
+  updateDiscount(id: ID!, input: UpdateDiscountInput!): Discount! @auth
+  deleteDiscount(id: ID!): Boolean! @auth
+
+  # Conversations
+  startConversation(userId: ID!, title: String): Conversation! @auth
+  sendMessage(conversationId: ID!, content: String!): Message! @auth
+  markConversationRead(conversationId: ID!): Boolean! @auth
 }

@@ -101,6 +101,21 @@ import { ProductImageResolver } from "./productImage/resolver.js";
 // Stats
 import { StatsQueries } from "./stats/resolver.js";
 
+// Subscription
+import { SubscriptionResolver, SubscriptionQueries, SubscriptionMutations } from "./subscription/resolver.js";
+
+// Discount
+import { DiscountResolver, DiscountQueries, DiscountMutations } from "./discount/resolver.js";
+
+// Conversation
+import {
+  ConversationResolver,
+  ConversationParticipantResolver,
+  MessageResolver,
+  ConversationQueries,
+  ConversationMutations,
+} from "./conversation/resolver.js";
+
 export const resolvers = {
   Query: {
     ...UserQueries,
@@ -117,6 +132,9 @@ export const resolvers = {
     ...FollowQueries,
     ...SavedPostQueries,
     ...StatsQueries,
+    ...SubscriptionQueries,
+    ...DiscountQueries,
+    ...ConversationQueries,
   },
 
   Mutation: {
@@ -134,6 +152,9 @@ export const resolvers = {
     ...FollowMutations,
     ...SavedPostMutations,
     ...PostViewMutations,
+    ...SubscriptionMutations,
+    ...DiscountMutations,
+    ...ConversationMutations,
   },
 
   User: { ...UserResolver },
@@ -158,6 +179,11 @@ export const resolvers = {
   Refund: { ...RefundResolver },
   Order: { ...OrderResolver },
   OrderItem: { ...OrderItemResolver },
+  Subscription: { ...SubscriptionResolver },
+  Discount: { ...DiscountResolver },
+  Conversation: { ...ConversationResolver },
+  ConversationParticipant: { ...ConversationParticipantResolver },
+  Message: { ...MessageResolver },
 };
 
 export type ResolverContext = Context;

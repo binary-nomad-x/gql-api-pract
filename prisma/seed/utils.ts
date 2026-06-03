@@ -1,12 +1,13 @@
 import type { PrismaClient } from "@prisma/client";
 
-/**
- * Delete every row from every table in dependency order.
- * Uses a single transaction so the reset is atomic.
- */
 export async function resetDatabase(prisma: PrismaClient): Promise<void> {
   console.log("Resetting database...");
   await prisma.$transaction([
+    prisma.message.deleteMany(),
+    prisma.conversationParticipant.deleteMany(),
+    prisma.conversation.deleteMany(),
+    prisma.discount.deleteMany(),
+    prisma.subscription.deleteMany(),
     prisma.postView.deleteMany(),
     prisma.notification.deleteMany(),
     prisma.savedPost.deleteMany(),
@@ -35,7 +36,30 @@ export async function resetDatabase(prisma: PrismaClient): Promise<void> {
   ]);
 }
 
-/** Print elapsed time in seconds */
+/** Raw insert into Prisma implicit M2M join table for Post <-> Tag */
+export async function attachPostTags(
+  prisma: PrismaClient,
+  data: Array<{ postId: string; tagId: string }>,
+): Promise<void> {
+  if (data.length === 0) return;
+  const values = data.map((r) => `('${r.postId}','${r.tagId}')`).join(",");
+  await prisma.$executeRawUnsafe(
+    `INSERT INTO "_PostToTag" ("A","B") VALUES ${values} ON CONFLICT DO NOTHING`,
+  );
+}
+
+/** Raw insert into Prisma implicit M2M join table for Post <-> Category */
+export async function attachPostCategories(
+  prisma: PrismaClient,
+  data: Array<{ postId: string; categoryId: string }>,
+): Promise<void> {
+  if (data.length === 0) return;
+  const values = data.map((r) => `('${r.postId}','${r.categoryId}')`).join(",");
+  await prisma.$executeRawUnsafe(
+    `INSERT INTO "_PostToCategory" ("A","B") VALUES ${values} ON CONFLICT DO NOTHING`,
+  );
+}
+
 export function printElapsed(start: number): void {
   const elapsed = ((Date.now() - start) / 1000).toFixed(1);
   console.log(`Seeding complete in ${elapsed}s`);

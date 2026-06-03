@@ -83,4 +83,19 @@ type Query {
 
   # Stats
   stats: Stats!
+
+  # Subscriptions
+  mySubscription: Subscription @auth
+  subscriptions: [Subscription!]! @auth
+
+  # Discounts
+  activeDiscounts: [Discount!]!
+  productDiscounts(productId: ID!): [Discount!]!
+
+  # Conversations
+  myConversations: [Conversation!]! @auth
+  conversation(id: ID!): Conversation @auth
+
+  # Messages
+  messages(conversationId: ID!, limit: Int, offset: Int): [Message!]! @auth
 }

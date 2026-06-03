@@ -1,0 +1,27 @@
+type Conversation {
+  id: ID!
+  title: String
+  participants: [ConversationParticipant!]!
+  messages(limit: Int, offset: Int): [Message!]!
+  lastMessage: Message
+  messageCount: Int!
+  createdAt: DateTime!
+  updatedAt: DateTime!
+}
+
+type ConversationParticipant {
+  id: ID!
+  conversation: Conversation!
+  user: User!
+  lastReadAt: DateTime
+  joinedAt: DateTime!
+}
+
+type Message {
+  id: ID!
+  conversation: Conversation!
+  sender: User!
+  content: String!
+  createdAt: DateTime!
+  updatedAt: DateTime!
+}

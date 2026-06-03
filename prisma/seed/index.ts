@@ -1,8 +1,7 @@
 import "dotenv/config";
 import { PrismaClient } from "@prisma/client";
 import { PrismaPg } from "@prisma/adapter-pg";
-import type { SeedCounts } from "./types.js";
-import { createEmptyCounts } from "./types.js";
+import { createEmptyCounts, type SeedCounts } from "./types.js";
 import { resetDatabase, printElapsed } from "./utils.js";
 import { seedUsers } from "./users.js";
 import { seedCategoriesAndTags, seedPostsCommentsLikes } from "./content.js";
@@ -11,24 +10,23 @@ import { seedReviews } from "./reviews.js";
 import { seedAccountRelated } from "./account.js";
 import { seedPromotions } from "./promotions.js";
 import { seedRemaining } from "./notifications.js";
+import { seedSubscriptions } from "./subscriptions.js";
+import { seedDiscounts } from "./discounts.js";
+import { seedConversations } from "./conversations.js";
 
 const adapter = new PrismaPg({ connectionString: process.env.DATABASE_URL });
 const prisma = new PrismaClient({ adapter });
 
 async function main(): Promise<void> {
   const flag = process.argv[2] ?? "";
-  const shouldReset = flag === "--reset" || flag === "-r";
-  const shouldFresh = flag === "--fresh" || flag === "-f";
 
-  // --reset: delete all data and exit
-  if (shouldReset) {
+  if (flag === "--reset" || flag === "-r") {
     await resetDatabase(prisma);
     console.log("Database reset complete.");
     return;
   }
 
-  // --fresh: delete all data before seeding
-  if (shouldFresh) {
+  if (flag === "--fresh" || flag === "-f") {
     await resetDatabase(prisma);
     console.log("Database reset complete. Now seeding...\n");
   }
@@ -37,28 +35,49 @@ async function main(): Promise<void> {
   const start = Date.now();
   const counts: SeedCounts = createEmptyCounts();
 
-  const users = await seedUsers({ prisma }, counts);
+  // Phase 1 — independent
+  console.log("[Phase 1] Users, Categories, Tags...");
+  const [users, { categories, tags }] = await Promise.all([
+    seedUsers({ prisma }, counts),
+    seedCategoriesAndTags({ prisma }, counts),
+  ]);
 
-  const { categories, tags } = await seedCategoriesAndTags({ prisma }, counts);
+  // Phase 2 — posts, products (depend on users+categories+tags)
+  console.log("[Phase 2] Posts, Products...");
+  const [posts, { products }] = await Promise.all([
+    seedPostsCommentsLikes({ prisma }, counts, users, categories, tags),
+    seedCommerce({ prisma }, counts, users, categories),
+  ]);
 
-  const posts = await seedPostsCommentsLikes({ prisma }, counts, users, categories, tags);
+  // Phase 3 — comments/likes (from posts), reviews/addresses/wishlists/carts (from products+users)
+  console.log("[Phase 3] Reviews, Addresses, Account-related...");
+  await Promise.all([
+    seedReviews({ prisma }, counts, users, products),
+    seedAccountRelated({ prisma }, counts, users, products),
+  ]);
 
-  const { products, orders } = await seedCommerce({ prisma }, counts, users, categories);
-
-  await seedReviews({ prisma }, counts, users, products);
-
-  await seedAccountRelated({ prisma }, counts, users, products);
-
+  // Phase 4 — promotions (from orders — already seeded inside commerce)
+  console.log("[Phase 4] Coupons, Shipments...");
+  // Orders are already created inside seedCommerce; load them fresh
+  const orders = await prisma.order.findMany();
   await seedPromotions({ prisma }, counts, orders);
 
-  await seedRemaining({ prisma }, counts, users, posts, products);
+  // Phase 5 — everything else (all independent of each other, depend on users/posts/products)
+  console.log("[Phase 5] Notifications, Follows, SavedPosts, PostViews, ProductImages, Subscriptions, Discounts...");
+  await Promise.all([
+    seedRemaining({ prisma }, counts, users, posts, products),
+    seedSubscriptions({ prisma }, counts, users),
+    seedDiscounts({ prisma }, counts, products),
+  ]);
+
+  // Phase 6 — conversations + messages (needs users)
+  console.log("[Phase 6] Conversations, Messages...");
+  await seedConversations({ prisma }, counts, users);
 
   // Summary
   printElapsed(start);
-  console.log(
-    `Summary: ${counts.users} users, ${counts.products} products, ${counts.orders} orders, ` +
-    `${counts.reviews} reviews, ${counts.notifications} notifications, ${counts.postViews} post views`,
-  );
+  console.log(`Summary: ${counts.users} users, ${counts.products} products, ${counts.orders} orders, ` +
+    `${counts.messages} messages, ${counts.postViews} post views, ${counts.productImages} product images`);
   console.log(
     "\nTest accounts (password123): alice@test.com (ADMIN), bob@test.com (USER), " +
     "charlie@test.com (USER), diana@test.com (MODERATOR), eve@test.com (USER)",

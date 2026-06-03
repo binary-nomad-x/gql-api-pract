@@ -58,4 +58,26 @@ enum NotificationType {
   NEW_LIKE
   REVIEW_REPLY
   PROMOTION
+  NEW_MESSAGE
+  SUBSCRIPTION_EXPIRING
+  DISCOUNT_AVAILABLE
+}
+
+enum SubscriptionPlan {
+  FREE
+  BASIC
+  PREMIUM
+  ENTERPRISE
+}
+
+enum SubscriptionStatus {
+  ACTIVE
+  CANCELLED
+  PAST_DUE
+  EXPIRED
+}
+
+enum DiscountType {
+  PERCENTAGE
+  FIXED_AMOUNT
 }

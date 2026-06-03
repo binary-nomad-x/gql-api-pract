@@ -28,6 +28,9 @@ model User {
   followers Follow[]  @relation("FollowingRelation")
   following Follow[]  @relation("FollowerRelation")
   savedPosts SavedPost[]
+  subscriptions Subscription[]
+  conversations ConversationParticipant[]
+  sentMessages Message[]
   createdAt DateTime  @default(now())
   updatedAt DateTime  @updatedAt
 
@@ -205,6 +208,7 @@ model Product {
   reviews     Review[]
   wishlistItems WishlistItem[]
   cartItems   CartItem[]
+  discounts   Discount[]
   createdAt   DateTime     @default(now())
   updatedAt   DateTime     @updatedAt
 
@@ -429,6 +433,88 @@ model Notification {
   @@map("notifications")
 }
 
+// ==================== Subscription Model ====================
+model Subscription {
+  id          String             @id @default(cuid())
+  userId      String
+  user        User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+  plan        SubscriptionPlan
+  status      SubscriptionStatus @default(ACTIVE)
+  startDate   DateTime
+  endDate     DateTime?
+  autoRenew   Boolean            @default(true)
+  cancelledAt DateTime?
+  createdAt   DateTime           @default(now())
+  updatedAt   DateTime           @updatedAt
+
+  @@index([userId])
+  @@index([status])
+  @@map("subscriptions")
+}
+
+// ==================== Discount Model ====================
+model Discount {
+  id        String       @id @default(cuid())
+  productId String
+  product   Product      @relation(fields: [productId], references: [id], onDelete: Cascade)
+  name      String
+  type      DiscountType
+  value     Float
+  startDate DateTime
+  endDate   DateTime
+  isActive  Boolean      @default(true)
+  maxUsage  Int          @default(0)
+  usedCount Int          @default(0)
+  createdAt DateTime     @default(now())
+  updatedAt DateTime     @updatedAt
+
+  @@index([productId])
+  @@index([startDate, endDate])
+  @@map("discounts")
+}
+
+// ==================== Conversation Model ====================
+model Conversation {
+  id           String                    @id @default(cuid())
+  title        String?
+  participants ConversationParticipant[]
+  messages     Message[]
+  createdAt    DateTime                  @default(now())
+  updatedAt    DateTime                  @updatedAt
+
+  @@map("conversations")
+}
+
+// ==================== ConversationParticipant Model ====================
+model ConversationParticipant {
+  id              String       @id @default(cuid())
+  conversationId  String
+  conversation    Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  userId          String
+  user            User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  lastReadAt      DateTime?
+  joinedAt        DateTime     @default(now())
+
+  @@unique([conversationId, userId])
+  @@map("conversation_participants")
+}
+
+// ==================== Message Model ====================
+model Message {
+  id              String       @id @default(cuid())
+  conversationId  String
+  conversation    Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  senderId        String
+  sender          User         @relation(fields: [senderId], references: [id], onDelete: Cascade)
+  content         String
+  createdAt       DateTime     @default(now())
+  updatedAt       DateTime     @updatedAt
+
+  @@index([conversationId])
+  @@index([senderId])
+  @@map("messages")
+}
+
 // ==================== Enums ====================
 enum Role {
   USER
@@ -486,4 +572,26 @@ enum NotificationType {
   NEW_LIKE
   REVIEW_REPLY
   PROMOTION
+  NEW_MESSAGE
+  SUBSCRIPTION_EXPIRING
+  DISCOUNT_AVAILABLE
+}
+
+enum SubscriptionPlan {
+  FREE
+  BASIC
+  PREMIUM
+  ENTERPRISE
+}
+
+enum SubscriptionStatus {
+  ACTIVE
+  CANCELLED
+  PAST_DUE
+  EXPIRED
+}
+
+enum DiscountType {
+  PERCENTAGE
+  FIXED_AMOUNT
 }

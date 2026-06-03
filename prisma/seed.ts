@@ -7,12 +7,12 @@ import { faker } from "@faker-js/faker";
 const adapter = new PrismaPg({ connectionString: process.env.DATABASE_URL });
 const prisma = new PrismaClient({ adapter });
 
-const SEED_USERS = 50;
-const SEED_PRODUCTS = 500;
-const SEED_ORDERS = 500;
-const SEED_POSTS = 50;
-const SEED_COMMENTS = 200;
-const SEED_LIKES = 300;
+const SEED_USERS = 200;
+const SEED_PRODUCTS = 2000;
+const SEED_ORDERS = 2000;
+const SEED_POSTS = 200;
+const SEED_COMMENTS = 800;
+const SEED_LIKES = 1200;
 
 async function main() {
   const flag = process.argv[2] || "";

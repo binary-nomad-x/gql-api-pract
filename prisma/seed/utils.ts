@@ -36,27 +36,43 @@ export async function resetDatabase(prisma: PrismaClient): Promise<void> {
   ]);
 }
 
-/** Raw insert into Prisma implicit M2M join table for Post <-> Tag */
+/** Group a flat post-tag array by postId and connect via Prisma */
 export async function attachPostTags(
   prisma: PrismaClient,
   data: Array<{ postId: string; tagId: string }>,
 ): Promise<void> {
-  if (data.length === 0) return;
-  const values = data.map((r) => `('${r.postId}','${r.tagId}')`).join(",");
-  await prisma.$executeRawUnsafe(
-    `INSERT INTO "_PostToTag" ("A","B") VALUES ${values} ON CONFLICT DO NOTHING`,
+  const grouped = new Map<string, string[]>();
+  for (const { postId, tagId } of data) {
+    if (!grouped.has(postId)) grouped.set(postId, []);
+    grouped.get(postId)!.push(tagId);
+  }
+  await Promise.all(
+    Array.from(grouped.entries()).map(([postId, tagIds]) =>
+      prisma.post.update({
+        where: { id: postId },
+        data: { tags: { connect: tagIds.map((id) => ({ id })) } },
+      }),
+    ),
   );
 }
 
-/** Raw insert into Prisma implicit M2M join table for Post <-> Category */
+/** Group a flat post-category array by postId and connect via Prisma */
 export async function attachPostCategories(
   prisma: PrismaClient,
   data: Array<{ postId: string; categoryId: string }>,
 ): Promise<void> {
-  if (data.length === 0) return;
-  const values = data.map((r) => `('${r.postId}','${r.categoryId}')`).join(",");
-  await prisma.$executeRawUnsafe(
-    `INSERT INTO "_PostToCategory" ("A","B") VALUES ${values} ON CONFLICT DO NOTHING`,
+  const grouped = new Map<string, string[]>();
+  for (const { postId, categoryId } of data) {
+    if (!grouped.has(postId)) grouped.set(postId, []);
+    grouped.get(postId)!.push(categoryId);
+  }
+  await Promise.all(
+    Array.from(grouped.entries()).map(([postId, categoryIds]) =>
+      prisma.post.update({
+        where: { id: postId },
+        data: { categories: { connect: categoryIds.map((id) => ({ id })) } },
+      }),
+    ),
   );
 }
 

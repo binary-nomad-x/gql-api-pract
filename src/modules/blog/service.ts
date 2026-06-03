@@ -2,6 +2,7 @@ import type { PrismaClient } from "@prisma/client";
 import type { CreatePostInput, UpdatePostInput, CreateCommentInput, CreateCategoryInput } from "@gql-prisma-api/types/inputs.js";
 import { requireAuth, requireOwner } from "@gql-prisma-api/utils/errors.js";
 import { triggerNovuWorkflow } from "@gql-prisma-api/utils/novu.js";
+import { logger } from "@gql-prisma-api/utils/logger.js";
 
 export async function createPost(
   prisma: PrismaClient,
@@ -9,7 +10,7 @@ export async function createPost(
   input: CreatePostInput,
 ) {
   requireAuth(userId);
-  return prisma.post.create({
+  const post = await prisma.post.create({
     data: {
       title: input.title,
       content: input.content ?? null,
@@ -26,6 +27,8 @@ export async function createPost(
       },
     },
   });
+  logger.info("Post created", { postId: post.id, authorId: userId! });
+  return post;
 }
 
 export async function updatePost(
@@ -50,6 +53,7 @@ export async function deletePost(
   if (!post) throw new Error("Post not found");
   requireOwner(post.authorId, userId);
   await prisma.post.delete({ where: { id } });
+  logger.info("Post deleted", { postId: id });
   return true;
 }
 
@@ -103,6 +107,7 @@ export async function createComment(
   if (post.authorId !== userId) {
     await triggerNovuWorkflow(post.authorId, "comment-on-post", { postId: input.postId, commentId: comment.id, commenterId: userId! });
   }
+  logger.info("Comment created", { commentId: comment.id, postId: input.postId, authorId: userId! });
   return comment;
 }
 

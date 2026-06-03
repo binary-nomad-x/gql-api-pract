@@ -1,13 +1,8 @@
 import type { PrismaClient } from "@prisma/client";
-import type {
-  CreateProductInput,
-  UpdateProductInput,
-  PlaceOrderInput,
-  ProcessPaymentInput,
-  CreateRefundInput,
-} from "@gql-prisma-api/types/inputs.js";
+import type { CreateProductInput, UpdateProductInput, PlaceOrderInput, ProcessPaymentInput, CreateRefundInput } from "@gql-prisma-api/types/inputs.js";
 import { requireAuth, requireOwner } from "@gql-prisma-api/utils/errors.js";
 import { triggerNovuWorkflow } from "@gql-prisma-api/utils/novu.js";
+import { logger } from "@gql-prisma-api/utils/logger.js";
 
 export async function createProduct(
   prisma: PrismaClient,
@@ -148,6 +143,7 @@ export async function placeOrder(
     itemCount: input.items.length,
   });
 
+  logger.info("Order placed", { orderId: order.id, userId: userId!, totalAmount, itemCount: input.items.length });
   return order;
 }
 
@@ -183,6 +179,7 @@ export async function cancelOrder(
 
   await triggerNovuWorkflow(userId!, "order-cancelled", { orderId: id });
 
+  logger.info("Order cancelled", { orderId: id, userId: userId! });
   return updated;
 }
 

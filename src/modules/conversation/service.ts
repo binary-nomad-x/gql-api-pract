@@ -1,5 +1,6 @@
 import type { PrismaClient } from "@prisma/client";
 import { requireAuth } from "@gql-prisma-api/utils/errors.js";
+import { logger } from "@gql-prisma-api/utils/logger.js";
 
 export async function startConversation(
   prisma: PrismaClient,
@@ -11,7 +12,7 @@ export async function startConversation(
   if (targetUserId === userId) throw new Error("Cannot start conversation with yourself");
   const target = await prisma.user.findUnique({ where: { id: targetUserId } });
   if (!target) throw new Error("User not found");
-  return prisma.conversation.create({
+  const conv = await prisma.conversation.create({
     data: {
       title,
       participants: {
@@ -25,6 +26,8 @@ export async function startConversation(
     },
     include: { participants: { include: { user: true } } },
   });
+  logger.info("Conversation started", { conversationId: conv.id, userId: userId!, targetUserId });
+  return conv;
 }
 
 export async function sendMessage(
@@ -46,6 +49,7 @@ export async function sendMessage(
     where: { conversationId, userId: userId! },
     data: { lastReadAt: new Date() },
   });
+  logger.info("Message sent", { messageId: message.id, conversationId, senderId: userId! });
   return message;
 }
 

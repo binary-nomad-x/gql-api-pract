@@ -1,5 +1,6 @@
 import type { PrismaClient, SubscriptionPlan } from "@prisma/client";
 import { requireAuth } from "@gql-prisma-api/utils/errors.js";
+import { logger } from "@gql-prisma-api/utils/logger.js";
 
 export async function createSubscription(
   prisma: PrismaClient,
@@ -11,9 +12,11 @@ export async function createSubscription(
     where: { userId: userId!, status: "ACTIVE" },
   });
   if (existing) throw new Error("Already have an active subscription");
-  return prisma.subscription.create({
+  const sub = await prisma.subscription.create({
     data: { userId: userId!, plan, startDate: new Date() },
   });
+  logger.info("Subscription created", { userId: userId!, plan, subscriptionId: sub.id });
+  return sub;
 }
 
 export async function cancelSubscription(
@@ -25,10 +28,12 @@ export async function cancelSubscription(
     where: { userId: userId!, status: "ACTIVE" },
   });
   if (!sub) throw new Error("No active subscription found");
-  return prisma.subscription.update({
+  const updated = await prisma.subscription.update({
     where: { id: sub.id },
     data: { status: "CANCELLED", cancelledAt: new Date(), autoRenew: false },
   });
+  logger.info("Subscription cancelled", { userId: userId!, subscriptionId: sub.id });
+  return updated;
 }
 
 export async function getMySubscription(

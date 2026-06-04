@@ -1,0 +1,19 @@
+input CreateAddressInput {
+  label: String
+  street: String!
+  city: String!
+  state: String
+  zip: String!
+  country: String
+  isDefault: Boolean
+}
+
+input UpdateAddressInput {
+  label: String
+  street: String
+  city: String
+  state: String
+  zip: String
+  country: String
+  isDefault: Boolean
+}

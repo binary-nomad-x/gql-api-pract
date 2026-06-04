@@ -1,0 +1,9 @@
+fragment NotificationBasic on Notification {
+  id
+  type
+  title
+  message
+  link
+  isRead
+  createdAt
+}

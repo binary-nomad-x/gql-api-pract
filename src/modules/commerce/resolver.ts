@@ -3,7 +3,7 @@ import type { Parent, IdArg, ProductFilterArgs, PaginationArgs } from "@gql-pris
 import type {
   CreateProductInput, UpdateProductInput, PlaceOrderInput,
   ProcessPaymentInput, CreateRefundInput,
-} from "@gql-prisma-api/types/inputs.js";
+} from "@gql-prisma-api/modules/commerce/inputs.js";
 import {
   createProduct, updateProduct, deleteProduct,
   placeOrder, cancelOrder, updateOrderStatus,

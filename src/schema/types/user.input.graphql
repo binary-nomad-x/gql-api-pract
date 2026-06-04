@@ -1,0 +1,11 @@
+input CreateUserInput {
+  email: String!
+  name: String
+  password: String!
+}
+
+input UpdateUserInput {
+  name: String
+  email: String
+  password: String
+}

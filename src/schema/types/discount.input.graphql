@@ -1,0 +1,18 @@
+input CreateDiscountInput {
+  productId: ID!
+  name: String!
+  type: DiscountType!
+  value: Float!
+  startDate: DateTime!
+  endDate: DateTime!
+  maxUsage: Int
+}
+
+input UpdateDiscountInput {
+  name: String
+  value: Float
+  startDate: DateTime
+  endDate: DateTime
+  isActive: Boolean
+  maxUsage: Int
+}

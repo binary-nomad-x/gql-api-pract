@@ -1,0 +1,10 @@
+input CreateCouponInput {
+  code: String!
+  description: String
+  discountPercent: Float
+  discountAmount: Float
+  minPurchase: Float
+  maxUses: Int
+  isActive: Boolean
+  expiresAt: DateTime
+}

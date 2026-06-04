@@ -1,5 +1,5 @@
 import type { PrismaClient, ShipmentStatus } from "@prisma/client";
-import type { CreateShipmentInput } from "@gql-prisma-api/types/inputs.js";
+import type { CreateShipmentInput } from "@gql-prisma-api/modules/shipment/inputs.js";
 import { requireAuth } from "@gql-prisma-api/utils/errors.js";
 import { triggerNovuWorkflow } from "@gql-prisma-api/utils/novu.js";
 

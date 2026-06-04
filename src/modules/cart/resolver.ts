@@ -1,6 +1,6 @@
 import type { Context } from "@gql-prisma-api/types/context.js";
 import type { Parent } from "@gql-prisma-api/types/graphql.js";
-import type { AddToCartInput, UpdateCartItemInput } from "@gql-prisma-api/types/inputs.js";
+import type { AddToCartInput, UpdateCartItemInput } from "@gql-prisma-api/modules/cart/inputs.js";
 import {
   addToCart, updateCartItem, removeFromCart, clearCart,
   getMyCart,

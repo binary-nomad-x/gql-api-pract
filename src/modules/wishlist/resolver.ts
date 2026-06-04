@@ -1,6 +1,6 @@
 import type { Context } from "@gql-prisma-api/types/context.js";
 import type { Parent, IdArg } from "@gql-prisma-api/types/graphql.js";
-import type { CreateWishlistInput, AddToWishlistInput } from "@gql-prisma-api/types/inputs.js";
+import type { CreateWishlistInput, AddToWishlistInput } from "@gql-prisma-api/modules/wishlist/inputs.js";
 import {
   createWishlist, addToWishlist, removeFromWishlist, deleteWishlist,
   getMyWishlists, getWishlist,

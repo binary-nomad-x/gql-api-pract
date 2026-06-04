@@ -1,5 +1,5 @@
 import type { PrismaClient, Prisma, OrderStatus, PaymentMethod, PaymentStatus, RefundStatus } from "@prisma/client";
-import type { CreateProductInput, UpdateProductInput, PlaceOrderInput, ProcessPaymentInput, CreateRefundInput } from "@gql-prisma-api/types/inputs.js";
+import type { CreateProductInput, UpdateProductInput, PlaceOrderInput, ProcessPaymentInput, CreateRefundInput } from "@gql-prisma-api/modules/commerce/inputs.js";
 import { requireAuth, requireOwner } from "@gql-prisma-api/utils/errors.js";
 import { triggerNovuWorkflow } from "@gql-prisma-api/utils/novu.js";
 import { logger } from "@gql-prisma-api/utils/logger.js";

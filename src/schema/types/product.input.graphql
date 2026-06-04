@@ -1,0 +1,19 @@
+input CreateProductInput {
+  name: String!
+  description: String
+  price: Float!
+  stock: Int!
+  sku: String!
+  imageUrl: String
+  categorySlug: String
+}
+
+input UpdateProductInput {
+  name: String
+  description: String
+  price: Float
+  stock: Int
+  imageUrl: String
+  isActive: Boolean
+  categorySlug: String
+}

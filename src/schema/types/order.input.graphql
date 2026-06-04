@@ -1,0 +1,22 @@
+input PlaceOrderInput {
+  items: [OrderItemInput!]!
+  shippingAddress: String
+  couponCode: String
+}
+
+input OrderItemInput {
+  productId: ID!
+  quantity: Int!
+}
+
+input ProcessPaymentInput {
+  orderId: ID!
+  method: PaymentMethod!
+}
+
+input CreateRefundInput {
+  paymentId: ID!
+  orderId: ID!
+  amount: Float!
+  reason: String
+}

@@ -1,6 +1,6 @@
 import type { Context } from "@gql-prisma-api/types/context.js";
 import type { Parent, IdArg, PaginationArgs } from "@gql-prisma-api/types/graphql.js";
-import type { CreateReviewInput } from "@gql-prisma-api/types/inputs.js";
+import type { CreateReviewInput } from "@gql-prisma-api/modules/review/inputs.js";
 import {
   createReview, deleteReview,
   getReviews, getReview,

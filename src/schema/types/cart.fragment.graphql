@@ -1,0 +1,12 @@
+fragment CartFull on Cart {
+  id
+  itemCount
+  totalAmount
+  items {
+    id
+    quantity
+    product {
+      ...ProductBasic
+    }
+  }
+}

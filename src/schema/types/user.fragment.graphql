@@ -1,0 +1,20 @@
+fragment UserBasic on User {
+  id
+  email
+  name
+  role
+}
+
+fragment UserFull on User {
+  ...UserBasic
+  profile {
+    ...ProfileBasic
+  }
+  posts {
+    id
+    title
+    published
+  }
+  createdAt
+  updatedAt
+}

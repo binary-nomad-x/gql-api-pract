@@ -1,0 +1,10 @@
+fragment AddressBasic on Address {
+  id
+  label
+  street
+  city
+  state
+  zip
+  country
+  isDefault
+}

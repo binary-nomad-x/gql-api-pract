@@ -1,0 +1,9 @@
+input CreateWishlistInput {
+  name: String
+}
+
+input AddToWishlistInput {
+  wishlistId: ID!
+  productId: ID!
+  note: String
+}

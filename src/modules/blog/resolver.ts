@@ -1,6 +1,6 @@
 import type { Context } from "@gql-prisma-api/types/context.js";
 import type { Parent, IdArg, PostFilterArgs } from "@gql-prisma-api/types/graphql.js";
-import type { CreatePostInput, UpdatePostInput, CreateCommentInput, CreateCategoryInput } from "@gql-prisma-api/types/inputs.js";
+import type { CreatePostInput, UpdatePostInput, CreateCommentInput, CreateCategoryInput } from "@gql-prisma-api/modules/blog/inputs.js";
 import {
   createPost, updatePost, deletePost, publishPost, unpublishPost,
   createTag, createCategory, createComment, deleteComment, toggleLike,

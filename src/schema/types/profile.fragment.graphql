@@ -1,0 +1,6 @@
+fragment ProfileBasic on Profile {
+  id
+  bio
+  avatar
+  phone
+}

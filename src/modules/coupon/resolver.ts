@@ -1,6 +1,6 @@
 import type { Context } from "@gql-prisma-api/types/context.js";
 import type { Parent } from "@gql-prisma-api/types/graphql.js";
-import type { CreateCouponInput } from "@gql-prisma-api/types/inputs.js";
+import type { CreateCouponInput } from "@gql-prisma-api/modules/coupon/inputs.js";
 import { createCoupon, getCouponByCode } from "./service.js";
 
 export const CouponResolver = {

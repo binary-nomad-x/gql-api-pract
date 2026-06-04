@@ -1,6 +1,6 @@
 import type { Context } from "@gql-prisma-api/types/context.js";
 import type { Parent } from "@gql-prisma-api/types/graphql.js";
-import type { CreateDiscountInput, UpdateDiscountInput } from "@gql-prisma-api/types/inputs.js";
+import type { CreateDiscountInput, UpdateDiscountInput } from "@gql-prisma-api/modules/discount/inputs.js";
 import {
   createDiscount, updateDiscount, deleteDiscount,
   getActiveDiscounts, getProductDiscounts,

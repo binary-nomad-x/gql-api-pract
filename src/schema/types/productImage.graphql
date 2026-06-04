@@ -1,8 +1,0 @@
-type ProductImage {
-  id: ID!
-  product: Product!
-  url: String!
-  alt: String
-  sortOrder: Int!
-  createdAt: DateTime!
-}

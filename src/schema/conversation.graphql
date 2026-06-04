@@ -25,3 +25,15 @@ type Message {
   createdAt: DateTime!
   updatedAt: DateTime!
 }
+
+extend type Query {
+  myConversations: [Conversation!]! @auth
+  conversation(id: ID!): Conversation @auth
+  messages(conversationId: ID!, limit: Int, offset: Int): [Message!]! @auth
+}
+
+extend type Mutation {
+  startConversation(userId: ID!, title: String): Conversation! @auth
+  sendMessage(conversationId: ID!, content: String!): Message! @auth
+  markConversationRead(conversationId: ID!): Boolean! @auth
+}

@@ -1,4 +1,0 @@
-input PaginationInput {
-  limit: Int
-  offset: Int
-}

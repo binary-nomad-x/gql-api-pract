@@ -10,3 +10,13 @@ type Subscription {
   createdAt: DateTime!
   updatedAt: DateTime!
 }
+
+extend type Query {
+  mySubscription: Subscription @auth
+  subscriptions: [Subscription!]! @auth
+}
+
+extend type Mutation {
+  createSubscription(plan: SubscriptionPlan!): Subscription! @auth
+  cancelSubscription: Subscription! @auth
+}

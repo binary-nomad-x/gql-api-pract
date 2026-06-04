@@ -1,7 +1,0 @@
-type Tag {
-  id: ID!
-  name: String!
-  posts: [Post!]!
-  postCount: Int!
-  createdAt: DateTime!
-}

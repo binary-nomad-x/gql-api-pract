@@ -1,5 +1,0 @@
-input CreateCategoryInput {
-  name: String!
-  slug: String!
-  description: String
-}

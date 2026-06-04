@@ -1,6 +1,0 @@
-type SavedPost {
-  id: ID!
-  user: User!
-  post: Post!
-  createdAt: DateTime!
-}

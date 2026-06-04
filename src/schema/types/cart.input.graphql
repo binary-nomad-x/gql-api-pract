@@ -1,9 +1,0 @@
-input AddToCartInput {
-  productId: ID!
-  quantity: Int
-}
-
-input UpdateCartItemInput {
-  productId: ID!
-  quantity: Int!
-}

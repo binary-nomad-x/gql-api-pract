@@ -1,0 +1,80 @@
+type User {
+  id: ID!
+  email: String!
+  name: String
+  role: Role!
+  profile: Profile
+  posts: [Post!]!
+  comments: [Comment!]!
+  likes: [Like!]!
+  products: [Product!]!
+  orders: [Order!]!
+  reviews: [Review!]!
+  addresses: [Address!]!
+  wishlists: [Wishlist!]!
+  cart: Cart
+  notifications: [Notification!]!
+  followers: [Follow!]!
+  following: [Follow!]!
+  savedPosts: [SavedPost!]!
+  postViews: [PostView!]!
+  createdAt: DateTime!
+  updatedAt: DateTime!
+}
+
+type Profile {
+  id: ID!
+  bio: String
+  avatar: String
+  phone: String
+  address: String
+  user: User!
+  createdAt: DateTime!
+  updatedAt: DateTime!
+}
+
+input UpdateUserInput {
+  name: String
+  email: String
+  password: String
+}
+
+fragment UserBasic on User {
+  id
+  email
+  name
+  role
+}
+
+fragment UserFull on User {
+  ...UserBasic
+  profile {
+    ...ProfileBasic
+  }
+  posts {
+    id
+    title
+    published
+  }
+  createdAt
+  updatedAt
+}
+
+fragment ProfileBasic on Profile {
+  id
+  bio
+  avatar
+  phone
+}
+
+extend type Query {
+  users: [User!]! @auth
+  user(id: ID!): User @auth
+  me: User @auth
+}
+
+extend type Mutation {
+  updateUser(id: ID!, input: UpdateUserInput!): User! @auth
+  deleteUser(id: ID!): Boolean! @auth
+  updateProfile(bio: String, avatar: String, phone: String, address: String): Profile! @auth
+}

@@ -5,21 +5,11 @@ import { fileURLToPath } from "url";
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
-const TYPES_DIR = join(__dirname, "types");
-
-function load(file: string): string {
-  return readFileSync(join(__dirname, file), "utf8");
-}
-
-function loadTypeFiles(): string[] {
-  const files = readdirSync(TYPES_DIR).filter(
+function load(dir: string): string[] {
+  const files = readdirSync(join(__dirname, dir)).filter(
     (f) => f.endsWith(".graphql"),
   );
-  return files.map((f) => readFileSync(join(TYPES_DIR, f), "utf8"));
+  return files.map((f) => readFileSync(join(__dirname, dir, f), "utf8"));
 }
 
-export const typeDefs = [
-  ...loadTypeFiles(),
-  load("./queries.graphql"),
-  load("./mutations.graphql"),
-].join("\n");
+export const typeDefs = load(".").join("\n");

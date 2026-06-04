@@ -2,6 +2,10 @@ scalar DateTime
 
 directive @auth on FIELD_DEFINITION
 
+type Query
+
+type Mutation
+
 enum Role {
   USER
   ADMIN
@@ -80,4 +84,21 @@ enum SubscriptionStatus {
 enum DiscountType {
   PERCENTAGE
   FIXED_AMOUNT
+}
+
+input PaginationInput {
+  limit: Int
+  offset: Int
+}
+
+type MutationResponse {
+  success: Boolean!
+  message: String
+}
+
+type PageInfo {
+  total: Int!
+  limit: Int!
+  offset: Int!
+  hasMore: Boolean!
 }

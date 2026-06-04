@@ -21,3 +21,7 @@ type Stats {
   totalSavedPosts: Int!
   totalPostViews: Int!
 }
+
+extend type Query {
+  stats: Stats!
+}

@@ -1,0 +1,51 @@
+type Cart {
+  id: ID!
+  user: User!
+  items: [CartItem!]!
+  totalAmount: Float!
+  itemCount: Int!
+  createdAt: DateTime!
+  updatedAt: DateTime!
+}
+
+type CartItem {
+  id: ID!
+  cart: Cart!
+  product: Product!
+  quantity: Int!
+  createdAt: DateTime!
+}
+
+input AddToCartInput {
+  productId: ID!
+  quantity: Int
+}
+
+input UpdateCartItemInput {
+  productId: ID!
+  quantity: Int!
+}
+
+fragment CartFull on Cart {
+  id
+  itemCount
+  totalAmount
+  items {
+    id
+    quantity
+    product {
+      ...ProductBasic
+    }
+  }
+}
+
+extend type Query {
+  myCart: Cart @auth
+}
+
+extend type Mutation {
+  addToCart(input: AddToCartInput!): Cart! @auth
+  updateCartItem(input: UpdateCartItemInput!): Cart! @auth
+  removeFromCart(productId: ID!): Cart! @auth
+  clearCart: Cart! @auth
+}

@@ -1,6 +1,0 @@
-input CreateShipmentInput {
-  orderId: ID!
-  carrier: String!
-  trackingNumber: String!
-  estimatedDelivery: DateTime
-}

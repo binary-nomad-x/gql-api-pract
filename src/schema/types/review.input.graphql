@@ -1,6 +1,0 @@
-input CreateReviewInput {
-  rating: Int!
-  title: String
-  content: String
-  productId: ID!
-}

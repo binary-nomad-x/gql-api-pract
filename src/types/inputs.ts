@@ -145,6 +145,13 @@ export interface CreateShipmentInput {
   estimatedDelivery?: string | null;
 }
 
+export interface UpdateProfileInput {
+  bio?: string | null;
+  avatar?: string | null;
+  phone?: string | null;
+  address?: string | null;
+}
+
 export interface CreateDiscountInput {
   productId: string;
   name: string;

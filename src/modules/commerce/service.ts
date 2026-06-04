@@ -1,4 +1,4 @@
-import type { PrismaClient } from "@prisma/client";
+import type { PrismaClient, Prisma, OrderStatus, PaymentMethod, PaymentStatus, RefundStatus } from "@prisma/client";
 import type { CreateProductInput, UpdateProductInput, PlaceOrderInput, ProcessPaymentInput, CreateRefundInput } from "@gql-prisma-api/types/inputs.js";
 import { requireAuth, requireOwner } from "@gql-prisma-api/utils/errors.js";
 import { triggerNovuWorkflow } from "@gql-prisma-api/utils/novu.js";
@@ -12,14 +12,13 @@ export async function createProduct(
   requireAuth(userId);
   const { categorySlug, ...data } = input;
   const { clean } = await import("@gql-prisma-api/utils/clean.js");
-  return prisma.product.create({
-    data: clean({
-      ...data,
-      stock: input.stock ?? 0,
-      sellerId: userId!,
-      category: categorySlug ? { connect: { slug: categorySlug } } : undefined,
-    }) as any,
-  });
+  const createData: Prisma.ProductCreateInput = clean({
+    ...data,
+    stock: input.stock ?? 0,
+    sellerId: userId!,
+    category: categorySlug ? { connect: { slug: categorySlug } } : undefined,
+  }) as unknown as Prisma.ProductCreateInput;
+  return prisma.product.create({ data: createData });
 }
 
 export async function updateProduct(
@@ -33,19 +32,17 @@ export async function updateProduct(
   requireOwner(product.sellerId, userId);
   const { categorySlug, ...data } = input;
   const { clean } = await import("@gql-prisma-api/utils/clean.js");
-  return prisma.product.update({
-    where: { id },
-    data: clean({
-      ...data,
-      ...(categorySlug !== undefined
-        ? {
-            category: categorySlug
-              ? { connect: { slug: categorySlug } }
-              : { disconnect: true },
-          }
-        : {}),
-    }) as any,
-  });
+  const updateData: Prisma.ProductUpdateInput = clean({
+    ...data,
+    ...(categorySlug !== undefined
+      ? {
+          category: categorySlug
+            ? { connect: { slug: categorySlug } }
+            : { disconnect: true },
+        }
+      : {}),
+  }) as unknown as Prisma.ProductUpdateInput;
+  return prisma.product.update({ where: { id }, data: updateData });
 }
 
 export async function deleteProduct(
@@ -99,24 +96,25 @@ export async function placeOrder(
     }
   }
 
-  const order = await prisma.$transaction(async (tx: any) => {
-    const o = await tx.order.create({
-      data: {
-        userId: userId!,
-        totalAmount,
-        discountAmount,
-        shippingAddress: input.shippingAddress ?? null,
-        ...(input.couponCode
-          ? { coupon: { connect: { code: input.couponCode } } }
-          : {}),
-        items: {
-          create: input.items.map((item) => ({
-            productId: item.productId,
-            quantity: item.quantity,
-            unitPrice: productMap.get(item.productId)!.price,
-          })),
-        },
+  const order = await prisma.$transaction(async (tx: Prisma.TransactionClient) => {
+    const orderData: Prisma.OrderCreateInput = {
+      user: { connect: { id: userId! } },
+      totalAmount,
+      discountAmount,
+      shippingAddress: input.shippingAddress ?? null,
+      items: {
+        create: input.items.map((item) => ({
+          product: { connect: { id: item.productId } },
+          quantity: item.quantity,
+          unitPrice: productMap.get(item.productId)!.price,
+        })),
       },
+    };
+    if (input.couponCode) {
+      orderData.coupon = { connect: { code: input.couponCode } };
+    }
+    const o = await tx.order.create({
+      data: orderData,
       include: { items: { include: { product: true } } },
     });
 
@@ -163,7 +161,7 @@ export async function cancelOrder(
     throw new Error("Cannot cancel shipped or delivered order");
   }
 
-  const updated = await prisma.$transaction(async (tx: any) => {
+  const updated = await prisma.$transaction(async (tx: Prisma.TransactionClient) => {
     const o = await tx.order.update({
       where: { id },
       data: { status: "CANCELLED" },
@@ -193,7 +191,7 @@ export async function updateOrderStatus(
   const order = await prisma.order.findUnique({ where: { id } });
   if (!order) throw new Error("Order not found");
   requireOwner(order.userId, userId);
-  return prisma.order.update({ where: { id }, data: { status } as any });
+  return prisma.order.update({ where: { id }, data: { status: status as OrderStatus } });
 }
 
 export async function processPayment(
@@ -216,8 +214,8 @@ export async function processPayment(
     data: {
       orderId: input.orderId,
       amount: order.totalAmount,
-      method: input.method as any,
-      status: "COMPLETED" as any,
+      method: input.method as PaymentMethod,
+      status: "COMPLETED" as PaymentStatus,
       transactionId,
     },
   });
@@ -266,7 +264,7 @@ export async function updateRefundStatus(
 
   const updated = await prisma.refund.update({
     where: { id },
-    data: { status } as any,
+    data: { status: status as RefundStatus },
   });
 
   if (status === "COMPLETED") {

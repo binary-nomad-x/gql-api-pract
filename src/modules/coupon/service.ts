@@ -1,4 +1,4 @@
-import type { PrismaClient } from "@prisma/client";
+import type { PrismaClient, Prisma } from "@prisma/client";
 import type { CreateCouponInput } from "@gql-prisma-api/types/inputs.js";
 import { requireAuth } from "@gql-prisma-api/utils/errors.js";
 
@@ -9,7 +9,8 @@ export async function createCoupon(
 ) {
   requireAuth(userId);
   const { clean } = await import("@gql-prisma-api/utils/clean.js");
-  return prisma.coupon.create({ data: clean(input as any) as any });
+  const data: Prisma.CouponCreateInput = clean(input as unknown as Record<string, unknown>) as Prisma.CouponCreateInput;
+  return prisma.coupon.create({ data });
 }
 
 export function getCouponByCode(prisma: PrismaClient, code: string) {

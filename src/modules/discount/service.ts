@@ -1,8 +1,8 @@
-import type { PrismaClient, DiscountType } from "@prisma/client";
+import type { PrismaClient, Prisma, DiscountType } from "@prisma/client";
 import type { CreateDiscountInput, UpdateDiscountInput } from "@gql-prisma-api/types/inputs.js";
 import { requireAuth } from "@gql-prisma-api/utils/errors.js";
 
-function toDiscountCreate(input: CreateDiscountInput) {
+function toDiscountCreate(input: CreateDiscountInput): Prisma.DiscountUncheckedCreateInput {
   return {
     productId: input.productId,
     name: input.name,
@@ -14,8 +14,8 @@ function toDiscountCreate(input: CreateDiscountInput) {
   };
 }
 
-function toDiscountUpdate(input: UpdateDiscountInput) {
-  const data: Record<string, unknown> = {};
+function toDiscountUpdate(input: UpdateDiscountInput): Prisma.DiscountUpdateInput {
+  const data: Prisma.DiscountUpdateInput = {};
   if (input.name !== undefined && input.name !== null) data.name = input.name;
   if (input.value !== undefined && input.value !== null) data.value = input.value;
   if (input.startDate !== undefined && input.startDate !== null) data.startDate = new Date(input.startDate);

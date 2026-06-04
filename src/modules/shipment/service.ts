@@ -1,4 +1,4 @@
-import type { PrismaClient } from "@prisma/client";
+import type { PrismaClient, ShipmentStatus } from "@prisma/client";
 import type { CreateShipmentInput } from "@gql-prisma-api/types/inputs.js";
 import { requireAuth } from "@gql-prisma-api/utils/errors.js";
 import { triggerNovuWorkflow } from "@gql-prisma-api/utils/novu.js";
@@ -19,7 +19,7 @@ export async function updateShipmentStatus(
   status: string,
 ) {
   requireAuth(userId);
-  const shipment = await prisma.shipment.update({ where: { id }, data: { status } as any });
+  const shipment = await prisma.shipment.update({ where: { id }, data: { status: status as ShipmentStatus } });
   const order = await prisma.order.findUnique({ where: { id: shipment.orderId } });
   if (order) {
     await triggerNovuWorkflow(order.userId, "shipment-updated", { shipmentId: id, orderId: shipment.orderId, status });

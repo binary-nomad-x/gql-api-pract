@@ -1,4 +1,4 @@
-import type { PrismaClient } from "@prisma/client";
+import type { PrismaClient, Prisma } from "@prisma/client";
 import type { CreateAddressInput, UpdateAddressInput } from "@gql-prisma-api/types/inputs.js";
 import { requireAuth } from "@gql-prisma-api/utils/errors.js";
 
@@ -9,14 +9,13 @@ export async function createAddress(
 ) {
   requireAuth(userId);
   const { clean } = await import("@gql-prisma-api/utils/clean.js");
-  return prisma.address.create({
-    data: clean({
-      ...input,
-      userId: userId!,
-      country: input.country ?? "US",
-      label: input.label ?? "Home",
-    }) as any,
-  });
+  const data: Prisma.AddressCreateInput = clean({
+    ...input,
+    userId: userId!,
+    country: input.country ?? "US",
+    label: input.label ?? "Home",
+  }) as unknown as Prisma.AddressCreateInput;
+  return prisma.address.create({ data });
 }
 
 export async function updateAddress(
@@ -29,7 +28,8 @@ export async function updateAddress(
   const addr = await prisma.address.findFirst({ where: { id, userId: userId! } });
   if (!addr) throw new Error("Address not found");
   const { clean } = await import("@gql-prisma-api/utils/clean.js");
-  return prisma.address.update({ where: { id }, data: clean(input as any) });
+  const data: Prisma.AddressUpdateInput = clean(input as unknown as Record<string, unknown>) as Prisma.AddressUpdateInput;
+  return prisma.address.update({ where: { id }, data });
 }
 
 export async function deleteAddress(

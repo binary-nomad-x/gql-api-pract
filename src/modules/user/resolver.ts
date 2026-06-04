@@ -1,6 +1,6 @@
 import type { Context } from "@gql-prisma-api/types/context.js";
 import type { Parent, IdArg } from "@gql-prisma-api/types/graphql.js";
-import type { UpdateUserInput } from "@gql-prisma-api/types/inputs.js";
+import type { UpdateUserInput, UpdateProfileInput } from "@gql-prisma-api/types/inputs.js";
 import {
   updateUser, deleteUser, updateProfile,
   getUsers, getUser, getMe,
@@ -62,7 +62,7 @@ export const UserMutations = {
 
   updateProfile: async (
     _parent: unknown,
-    args: Record<string, unknown>,
+    args: UpdateProfileInput,
     ctx: Context,
   ) => updateProfile(ctx.prisma, ctx.userId, args),
 };

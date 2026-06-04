@@ -1,4 +1,4 @@
-import type { PrismaClient } from "@prisma/client";
+import type { PrismaClient, Prisma } from "@prisma/client";
 import type { CreatePostInput, UpdatePostInput, CreateCommentInput, CreateCategoryInput } from "@gql-prisma-api/types/inputs.js";
 import { requireAuth, requireOwner } from "@gql-prisma-api/utils/errors.js";
 import { triggerNovuWorkflow } from "@gql-prisma-api/utils/novu.js";
@@ -41,7 +41,8 @@ export async function updatePost(
   if (!post) throw new Error("Post not found");
   requireOwner(post.authorId, userId);
   const { clean } = await import("@gql-prisma-api/utils/clean.js");
-  return prisma.post.update({ where: { id }, data: clean(input as any) });
+  const data: Prisma.PostUpdateInput = clean(input as unknown as Record<string, unknown>) as Prisma.PostUpdateInput;
+  return prisma.post.update({ where: { id }, data });
 }
 
 export async function deletePost(

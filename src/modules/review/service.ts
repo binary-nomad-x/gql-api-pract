@@ -18,6 +18,7 @@ export async function createReview(
   const existing = await prisma.review.findUnique({
     where: { productId_userId: { productId: input.productId, userId: userId! } },
   });
+  
   if (existing) throw new Error("Already reviewed this product");
 
   const review = await prisma.review.create({

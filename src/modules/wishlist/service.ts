@@ -29,6 +29,7 @@ export async function addToWishlist(
     update: { note: input.note ?? null },
     create: { wishlistId: input.wishlistId, productId: input.productId, note: input.note ?? null },
   });
+  
   return prisma.wishlist.findUnique({ where: { id: input.wishlistId } });
 }
 

@@ -13,6 +13,7 @@ import { seedRemaining } from "./notifications.js";
 import { seedSubscriptions } from "./subscriptions.js";
 import { seedDiscounts } from "./discounts.js";
 import { seedConversations } from "./conversations.js";
+import { seedExtras } from "./extras.js";
 
 const adapter = new PrismaPg({ connectionString: process.env.DATABASE_URL });
 const prisma = new PrismaClient({ adapter });
@@ -75,10 +76,15 @@ async function main(): Promise<void> {
   console.log("[Phase 6] Conversations, Messages...");
   await seedConversations({ prisma }, counts, users);
 
+  // Phase 7 — extras: invoices, returns, support tickets, ticket replies
+  console.log("[Phase 7] Invoices, Return Requests, Support Tickets...");
+  await seedExtras({ prisma }, counts, users, products);
+
   // Summary
   printElapsed(start);
   console.log(`Summary: ${counts.users} users, ${counts.products} products, ${counts.orders} orders, ` +
-    `${counts.messages} messages, ${counts.postViews} post views, ${counts.productImages} product images`);
+    `${counts.messages} messages, ${counts.postViews} post views, ${counts.productImages} product images, ` +
+    `${counts.invoices} invoices, ${counts.returns} returns, ${counts.tickets} tickets, ${counts.ticketReplies} replies`);
   console.log(
     "\nTest accounts (password123): alice@test.com (ADMIN), bob@test.com (USER), " +
     "charlie@test.com (USER), diana@test.com (MODERATOR), eve@test.com (USER)",

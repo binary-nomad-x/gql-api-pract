@@ -14,7 +14,17 @@ export type NovuEventName =
   | 'shipment-updated'
   | 'new-follower'
   | 'review-received'
-  | 'welcome';
+  | 'welcome'
+  | 'invoice-created'
+  | 'invoice-paid'
+  | 'invoice-overdue'
+  | 'return-requested'
+  | 'return-approved'
+  | 'return-rejected'
+  | 'return-refunded'
+  | 'ticket-created'
+  | 'ticket-updated'
+  | 'ticket-resolved';
 
 export async function triggerNovuWorkflow(
   userId: string,

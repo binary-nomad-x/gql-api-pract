@@ -107,6 +107,15 @@ import { SubscriptionResolver, SubscriptionQueries, SubscriptionMutations } from
 // Discount
 import { DiscountResolver, DiscountQueries, DiscountMutations } from "./discount/resolver.js";
 
+// Invoice
+import { invoiceResolver } from "./invoice/resolver.js";
+
+// Return
+import { returnResolver } from "./return/resolver.js";
+
+// Support
+import { supportResolver } from "./support/resolver.js";
+
 // Conversation
 import {
   ConversationResolver,
@@ -134,6 +143,9 @@ export const resolvers = {
     ...StatsQueries,
     ...SubscriptionQueries,
     ...DiscountQueries,
+    ...invoiceResolver.Query,
+    ...returnResolver.Query,
+    ...supportResolver.Query,
     ...ConversationQueries,
   },
 
@@ -154,6 +166,9 @@ export const resolvers = {
     ...PostViewMutations,
     ...SubscriptionMutations,
     ...DiscountMutations,
+    ...invoiceResolver.Mutation,
+    ...returnResolver.Mutation,
+    ...supportResolver.Mutation,
     ...ConversationMutations,
   },
 
@@ -181,6 +196,10 @@ export const resolvers = {
   OrderItem: { ...OrderItemResolver },
   Subscription: { ...SubscriptionResolver },
   Discount: { ...DiscountResolver },
+  Invoice: { ...invoiceResolver.Invoice },
+  ReturnRequest: { ...returnResolver.ReturnRequest },
+  SupportTicket: { ...supportResolver.SupportTicket },
+  TicketReply: { ...supportResolver.TicketReply },
   Conversation: { ...ConversationResolver },
   ConversationParticipant: { ...ConversationParticipantResolver },
   Message: { ...MessageResolver },

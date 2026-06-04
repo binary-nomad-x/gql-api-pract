@@ -86,6 +86,45 @@ enum DiscountType {
   FIXED_AMOUNT
 }
 
+enum InvoiceStatus {
+  DRAFT
+  SENT
+  PAID
+  OVERDUE
+  CANCELLED
+}
+
+enum ReturnReason {
+  DEFECTIVE
+  NOT_AS_DESCRIBED
+  WRONG_ITEM
+  SIZE_ISSUE
+  OTHER
+}
+
+enum ReturnStatus {
+  PENDING
+  APPROVED
+  REJECTED
+  RECEIVED
+  REFUNDED
+}
+
+enum TicketStatus {
+  OPEN
+  IN_PROGRESS
+  WAITING_ON_CUSTOMER
+  RESOLVED
+  CLOSED
+}
+
+enum TicketPriority {
+  LOW
+  MEDIUM
+  HIGH
+  URGENT
+}
+
 input PaginationInput {
   limit: Int
   offset: Int

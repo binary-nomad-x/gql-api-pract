@@ -1,0 +1,128 @@
+import type { PrismaClient, Prisma } from "@prisma/client";
+import type { CreateInvoiceInput, InvoiceFilterInput } from "@gql-prisma-api/modules/invoice/inputs.js";
+import { requireAuth } from "@gql-prisma-api/utils/errors.js";
+import { triggerNovuWorkflow } from "@gql-prisma-api/utils/novu.js";
+import { logger } from "@gql-prisma-api/utils/logger.js";
+
+export async function findMyInvoices(
+  prisma: PrismaClient,
+  userId: string | undefined,
+  filter?: InvoiceFilterInput,
+) {
+  requireAuth(userId);
+  const where: Prisma.InvoiceWhereInput = { order: { userId } };
+  if (filter?.status) where.status = filter.status as any;
+
+  return prisma.invoice.findMany({
+    where,
+    orderBy: { issuedAt: "desc" },
+    take: filter?.limit ?? 20,
+    skip: filter?.offset ?? 0,
+    include: { order: true },
+  });
+}
+
+export async function findInvoiceById(
+  prisma: PrismaClient,
+  userId: string | undefined,
+  id: string,
+) {
+  requireAuth(userId);
+  const invoice = await prisma.invoice.findUnique({
+    where: { id },
+    include: { order: true },
+  });
+  if (!invoice) throw new Error("Invoice not found");
+  return invoice;
+}
+
+export async function createInvoice(
+  prisma: PrismaClient,
+  userId: string | undefined,
+  input: CreateInvoiceInput,
+) {
+  requireAuth(userId);
+  const order = await prisma.order.findUnique({
+    where: { id: input.orderId },
+    include: { user: true },
+  });
+  if (!order) throw new Error("Order not found");
+  if (order.userId !== userId) throw new Error("Unauthorized");
+
+  const invoiceNumber = `INV-${Date.now()}-${Math.random().toString(36).slice(2, 8).toUpperCase()}`;
+
+  const invoice = await prisma.invoice.create({
+    data: {
+      orderId: input.orderId,
+      invoiceNumber,
+      amount: order.totalAmount,
+      dueDate: new Date(input.dueDate),
+    },
+    include: { order: true },
+  });
+
+  await prisma.notification.create({
+    data: {
+      userId: order.userId,
+      type: "INVOICE_CREATED",
+      title: "Invoice Created",
+      message: `Invoice ${invoiceNumber} for $${order.totalAmount.toFixed(2)} has been created.`,
+    },
+  });
+
+  await triggerNovuWorkflow(userId!, "invoice-created", { invoiceId: invoice.id, invoiceNumber, amount: order.totalAmount });
+  logger.info("Invoice created", { invoiceId: invoice.id, orderId: input.orderId, userId });
+  return invoice;
+}
+
+export async function markInvoicePaid(
+  prisma: PrismaClient,
+  userId: string | undefined,
+  id: string,
+) {
+  requireAuth(userId);
+  const invoice = await prisma.invoice.findUnique({
+    where: { id },
+    include: { order: { include: { user: true } } },
+  });
+  if (!invoice) throw new Error("Invoice not found");
+
+  const updated = await prisma.invoice.update({
+    where: { id },
+    data: { status: "PAID", paidAt: new Date() },
+    include: { order: true },
+  });
+
+  await prisma.notification.create({
+    data: {
+      userId: invoice.order.userId,
+      type: "INVOICE_PAID",
+      title: "Invoice Paid",
+      message: `Invoice ${invoice.invoiceNumber} has been paid.`,
+    },
+  });
+
+  await triggerNovuWorkflow(userId!, "invoice-paid", { invoiceId: invoice.id, invoiceNumber: invoice.invoiceNumber });
+  logger.info("Invoice marked paid", { invoiceId: id, userId });
+  return updated;
+}
+
+export async function cancelInvoice(
+  prisma: PrismaClient,
+  userId: string | undefined,
+  id: string,
+) {
+  requireAuth(userId);
+  const invoice = await prisma.invoice.findUnique({ where: { id } });
+  if (!invoice) throw new Error("Invoice not found");
+  if (invoice.status === "PAID") throw new Error("Cannot cancel a paid invoice");
+
+  const updated = await prisma.invoice.update({
+    where: { id },
+    data: { status: "CANCELLED" },
+    include: { order: true },
+  });
+
+  logger.info("Invoice cancelled", { invoiceId: id, userId });
+  return updated;
+}

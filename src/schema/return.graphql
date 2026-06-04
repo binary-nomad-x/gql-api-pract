@@ -1,0 +1,27 @@
+type ReturnRequest {
+  id: ID!
+  orderItem: OrderItem!
+  user: User!
+  reason: ReturnReason!
+  status: ReturnStatus!
+  quantity: Int!
+  requestedAt: DateTime!
+  resolvedAt: DateTime
+}
+
+input CreateReturnInput {
+  orderItemId: ID!
+  reason: ReturnReason!
+  quantity: Int!
+}
+
+extend type Query {
+  myReturns(status: ReturnStatus, limit: Int, offset: Int): [ReturnRequest!]! @auth
+  returnRequest(id: ID!): ReturnRequest @auth
+}
+
+extend type Mutation {
+  createReturn(input: CreateReturnInput!): ReturnRequest! @auth
+  approveReturn(id: ID!): ReturnRequest! @auth
+  rejectReturn(id: ID!): ReturnRequest! @auth
+}

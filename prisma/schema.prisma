@@ -31,6 +31,9 @@ model User {
   subscriptions Subscription[]
   conversations ConversationParticipant[]
   sentMessages Message[]
+  returnRequests ReturnRequest[]
+  supportTickets SupportTicket[]
+  ticketReplies TicketReply[]
   createdAt DateTime  @default(now())
   updatedAt DateTime  @updatedAt
 
@@ -247,6 +250,7 @@ model Order {
   payment         Payment?
   refunds         Refund[]
   shipments       Shipment[]
+  invoice         Invoice?
   createdAt       DateTime    @default(now())
   updatedAt       DateTime    @updatedAt
 
@@ -264,6 +268,7 @@ model OrderItem {
   product   Product @relation(fields: [productId], references: [id], onDelete: Restrict)
   quantity  Int     @default(1)
   unitPrice Float
+  returnRequests ReturnRequest[]
 
   @@index([orderId])
   @@index([productId])
@@ -515,7 +520,122 @@ model Message {
   @@map("messages")
 }
 
+// ==================== Invoice Model ====================
+model Invoice {
+  id            String        @id @default(cuid())
+  orderId       String        @unique
+  order         Order         @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  invoiceNumber String        @unique
+  amount        Float
+  status        InvoiceStatus @default(DRAFT)
+  issuedAt      DateTime      @default(now())
+  paidAt        DateTime?
+  dueDate       DateTime
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+
+  @@index([orderId])
+  @@index([status])
+  @@map("invoices")
+}
+
+// ==================== ReturnRequest Model ====================
+model ReturnRequest {
+  id             String       @id @default(cuid())
+  orderItemId    String
+  orderItem      OrderItem    @relation(fields: [orderItemId], references: [id], onDelete: Cascade)
+  userId         String
+  user           User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  reason         ReturnReason
+  status         ReturnStatus @default(PENDING)
+  quantity       Int          @default(1)
+  requestedAt    DateTime     @default(now())
+  resolvedAt     DateTime?
+
+  @@index([orderItemId])
+  @@index([userId])
+  @@index([status])
+  @@map("return_requests")
+}
+
+// ==================== SupportTicket Model ====================
+model SupportTicket {
+  id          String        @id @default(cuid())
+  userId      String
+  user        User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  subject     String
+  description String
+  status      TicketStatus  @default(OPEN)
+  priority    TicketPriority @default(MEDIUM)
+  category    String        @default("general")
+  assignedTo  String?
+  replies     TicketReply[]
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+
+  @@index([userId])
+  @@index([status])
+  @@index([priority])
+  @@map("support_tickets")
+}
+
+// ==================== TicketReply Model ====================
+model TicketReply {
+  id        String       @id @default(cuid())
+  ticketId  String
+  ticket    SupportTicket @relation(fields: [ticketId], references: [id], onDelete: Cascade)
+  userId    String
+  user      User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  content   String
+  isStaff   Boolean      @default(false)
+  createdAt DateTime     @default(now())
+  updatedAt DateTime     @updatedAt
+
+  @@index([ticketId])
+  @@index([userId])
+  @@map("ticket_replies")
+}
+
 // ==================== Enums ====================
+enum InvoiceStatus {
+  DRAFT
+  SENT
+  PAID
+  OVERDUE
+  CANCELLED
+}
+
+enum ReturnReason {
+  DEFECTIVE
+  NOT_AS_DESCRIBED
+  WRONG_ITEM
+  SIZE_ISSUE
+  OTHER
+}
+
+enum ReturnStatus {
+  PENDING
+  APPROVED
+  REJECTED
+  RECEIVED
+  REFUNDED
+}
+
+enum TicketStatus {
+  OPEN
+  IN_PROGRESS
+  WAITING_ON_CUSTOMER
+  RESOLVED
+  CLOSED
+}
+
+enum TicketPriority {
+  LOW
+  MEDIUM
+  HIGH
+  URGENT
+}
+
 enum Role {
   USER
   ADMIN
@@ -575,6 +695,16 @@ enum NotificationType {
   NEW_MESSAGE
   SUBSCRIPTION_EXPIRING
   DISCOUNT_AVAILABLE
+  INVOICE_CREATED
+  INVOICE_PAID
+  INVOICE_OVERDUE
+  RETURN_REQUESTED
+  RETURN_APPROVED
+  RETURN_REJECTED
+  RETURN_REFUNDED
+  TICKET_CREATED
+  TICKET_UPDATED
+  TICKET_RESOLVED
 }
 
 enum SubscriptionPlan {

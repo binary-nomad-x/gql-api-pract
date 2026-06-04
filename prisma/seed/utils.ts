@@ -3,6 +3,10 @@ import type { PrismaClient } from "@prisma/client";
 export async function resetDatabase(prisma: PrismaClient): Promise<void> {
   console.log("Resetting database...");
   await prisma.$transaction([
+    prisma.ticketReply.deleteMany(),
+    prisma.supportTicket.deleteMany(),
+    prisma.returnRequest.deleteMany(),
+    prisma.invoice.deleteMany(),
     prisma.message.deleteMany(),
     prisma.conversationParticipant.deleteMany(),
     prisma.conversation.deleteMany(),

@@ -15,6 +15,7 @@ export interface SeedCounts {
   savedPosts: number; postViews: number; productImages: number;
   subscriptions: number; discounts: number;
   conversations: number; messages: number;
+  invoices: number; returns: number; tickets: number; ticketReplies: number;
 }
 
 export function createEmptyCounts(): SeedCounts {
@@ -29,5 +30,6 @@ export function createEmptyCounts(): SeedCounts {
     savedPosts: 0, postViews: 0, productImages: 0,
     subscriptions: 0, discounts: 0,
     conversations: 0, messages: 0,
+    invoices: 0, returns: 0, tickets: 0, ticketReplies: 0,
   };
 }

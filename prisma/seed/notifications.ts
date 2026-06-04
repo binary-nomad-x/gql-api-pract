@@ -82,6 +82,7 @@ export async function seedRemaining(
 
   // ProductImages
   const piData: Array<{ productId: string; url: string; alt?: string; sortOrder: number }> = [];
+  
   for (const product of products) {
     const n = faker.number.int({ min: 1, max: 4 });
     for (let i = 0; i < n; i++) {
@@ -93,8 +94,10 @@ export async function seedRemaining(
       });
     }
   }
+
   for (let i = 0; i < piData.length; i += 1000) {
     await ctx.prisma.productImage.createMany({ data: piData.slice(i, i + 1000) });
   }
+
   counts.productImages = piData.length;
 }

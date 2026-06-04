@@ -55,6 +55,7 @@ export async function seedCommerce(
   for (let i = 0; i < productData.length; i += 500) {
     await ctx.prisma.product.createMany({ data: productData.slice(i, i + 500) });
   }
+
   const products = await ctx.prisma.product.findMany();
   counts.products = products.length;
   console.log(`Created ${products.length} products`);
@@ -64,6 +65,7 @@ export async function seedCommerce(
   const orderData: Array<{
     userId: string; status: OrderStatus; totalAmount: number; discountAmount: number; shippingAddress: string;
   }> = [];
+
   const orderItemData: Array<{ orderId: string; productId: string; quantity: number; unitPrice: number }> = [];
 
   // Pre-generate order items data grouped by order
@@ -110,6 +112,7 @@ export async function seedCommerce(
       orders.push(results[j]);
     }
   }
+
   counts.orders = orders.length;
   console.log(`Created ${orders.length} orders`);
 
@@ -119,6 +122,7 @@ export async function seedCommerce(
     const buyer = faker.helpers.arrayElement(users);
     const numItems = faker.number.int({ min: 1, max: 6 });
     const op = faker.helpers.arrayElements(products, numItems);
+
     for (const p of op) {
       orderItemData.push({
         orderId: realOrderId,
@@ -127,6 +131,7 @@ export async function seedCommerce(
         unitPrice: p.price,
       });
     }
+    
     // No need to regenerate total — it's already in orderData[i].totalAmount
   }
 
@@ -134,6 +139,7 @@ export async function seedCommerce(
   for (let i = 0; i < orderItemData.length; i += 1000) {
     await ctx.prisma.orderItem.createMany({ data: orderItemData.slice(i, i + 1000) });
   }
+
   counts.orderItems = orderItemData.length;
 
   // Decrement stock for non-cancelled orders (batch update)
@@ -159,6 +165,7 @@ export async function seedCommerce(
       status: faker.helpers.arrayElement(PAYMENT_STATUSES),
       transactionId: `TXN-${faker.string.alphanumeric({ length: 12, casing: "upper" })}`,
     }));
+
   await ctx.prisma.payment.createMany({ data: paymentData });
   counts.payments = paymentData.length;
 
@@ -166,6 +173,7 @@ export async function seedCommerce(
   const completedPayments = await ctx.prisma.payment.findMany({
     where: { status: "COMPLETED" }, take: 200, orderBy: { createdAt: "desc" },
   });
+
   const refundData = completedPayments.map((p) => {
     const amt = parseFloat(faker.commerce.price({ min: 10, max: Math.min(p.amount, 200) }));
     return {
@@ -176,6 +184,7 @@ export async function seedCommerce(
       status: faker.helpers.arrayElement(REFUND_STATUSES),
     };
   });
+
   await ctx.prisma.refund.createMany({ data: refundData });
   counts.refunds = refundData.length;
 

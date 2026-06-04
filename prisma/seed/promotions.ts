@@ -17,6 +17,7 @@ export async function seedPromotions(ctx: SeedContext, counts: SeedCounts, order
       isActive: true, expiresAt: faker.date.future(),
     })),
   });
+
   counts.coupons = COUPON_CODES.length;
 
   const shipped = orders.filter((o) => ["SHIPPED", "DELIVERED"].includes(o.status)).slice(0, 500);
@@ -30,5 +31,6 @@ export async function seedPromotions(ctx: SeedContext, counts: SeedCounts, order
       deliveredAt: faker.datatype.boolean(0.4) ? faker.date.recent() : undefined,
     })),
   });
+  
   counts.shipments = shipped.length;
 }

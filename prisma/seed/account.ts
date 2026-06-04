@@ -43,6 +43,7 @@ export async function seedAccountRelated(
 
   const wlItemSet = new Set<string>();
   const wlItemData: Array<{ wishlistId: string; productId: string; note?: string }> = [];
+
   for (const wl of wishlists) {
     const items = faker.helpers.arrayElements(products, faker.number.int({ min: 1, max: 5 }));
     for (const p of items) {
@@ -55,6 +56,7 @@ export async function seedAccountRelated(
       });
     }
   }
+
   await ctx.prisma.wishlistItem.createMany({ data: wlItemData });
   counts.wishlistItems = wlItemData.length;
 
@@ -64,10 +66,12 @@ export async function seedAccountRelated(
   const carts = await ctx.prisma.cart.findMany({
     where: { userId: { in: cartUsers.map((u) => u.id) } },
   });
+
   counts.carts = carts.length;
 
   const ciSet = new Set<string>();
   const ciData: Array<{ cartId: string; productId: string; quantity: number }> = [];
+  
   for (const cart of carts) {
     const items = faker.helpers.arrayElements(products, faker.number.int({ min: 1, max: 4 }));
     for (const p of items) {
@@ -77,6 +81,7 @@ export async function seedAccountRelated(
       ciData.push({ cartId: cart.id, productId: p.id, quantity: faker.number.int({ min: 1, max: 3 }) });
     }
   }
+
   await ctx.prisma.cartItem.createMany({ data: ciData });
   counts.cartItems = ciData.length;
 }

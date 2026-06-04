@@ -17,5 +17,6 @@ export async function seedSubscriptions(ctx: SeedContext, counts: SeedCounts, us
       cancelledAt: faker.datatype.boolean(0.2) ? faker.date.recent() : undefined,
     })),
   });
+  
   counts.subscriptions = users.length;
 }

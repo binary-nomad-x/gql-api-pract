@@ -87,6 +87,7 @@ export async function seedPostsCommentsLikes(
     authorId: faker.helpers.arrayElement(users).id,
     postId: faker.helpers.arrayElement(posts).id,
   }));
+  
   await ctx.prisma.comment.createMany({ data: commentData });
   counts.comments = SEED_COMMENTS;
   console.log(`Created ${SEED_COMMENTS} comments`);
@@ -102,6 +103,7 @@ export async function seedPostsCommentsLikes(
     likeSet.add(key);
     likeData.push({ userId, postId });
   }
+
   await ctx.prisma.like.createMany({ data: likeData });
   counts.likes = likeData.length;
   console.log(`Created ${likeData.length} likes`);

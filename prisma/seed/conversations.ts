@@ -10,6 +10,7 @@ export async function seedConversations(ctx: SeedContext, counts: SeedCounts, us
   const convData = Array.from({ length: SEED_CONVERSATIONS }, () => ({
     title: faker.datatype.boolean(0.5) ? faker.lorem.words({ min: 2, max: 6 }) : undefined,
   }));
+
   await ctx.prisma.conversation.createMany({ data: convData });
   const conversations = await ctx.prisma.conversation.findMany();
   counts.conversations = conversations.length;
@@ -31,6 +32,7 @@ export async function seedConversations(ctx: SeedContext, counts: SeedCounts, us
       });
     }
   }
+
   await ctx.prisma.conversationParticipant.createMany({ data: cpData });
 
   // Messages — bulk insert in batches
@@ -52,6 +54,7 @@ export async function seedConversations(ctx: SeedContext, counts: SeedCounts, us
   for (let i = 0; i < msgData.length; i += 2000) {
     await ctx.prisma.message.createMany({ data: msgData.slice(i, i + 2000) });
   }
+  
   counts.messages = msgData.length;
   console.log(`Created ${msgData.length} messages`);
 }

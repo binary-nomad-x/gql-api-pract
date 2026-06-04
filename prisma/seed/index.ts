@@ -58,6 +58,7 @@ async function main(): Promise<void> {
 
   // Phase 4 — promotions (from orders — already seeded inside commerce)
   console.log("[Phase 4] Coupons, Shipments...");
+  
   // Orders are already created inside seedCommerce; load them fresh
   const orders = await prisma.order.findMany();
   await seedPromotions({ prisma }, counts, orders);

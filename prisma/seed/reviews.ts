@@ -29,6 +29,7 @@ export async function seedReviews(
       });
     }
   }
+  
   await ctx.prisma.review.createMany({ data });
   counts.reviews = data.length;
   console.log(`Created ${data.length} reviews`);

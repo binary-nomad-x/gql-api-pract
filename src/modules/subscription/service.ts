@@ -1,6 +1,19 @@
 import type { PrismaClient, SubscriptionPlan } from "@prisma/client";
 import { requireAuth } from "@gql-prisma-api/utils/errors.js";
 import { logger } from "@gql-prisma-api/utils/logger.js";
+import { triggerTrialEndingNotification as triggerNovu } from "@gql-prisma-api/utils/novu.js";
+
+export interface TrialEndingInput {
+  planName: string;
+  trialEnd: string;
+  nextBillingDate: string;
+  daysUntilAction: string;
+  nextChargeDisplayAmount: string;
+  paymentMethodType: string;
+  notifyPatient: boolean;
+  notifyDoctor: boolean;
+  notifyAdmin: boolean;
+}
 
 export async function createSubscription(
   prisma: PrismaClient,
@@ -34,6 +47,39 @@ export async function cancelSubscription(
   });
   logger.info("Subscription cancelled", { userId: userId!, subscriptionId: sub.id });
   return updated;
+}
+
+export async function triggerTrialEndingNotification(
+  prisma: PrismaClient,
+  userId: string | undefined,
+  input: TrialEndingInput,
+): Promise<boolean> {
+  requireAuth(userId);
+
+  await triggerNovu(userId!, {
+    subscription: {
+      plan: { name: input.planName },
+      trialEnd: input.trialEnd,
+      nextBillingDate: input.nextBillingDate,
+    },
+    notification: {
+      daysUntilAction: input.daysUntilAction,
+    },
+    billing: {
+      nextChargeDisplayAmount: input.nextChargeDisplayAmount,
+    },
+    payment: {
+      method: { type: input.paymentMethodType },
+    },
+    notify: {
+      patient: input.notifyPatient,
+      doctor: input.notifyDoctor,
+      admin: input.notifyAdmin,
+    },
+  });
+
+  logger.info("Trial ending notification triggered", { userId: userId!, planName: input.planName });
+  return true;
 }
 
 export async function getMySubscription(

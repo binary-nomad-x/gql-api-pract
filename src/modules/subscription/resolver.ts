@@ -4,7 +4,9 @@ import type { SubscriptionPlan } from "@prisma/client";
 import {
   createSubscription, cancelSubscription,
   getMySubscription, getAllSubscriptions,
+  triggerTrialEndingNotification,
 } from "./service.js";
+import type { TrialEndingInput } from "./service.js";
 
 export const SubscriptionResolver = {
   user: (parent: Parent, _args: unknown, ctx: Context) =>
@@ -25,4 +27,10 @@ export const SubscriptionMutations = {
 
   cancelSubscription: async (_parent: unknown, _args: unknown, ctx: Context) =>
     cancelSubscription(ctx.prisma, ctx.userId),
+
+  triggerTrialEndingNotification: async (
+    _parent: unknown,
+    { input }: { input: TrialEndingInput },
+    ctx: Context,
+  ) => triggerTrialEndingNotification(ctx.prisma, ctx.userId, input),
 };

@@ -16,7 +16,20 @@ extend type Query {
   subscriptions: [Subscription!]! @auth
 }
 
+input TrialEndingNotificationInput {
+  planName: String!
+  trialEnd: String!
+  nextBillingDate: String!
+  daysUntilAction: String!
+  nextChargeDisplayAmount: String!
+  paymentMethodType: String!
+  notifyPatient: Boolean!
+  notifyDoctor: Boolean!
+  notifyAdmin: Boolean!
+}
+
 extend type Mutation {
   createSubscription(plan: SubscriptionPlan!): Subscription! @auth
   cancelSubscription: Subscription! @auth
+  triggerTrialEndingNotification(input: TrialEndingNotificationInput!): Boolean! @auth
 }

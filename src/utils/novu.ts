@@ -24,7 +24,8 @@ export type NovuEventName =
   | 'return-refunded'
   | 'ticket-created'
   | 'ticket-updated'
-  | 'ticket-resolved';
+  | 'ticket-resolved'
+  | 'trial-ending';
 
 export async function triggerNovuWorkflow(
   userId: string,
@@ -41,6 +42,35 @@ export async function triggerNovuWorkflow(
   } catch {
     // Silently fail - Novu trigger errors shouldn't break the API
   }
+}
+
+export interface TrialEndingPayload {
+  subscription: {
+    plan: { name: string };
+    trialEnd: string;
+    nextBillingDate: string;
+  };
+  notification: {
+    daysUntilAction: string;
+  };
+  billing: {
+    nextChargeDisplayAmount: string;
+  };
+  payment: {
+    method: { type: string };
+  };
+  notify: {
+    patient: boolean;
+    doctor: boolean;
+    admin: boolean;
+  };
+}
+
+export async function triggerTrialEndingNotification(
+  userId: string,
+  payload: TrialEndingPayload,
+): Promise<void> {
+  return triggerNovuWorkflow(userId, "trial-ending", payload as unknown as Record<string, unknown>);
 }
 
 export async function createNovuSubscriber(

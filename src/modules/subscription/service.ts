@@ -1,4 +1,5 @@
-import type { PrismaClient, SubscriptionPlan } from "@prisma/client";
+import type { PrismaClient } from "@prisma/client";
+import type { SubscriptionPlan } from "@gql-prisma-api/modules/subscription/types/index.js";
 import { requireAuth } from "@gql-prisma-api/utils/errors.js";
 import { logger } from "@gql-prisma-api/utils/logger.js";
 import { triggerTrialEndingNotification as triggerNovu } from "@gql-prisma-api/utils/novu.js";

@@ -1,6 +1,6 @@
 import type { Context } from "@gql-prisma-api/types/context.js";
 import type { Parent } from "@gql-prisma-api/types/graphql.js";
-import type { SubscriptionPlan } from "@prisma/client";
+import type { SubscriptionPlan } from "@gql-prisma-api/modules/subscription/types/index.js";
 import {
   createSubscription, cancelSubscription,
   getMySubscription, getAllSubscriptions,

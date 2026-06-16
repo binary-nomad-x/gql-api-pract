@@ -1,12 +1,12 @@
 import bcrypt from "bcryptjs";
 import { faker } from "@faker-js/faker";
 import type { SeedContext, SeedCounts } from "./types.js";
-import type { User, Role } from "@prisma/client";
+import type { User } from "@prisma/client";
 
 const SEED_USERS = 500;
-const USER_ROLES: Role[] = ["USER", "USER", "USER", "ADMIN", "MODERATOR"];
+const USER_ROLES = ["USER", "USER", "USER", "ADMIN", "MODERATOR"] as const;
 
-const FIXED_USERS: Array<{ email: string; name: string; role: Role }> = [
+const FIXED_USERS = [
   { email: "alice@test.com", name: "Alice Johnson", role: "ADMIN" },
   { email: "bob@test.com", name: "Bob Smith", role: "USER" },
   { email: "charlie@test.com", name: "Charlie Brown", role: "USER" },

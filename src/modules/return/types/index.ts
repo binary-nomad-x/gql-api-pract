@@ -1,0 +1,15 @@
+export enum ReturnReason {
+  DEFECTIVE = "DEFECTIVE",
+  NOT_AS_DESCRIBED = "NOT_AS_DESCRIBED",
+  WRONG_ITEM = "WRONG_ITEM",
+  SIZE_ISSUE = "SIZE_ISSUE",
+  OTHER = "OTHER",
+}
+
+export enum ReturnStatus {
+  PENDING = "PENDING",
+  APPROVED = "APPROVED",
+  REJECTED = "REJECTED",
+  RECEIVED = "RECEIVED",
+  REFUNDED = "REFUNDED",
+}

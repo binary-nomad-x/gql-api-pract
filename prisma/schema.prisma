@@ -12,7 +12,7 @@ model User {
   email     String    @unique
   name      String?
   password  String
-  role      Role      @default(USER)
+  role      String    @default("USER")
   profile   Profile?
   posts     Post[]
   comments  Comment[]
@@ -240,7 +240,7 @@ model Order {
   id              String      @id @default(cuid())
   userId          String
   user            User        @relation(fields: [userId], references: [id], onDelete: Cascade)
-  status          OrderStatus @default(PENDING)
+  status          String      @default("PENDING")
   totalAmount     Float       @default(0)
   discountAmount  Float       @default(0)
   shippingAddress String?
@@ -281,8 +281,8 @@ model Payment {
   orderId       String         @unique
   order         Order          @relation(fields: [orderId], references: [id], onDelete: Cascade)
   amount        Float
-  method        PaymentMethod
-  status        PaymentStatus  @default(PENDING)
+  method        String
+  status        String         @default("PENDING")
   transactionId String         @unique
   refunds       Refund[]
   createdAt     DateTime       @default(now())
@@ -300,7 +300,7 @@ model Refund {
   order     Order         @relation(fields: [orderId], references: [id], onDelete: Cascade)
   amount    Float
   reason    String?
-  status    RefundStatus  @default(PENDING)
+  status    String        @default("PENDING")
   createdAt DateTime      @default(now())
   updatedAt DateTime      @updatedAt
 
@@ -409,7 +409,7 @@ model Shipment {
   order            Order          @relation(fields: [orderId], references: [id], onDelete: Cascade)
   carrier          String
   trackingNumber   String
-  status           ShipmentStatus @default(PENDING)
+  status           String         @default("PENDING")
   estimatedDelivery DateTime?
   deliveredAt      DateTime?
   createdAt        DateTime       @default(now())
@@ -425,7 +425,7 @@ model Notification {
   id        String           @id @default(cuid())
   userId    String
   user      User             @relation(fields: [userId], references: [id], onDelete: Cascade)
-  type      NotificationType
+  type      String
   title     String
   message   String?
   link      String?
@@ -443,8 +443,8 @@ model Subscription {
   id          String             @id @default(cuid())
   userId      String
   user        User               @relation(fields: [userId], references: [id], onDelete: Cascade)
-  plan        SubscriptionPlan
-  status      SubscriptionStatus @default(ACTIVE)
+  plan        String
+  status      String             @default("ACTIVE")
   startDate   DateTime
   endDate     DateTime?
   autoRenew   Boolean            @default(true)
@@ -463,7 +463,7 @@ model Discount {
   productId String
   product   Product      @relation(fields: [productId], references: [id], onDelete: Cascade)
   name      String
-  type      DiscountType
+  type      String
   value     Float
   startDate DateTime
   endDate   DateTime
@@ -527,7 +527,7 @@ model Invoice {
   order         Order         @relation(fields: [orderId], references: [id], onDelete: Cascade)
   invoiceNumber String        @unique
   amount        Float
-  status        InvoiceStatus @default(DRAFT)
+  status        String        @default("DRAFT")
   issuedAt      DateTime      @default(now())
   paidAt        DateTime?
   dueDate       DateTime
@@ -546,8 +546,8 @@ model ReturnRequest {
   orderItem      OrderItem    @relation(fields: [orderItemId], references: [id], onDelete: Cascade)
   userId         String
   user           User         @relation(fields: [userId], references: [id], onDelete: Cascade)
-  reason         ReturnReason
-  status         ReturnStatus @default(PENDING)
+  reason         String
+  status         String       @default("PENDING")
   quantity       Int          @default(1)
   requestedAt    DateTime     @default(now())
   resolvedAt     DateTime?
@@ -565,8 +565,8 @@ model SupportTicket {
   user        User          @relation(fields: [userId], references: [id], onDelete: Cascade)
   subject     String
   description String
-  status      TicketStatus  @default(OPEN)
-  priority    TicketPriority @default(MEDIUM)
+  status      String  @default("OPEN")
+  priority    String  @default("MEDIUM")
   category    String        @default("general")
   assignedTo  String?
   replies     TicketReply[]
@@ -596,132 +596,4 @@ model TicketReply {
   @@map("ticket_replies")
 }
 
-// ==================== Enums ====================
-enum InvoiceStatus {
-  DRAFT
-  SENT
-  PAID
-  OVERDUE
-  CANCELLED
-}
 
-enum ReturnReason {
-  DEFECTIVE
-  NOT_AS_DESCRIBED
-  WRONG_ITEM
-  SIZE_ISSUE
-  OTHER
-}
-
-enum ReturnStatus {
-  PENDING
-  APPROVED
-  REJECTED
-  RECEIVED
-  REFUNDED
-}
-
-enum TicketStatus {
-  OPEN
-  IN_PROGRESS
-  WAITING_ON_CUSTOMER
-  RESOLVED
-  CLOSED
-}
-
-enum TicketPriority {
-  LOW
-  MEDIUM
-  HIGH
-  URGENT
-}
-
-enum Role {
-  USER
-  ADMIN
-  MODERATOR
-}
-
-enum OrderStatus {
-  PENDING
-  CONFIRMED
-  PROCESSING
-  SHIPPED
-  DELIVERED
-  CANCELLED
-}
-
-enum PaymentMethod {
-  CREDIT_CARD
-  DEBIT_CARD
-  PAYPAL
-  BANK_TRANSFER
-  CASH_ON_DELIVERY
-}
-
-enum PaymentStatus {
-  PENDING
-  COMPLETED
-  FAILED
-  REFUNDED
-}
-
-enum RefundStatus {
-  PENDING
-  APPROVED
-  REJECTED
-  COMPLETED
-}
-
-enum ShipmentStatus {
-  PENDING
-  PICKED_UP
-  IN_TRANSIT
-  OUT_FOR_DELIVERY
-  DELIVERED
-  FAILED
-}
-
-enum NotificationType {
-  SYSTEM
-  ORDER_UPDATE
-  PAYMENT_RECEIVED
-  SHIPMENT_UPDATE
-  NEW_FOLLOWER
-  NEW_COMMENT
-  NEW_LIKE
-  REVIEW_REPLY
-  PROMOTION
-  NEW_MESSAGE
-  SUBSCRIPTION_EXPIRING
-  DISCOUNT_AVAILABLE
-  INVOICE_CREATED
-  INVOICE_PAID
-  INVOICE_OVERDUE
-  RETURN_REQUESTED
-  RETURN_APPROVED
-  RETURN_REJECTED
-  RETURN_REFUNDED
-  TICKET_CREATED
-  TICKET_UPDATED
-  TICKET_RESOLVED
-}
-
-enum SubscriptionPlan {
-  FREE
-  BASIC
-  PREMIUM
-  ENTERPRISE
-}
-
-enum SubscriptionStatus {
-  ACTIVE
-  CANCELLED
-  PAST_DUE
-  EXPIRED
-}
-
-enum DiscountType {
-  PERCENTAGE
-  FIXED_AMOUNT
-}

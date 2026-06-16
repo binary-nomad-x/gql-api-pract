@@ -1,8 +1,8 @@
 import { faker } from "@faker-js/faker";
 import type { SeedContext, SeedCounts } from "./types.js";
-import type { User, Post, Product, NotificationType } from "@prisma/client";
+import type { User, Post, Product } from "@prisma/client";
 
-const NT: NotificationType[] = [
+const NT = [
   "SYSTEM", "ORDER_UPDATE", "PAYMENT_RECEIVED", "SHIPMENT_UPDATE",
   "NEW_FOLLOWER", "NEW_COMMENT", "NEW_LIKE", "REVIEW_REPLY",
   "PROMOTION", "NEW_MESSAGE", "SUBSCRIPTION_EXPIRING", "DISCOUNT_AVAILABLE",
@@ -14,7 +14,7 @@ export async function seedRemaining(
 ): Promise<void> {
   // Notifications
   const notifData: Array<{
-    userId: string; type: NotificationType; title: string;
+    userId: string; type: string; title: string;
     message?: string; link?: string; isRead: boolean; readAt?: Date;
   }> = [];
   for (const u of users) {

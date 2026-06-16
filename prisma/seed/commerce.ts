@@ -1,11 +1,11 @@
 import { faker } from "@faker-js/faker";
 import type { SeedContext, SeedCounts } from "./types.js";
-import type { User, Category, Product, OrderStatus } from "@prisma/client";
+import type { User, Category, Product } from "@prisma/client";
 
 const SEED_PRODUCTS = 5000;
 const SEED_ORDERS = 5000;
 
-const ORDER_STATUSES: OrderStatus[] = [
+const ORDER_STATUSES = [
   "PENDING", "CONFIRMED", "PROCESSING", "SHIPPED", "DELIVERED", "CANCELLED",
 ];
 const PAYMENT_METHODS = ["CREDIT_CARD", "DEBIT_CARD", "PAYPAL", "BANK_TRANSFER", "CASH_ON_DELIVERY"] as const;
@@ -63,7 +63,7 @@ export async function seedCommerce(
   // Orders + OrderItems — create orders first, then items in bulk
   console.log("Seeding orders...");
   const orderData: Array<{
-    userId: string; status: OrderStatus; totalAmount: number; discountAmount: number; shippingAddress: string;
+    userId: string; status: string; totalAmount: number; discountAmount: number; shippingAddress: string;
   }> = [];
 
   const orderItemData: Array<{ orderId: string; productId: string; quantity: number; unitPrice: number }> = [];

@@ -1,9 +1,9 @@
 import { faker } from "@faker-js/faker";
 import type { SeedContext, SeedCounts } from "./types.js";
-import type { User, SubscriptionPlan, SubscriptionStatus } from "@prisma/client";
+import type { User } from "@prisma/client";
 
-const PLANS: SubscriptionPlan[] = ["FREE", "BASIC", "PREMIUM", "ENTERPRISE"];
-const STATUSES: SubscriptionStatus[] = ["ACTIVE", "ACTIVE", "ACTIVE", "CANCELLED", "PAST_DUE", "EXPIRED"];
+const PLANS = ["FREE", "BASIC", "PREMIUM", "ENTERPRISE"] as const;
+const STATUSES = ["ACTIVE", "ACTIVE", "ACTIVE", "CANCELLED", "PAST_DUE", "EXPIRED"] as const;
 
 export async function seedSubscriptions(ctx: SeedContext, counts: SeedCounts, users: User[]): Promise<void> {
   await ctx.prisma.subscription.createMany({

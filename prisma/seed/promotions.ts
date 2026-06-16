@@ -1,10 +1,10 @@
 import { faker } from "@faker-js/faker";
 import type { SeedContext, SeedCounts } from "./types.js";
-import type { Order, ShipmentStatus } from "@prisma/client";
+import type { Order } from "@prisma/client";
 
 const COUPON_CODES = ["WELCOME10", "SAVE20", "FREESHIP", "HOLIDAY25", "FLASH50", "NEWUSER", "LOYALTY", "VIP15", "MEGA50", "DEAL25", "SAVE100"];
 const CARRIERS = ["UPS", "FedEx", "USPS", "DHL", "Amazon Logistics", "Ontrac", "Canada Post"];
-const SHIP_STATUSES: ShipmentStatus[] = ["PICKED_UP", "IN_TRANSIT", "OUT_FOR_DELIVERY", "DELIVERED"];
+const SHIP_STATUSES = ["PICKED_UP", "IN_TRANSIT", "OUT_FOR_DELIVERY", "DELIVERED"] as const;
 
 export async function seedPromotions(ctx: SeedContext, counts: SeedCounts, orders: Order[]): Promise<void> {
   await ctx.prisma.coupon.createMany({

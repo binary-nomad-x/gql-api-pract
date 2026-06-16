@@ -1,4 +1,4 @@
-import type { PrismaClient, Prisma, OrderStatus, PaymentMethod, PaymentStatus, RefundStatus } from "@prisma/client";
+import type { PrismaClient, Prisma } from "@prisma/client";
 import type { CreateProductInput, UpdateProductInput, PlaceOrderInput, ProcessPaymentInput, CreateRefundInput } from "@gql-prisma-api/modules/commerce/inputs.js";
 import { requireAuth, requireOwner } from "@gql-prisma-api/utils/errors.js";
 import { triggerNovuWorkflow } from "@gql-prisma-api/utils/novu.js";
@@ -191,7 +191,7 @@ export async function updateOrderStatus(
   const order = await prisma.order.findUnique({ where: { id } });
   if (!order) throw new Error("Order not found");
   requireOwner(order.userId, userId);
-  return prisma.order.update({ where: { id }, data: { status: status as OrderStatus } });
+  return prisma.order.update({ where: { id }, data: { status } });
 }
 
 export async function processPayment(
@@ -214,8 +214,8 @@ export async function processPayment(
     data: {
       orderId: input.orderId,
       amount: order.totalAmount,
-      method: input.method as PaymentMethod,
-      status: "COMPLETED" as PaymentStatus,
+      method: input.method,
+      status: "COMPLETED",
       transactionId,
     },
   });
@@ -264,7 +264,7 @@ export async function updateRefundStatus(
 
   const updated = await prisma.refund.update({
     where: { id },
-    data: { status: status as RefundStatus },
+    data: { status },
   });
 
   if (status === "COMPLETED") {

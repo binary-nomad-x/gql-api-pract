@@ -1,6 +1,6 @@
 import { faker } from "@faker-js/faker";
 import type { SeedContext, SeedCounts } from "./types.js";
-import type { User, Order, OrderItem, InvoiceStatus, ReturnStatus, TicketStatus } from "@prisma/client";
+import type { User, Order, OrderItem } from "@prisma/client";
 
 export async function seedExtras(
   ctx: SeedContext, counts: SeedCounts,
@@ -8,10 +8,10 @@ export async function seedExtras(
 ): Promise<void> {
   const orders = await ctx.prisma.order.findMany();
   const orderItems = await ctx.prisma.orderItem.findMany({ include: { order: true } });
-  const allStatuses: InvoiceStatus[] = ["DRAFT", "SENT", "PAID", "OVERDUE", "CANCELLED"];
-  const returnReasons: any[] = ["DEFECTIVE", "NOT_AS_DESCRIBED", "WRONG_ITEM", "SIZE_ISSUE", "OTHER"];
-  const returnStatuses: ReturnStatus[] = ["PENDING", "APPROVED", "REJECTED", "RECEIVED", "REFUNDED"];
-  const ticketStatuses: TicketStatus[] = ["OPEN", "IN_PROGRESS", "WAITING_ON_CUSTOMER", "RESOLVED", "CLOSED"];
+  const allStatuses = ["DRAFT", "SENT", "PAID", "OVERDUE", "CANCELLED"] as const;
+  const returnReasons = ["DEFECTIVE", "NOT_AS_DESCRIBED", "WRONG_ITEM", "SIZE_ISSUE", "OTHER"] as const;
+  const returnStatuses = ["PENDING", "APPROVED", "REJECTED", "RECEIVED", "REFUNDED"] as const;
+  const ticketStatuses = ["OPEN", "IN_PROGRESS", "WAITING_ON_CUSTOMER", "RESOLVED", "CLOSED"] as const;
   const priorities: any[] = ["LOW", "MEDIUM", "HIGH", "URGENT"];
   const categories = ["general", "billing", "technical", "account", "shipping", "returns"];
 
@@ -49,7 +49,7 @@ export async function seedExtras(
   console.log("Seeding return requests...");
   const returnData: Array<{
     orderItemId: string; userId: string; reason: string;
-    status: ReturnStatus; quantity: number; requestedAt: Date; resolvedAt?: Date;
+    status: string; quantity: number; requestedAt: Date; resolvedAt?: Date;
   }> = [];
 
   const returnCandidates = orderItems.filter((oi) => oi.order.status !== "CANCELLED");
@@ -78,7 +78,7 @@ export async function seedExtras(
   console.log("Seeding support tickets...");
   const ticketData: Array<{
     userId: string; subject: string; description: string;
-    status: TicketStatus; priority: string; category: string; assignedTo?: string;
+    status: string; priority: string; category: string; assignedTo?: string;
   }> = [];
 
   for (let i = 0; i < 300; i++) {

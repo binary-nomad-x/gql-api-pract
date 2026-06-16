@@ -9,7 +9,8 @@ export async function startConversation(
   title?: string,
 ) {
   requireAuth(userId);
-  if (targetUserId === userId) throw new Error("Cannot start conversation with yourself");
+  if (targetUserId === userId)
+    throw new Error("Cannot start conversation with yourself");
   const target = await prisma.user.findUnique({ where: { id: targetUserId } });
   if (!target) throw new Error("User not found");
   const conv = await prisma.conversation.create({
@@ -26,7 +27,11 @@ export async function startConversation(
     },
     include: { participants: { include: { user: true } } },
   });
-  logger.info("Conversation started", { conversationId: conv.id, userId: userId!, targetUserId });
+  logger.info("Conversation started", {
+    conversationId: conv.id,
+    userId: userId!,
+    targetUserId,
+  });
   return conv;
 }
 
@@ -49,7 +54,11 @@ export async function sendMessage(
     where: { conversationId, userId: userId! },
     data: { lastReadAt: new Date() },
   });
-  logger.info("Message sent", { messageId: message.id, conversationId, senderId: userId! });
+  logger.info("Message sent", {
+    messageId: message.id,
+    conversationId,
+    senderId: userId!,
+  });
   return message;
 }
 

@@ -59,13 +59,16 @@ async function main(): Promise<void> {
 
   // Phase 4 — promotions (from orders — already seeded inside commerce)
   console.log("[Phase 4] Coupons, Shipments...");
-  
+
   // Orders are already created inside seedCommerce; load them fresh
   const orders = await prisma.order.findMany();
   await seedPromotions({ prisma }, counts, orders);
 
   // Phase 5 — everything else (all independent of each other, depend on users/posts/products)
-  console.log("[Phase 5] Notifications, Follows, SavedPosts, PostViews, ProductImages, Subscriptions, Discounts...");
+  console.log(
+    "[Phase 5] Notifications, Follows, SavedPosts, PostViews, ProductImages, Subscriptions, Discounts...",
+  );
+
   await Promise.all([
     seedRemaining({ prisma }, counts, users, posts, products),
     seedSubscriptions({ prisma }, counts, users),
@@ -82,12 +85,15 @@ async function main(): Promise<void> {
 
   // Summary
   printElapsed(start);
-  console.log(`Summary: ${counts.users} users, ${counts.products} products, ${counts.orders} orders, ` +
-    `${counts.messages} messages, ${counts.postViews} post views, ${counts.productImages} product images, ` +
-    `${counts.invoices} invoices, ${counts.returns} returns, ${counts.tickets} tickets, ${counts.ticketReplies} replies`);
+  console.log(
+    `Summary: ${counts.users} users, ${counts.products} products, ${counts.orders} orders, ` +
+      `${counts.messages} messages, ${counts.postViews} post views, ${counts.productImages} product images, ` +
+      `${counts.invoices} invoices, ${counts.returns} returns, ${counts.tickets} tickets, ${counts.ticketReplies} replies`,
+  );
+
   console.log(
     "\nTest accounts (password123): alice@test.com (ADMIN), bob@test.com (USER), " +
-    "charlie@test.com (USER), diana@test.com (MODERATOR), eve@test.com (USER)",
+      "charlie@test.com (USER), diana@test.com (MODERATOR), eve@test.com (USER)",
   );
 }
 

@@ -114,34 +114,34 @@ mutation {
 
 Running `npm run seed` creates approximately 90,000+ records across 26 tables:
 
-| Table | Records |
-|---|---|
-| Users | 500 |
-| Profiles | 500 |
-| Categories | 15 |
-| Tags | 20 |
-| Posts | 500 |
-| Comments | 2,000 |
-| Likes | ~3,000 |
-| Products | 5,000 |
-| Orders + Items | 5,000 / ~15,000 |
-| Payments | ~4,000 |
-| Refunds | ~200 |
-| Reviews | ~2,500 |
-| Addresses | ~1,000 |
-| Wishlists + Items | 100 / ~300 |
-| Carts + Items | 150 / ~400 |
-| Coupons | 11 |
-| Shipments | ~500 |
-| Notifications | ~3,500 |
-| Follows | 500 |
-| SavedPosts | 500 |
-| PostViews | ~20,000 |
-| ProductImages | ~12,000 |
-| Subscriptions | 500 |
-| Discounts | 1,000 |
-| Conversations | 500 |
-| Messages | ~20,000 |
+| Table             | Records         |
+| ----------------- | --------------- |
+| Users             | 500             |
+| Profiles          | 500             |
+| Categories        | 15              |
+| Tags              | 20              |
+| Posts             | 500             |
+| Comments          | 2,000           |
+| Likes             | ~3,000          |
+| Products          | 5,000           |
+| Orders + Items    | 5,000 / ~15,000 |
+| Payments          | ~4,000          |
+| Refunds           | ~200            |
+| Reviews           | ~2,500          |
+| Addresses         | ~1,000          |
+| Wishlists + Items | 100 / ~300      |
+| Carts + Items     | 150 / ~400      |
+| Coupons           | 11              |
+| Shipments         | ~500            |
+| Notifications     | ~3,500          |
+| Follows           | 500             |
+| SavedPosts        | 500             |
+| PostViews         | ~20,000         |
+| ProductImages     | ~12,000         |
+| Subscriptions     | 500             |
+| Discounts         | 1,000           |
+| Conversations     | 500             |
+| Messages          | ~20,000         |
 
 ## API
 

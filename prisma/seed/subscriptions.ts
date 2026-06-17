@@ -1,6 +1,6 @@
 import { faker } from "@faker-js/faker";
 import type { SeedContext, SeedCounts } from "./types.js";
-import type { User } from "@prisma/client";
+import { User } from "@prisma/client";
 
 const PLANS = ["FREE", "BASIC", "PREMIUM", "ENTERPRISE"] as const;
 

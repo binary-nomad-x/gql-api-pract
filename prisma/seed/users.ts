@@ -4,6 +4,7 @@ import type { SeedContext, SeedCounts } from "./types.js";
 import type { User } from "@prisma/client";
 
 const SEED_USERS = 500;
+
 const USER_ROLES = ["USER", "USER", "USER", "ADMIN", "MODERATOR"] as const;
 
 export async function seedUsers(
@@ -12,36 +13,44 @@ export async function seedUsers(
 ): Promise<User[]> {
   console.log("Seeding users...");
 
-  const defaultPasswrod = process.env.DEFUALT_USER_PASSWORD || "password123";
-  const password = await bcrypt.hash(defaultPasswrod, 10);
-  const fixed = FIXED_USERS.map((u) => ({ ...u, password }));
+  const defaultPassword = process.env.DEFAULT_USER_PASSWORD || "password123";
 
-  const random = Array.from(
-    { length: SEED_USERS - FIXED_USERS.length },
-    () => ({
-      email: faker.internet.email().toLowerCase(),
-      name: faker.person.fullName(),
-      password,
-      role: faker.helpers.arrayElement(USER_ROLES),
-    }),
-  );
+  const hashedPassword = await bcrypt.hash(defaultPassword, 10);
 
-  await ctx.prisma.user.createMany({ data: [...fixed, ...random] });
-  const users = await ctx.prisma.user.findMany();
+  const usersData = Array.from({ length: SEED_USERS }, (_, index) => ({
+    email: faker.internet.email().toLowerCase() + `.${index}`,
+    name: faker.person.fullName(),
+    password: hashedPassword,
+    role: faker.helpers.arrayElement(USER_ROLES),
+  }));
+
+  await ctx.prisma.user.createMany({
+    data: usersData,
+    skipDuplicates: true,
+  });
+
+  const users = await ctx.prisma.user.findMany({
+    select: { id: true },
+  });
+
   counts.users = users.length;
+
   console.log(`Created ${users.length} users`);
 
   await ctx.prisma.profile.createMany({
-    data: users.map((u) => ({
-      userId: u.id,
-      bio: faker.lorem.sentence(),
+    data: users.map((user) => ({
+      userId: user.id,
+      bio: faker.lorem.sentences(2),
       avatar: faker.image.avatar(),
       phone: faker.phone.number(),
-      address: faker.location.streetAddress(),
+      address: faker.location.streetAddress(true),
     })),
+    skipDuplicates: true,
   });
 
   counts.profiles = users.length;
+
   console.log(`Created ${users.length} profiles`);
-  return users;
+
+  return ctx.prisma.user.findMany();
 }

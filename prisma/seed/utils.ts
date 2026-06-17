@@ -46,10 +46,12 @@ export async function attachPostTags(
   data: Array<{ postId: string; tagId: string }>,
 ): Promise<void> {
   const grouped = new Map<string, string[]>();
+
   for (const { postId, tagId } of data) {
     if (!grouped.has(postId)) grouped.set(postId, []);
     grouped.get(postId)!.push(tagId);
   }
+
   await Promise.all(
     Array.from(grouped.entries()).map(([postId, tagIds]) =>
       prisma.post.update({
@@ -66,10 +68,12 @@ export async function attachPostCategories(
   data: Array<{ postId: string; categoryId: string }>,
 ): Promise<void> {
   const grouped = new Map<string, string[]>();
+
   for (const { postId, categoryId } of data) {
     if (!grouped.has(postId)) grouped.set(postId, []);
     grouped.get(postId)!.push(categoryId);
   }
+
   await Promise.all(
     Array.from(grouped.entries()).map(([postId, categoryIds]) =>
       prisma.post.update({

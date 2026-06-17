@@ -41,3 +41,6 @@ tsnode-type-check-*
 # Optional: Coverage reports (if you add tests later)
 coverage/
 .nyc_output
+
+# zed Editor
+.zed/

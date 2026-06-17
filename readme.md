@@ -171,3 +171,18 @@ See [API.md](./API.md) for a complete reference of all queries, mutations, input
 - `SubscriptionPlan`: `FREE | BASIC | PREMIUM | ENTERPRISE`
 - `SubscriptionStatus`: `ACTIVE | CANCELLED | PAST_DUE | EXPIRED`
 - `DiscountType`: `PERCENTAGE | FIXED_AMOUNT`
+
+
+
+
+### TODO'S : 
+* Grow the project to even more data (real looking and fake real data that mockaroo generates)
+* Introduce database level things like materialized views, views, procedures, functions in the codebase
+* Introduce more helpers in auth
+* Ability to use /src methods into /prisma/seed files (like exported methods and constants)
+* Make the novu working (use the new approach that supports the ts files - code level workflows and steps)
+* Introduce mcp in the project
+* Use pgsql mcp for the project
+* introduce stripe
+* when i hit localhost:4000 port and im offline, it does not open graphql appollo server for me to play with offline
+*

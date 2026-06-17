@@ -6,19 +6,46 @@ const SEED_PRODUCTS = 5000;
 const SEED_ORDERS = 5000;
 
 const ORDER_STATUSES = [
-  "PENDING", "CONFIRMED", "PROCESSING", "SHIPPED", "DELIVERED", "CANCELLED",
+  "PENDING",
+  "CONFIRMED",
+  "PROCESSING",
+  "SHIPPED",
+  "DELIVERED",
+  "CANCELLED",
 ];
-const PAYMENT_METHODS = ["CREDIT_CARD", "DEBIT_CARD", "PAYPAL", "BANK_TRANSFER", "CASH_ON_DELIVERY"] as const;
-const PAYMENT_STATUSES = ["COMPLETED", "COMPLETED", "COMPLETED", "FAILED", "REFUNDED"] as const;
+const PAYMENT_METHODS = [
+  "CREDIT_CARD",
+  "DEBIT_CARD",
+  "PAYPAL",
+  "BANK_TRANSFER",
+  "CASH_ON_DELIVERY",
+] as const;
+const PAYMENT_STATUSES = [
+  "COMPLETED",
+  "COMPLETED",
+  "COMPLETED",
+  "FAILED",
+  "REFUNDED",
+] as const;
 const REFUND_REASONS = [
-  "Defective product", "Wrong item shipped", "Changed mind",
-  "Item not as described", "Damaged during shipping",
+  "Defective product",
+  "Wrong item shipped",
+  "Changed mind",
+  "Item not as described",
+  "Damaged during shipping",
 ];
-const REFUND_STATUSES = ["PENDING", "APPROVED", "COMPLETED", "REJECTED"] as const;
+const REFUND_STATUSES = [
+  "PENDING",
+  "APPROVED",
+  "COMPLETED",
+  "REJECTED",
+] as const;
 
 export async function seedCommerce(
-  ctx: SeedContext, counts: SeedCounts,
-  users: User[], categories: Category[],
+  ctx: SeedContext,
+  counts: SeedCounts,
+  users: User[],
+  categories: Category[],
 ): Promise<{ products: Product[] }> {
   const prodCatIds = categories.slice(6).map((c) => c.id);
   const allCatIds = categories.map((c) => c.id);
@@ -27,15 +54,22 @@ export async function seedCommerce(
   console.log("Seeding products...");
   const usedSkus = new Set<string>();
   const productData: Array<{
-    name: string; description: string; price: number; stock: number;
-    sku: string; imageUrl: string; isActive: boolean;
-    sellerId: string; categoryId: string | undefined;
+    name: string;
+    description: string;
+    price: number;
+    stock: number;
+    sku: string;
+    imageUrl: string;
+    isActive: boolean;
+    sellerId: string;
+    categoryId: string | undefined;
   }> = [];
 
   for (let i = 0; i < SEED_PRODUCTS; i++) {
     let sku: string;
-    do { sku = faker.string.alphanumeric({ length: 10, casing: "upper" }); }
-    while (usedSkus.has(sku));
+    do {
+      sku = faker.string.alphanumeric({ length: 10, casing: "upper" });
+    } while (usedSkus.has(sku));
     usedSkus.add(sku);
     productData.push({
       name: faker.commerce.productName(),
@@ -53,7 +87,9 @@ export async function seedCommerce(
   }
 
   for (let i = 0; i < productData.length; i += 500) {
-    await ctx.prisma.product.createMany({ data: productData.slice(i, i + 500) });
+    await ctx.prisma.product.createMany({
+      data: productData.slice(i, i + 500),
+    });
   }
 
   const products = await ctx.prisma.product.findMany();
@@ -63,10 +99,19 @@ export async function seedCommerce(
   // Orders + OrderItems — create orders first, then items in bulk
   console.log("Seeding orders...");
   const orderData: Array<{
-    userId: string; status: string; totalAmount: number; discountAmount: number; shippingAddress: string;
+    userId: string;
+    status: string;
+    totalAmount: number;
+    discountAmount: number;
+    shippingAddress: string;
   }> = [];
 
-  const orderItemData: Array<{ orderId: string; productId: string; quantity: number; unitPrice: number }> = [];
+  const orderItemData: Array<{
+    orderId: string;
+    productId: string;
+    quantity: number;
+    unitPrice: number;
+  }> = [];
 
   // Pre-generate order items data grouped by order
   const tempOrderIds: string[] = [];
@@ -99,7 +144,12 @@ export async function seedCommerce(
   // Actually, let's batch orders with individual creates but in parallel transactions
   const BATCH = 100;
   const orderMap = new Map<string, string>(); // tempId → realId
-  const orders: Array<{ id: string; userId: string; status: string; totalAmount: number }> = [];
+  const orders: Array<{
+    id: string;
+    userId: string;
+    status: string;
+    totalAmount: number;
+  }> = [];
 
   for (let i = 0; i < orderData.length; i += BATCH) {
     const batch = orderData.slice(i, i + BATCH);
@@ -131,13 +181,15 @@ export async function seedCommerce(
         unitPrice: p.price,
       });
     }
-    
+
     // No need to regenerate total — it's already in orderData[i].totalAmount
   }
 
   // Bulk insert order items in batches
   for (let i = 0; i < orderItemData.length; i += 1000) {
-    await ctx.prisma.orderItem.createMany({ data: orderItemData.slice(i, i + 1000) });
+    await ctx.prisma.orderItem.createMany({
+      data: orderItemData.slice(i, i + 1000),
+    });
   }
 
   counts.orderItems = orderItemData.length;
@@ -171,11 +223,15 @@ export async function seedCommerce(
 
   // Refunds — bulk
   const completedPayments = await ctx.prisma.payment.findMany({
-    where: { status: "COMPLETED" }, take: 200, orderBy: { createdAt: "desc" },
+    where: { status: "COMPLETED" },
+    take: 200,
+    orderBy: { createdAt: "desc" },
   });
 
   const refundData = completedPayments.map((p) => {
-    const amt = parseFloat(faker.commerce.price({ min: 10, max: Math.min(p.amount, 200) }));
+    const amt = parseFloat(
+      faker.commerce.price({ min: 10, max: Math.min(p.amount, 200) }),
+    );
     return {
       paymentId: p.id,
       orderId: p.orderId,

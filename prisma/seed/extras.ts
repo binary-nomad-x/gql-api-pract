@@ -3,23 +3,68 @@ import type { SeedContext, SeedCounts } from "./types.js";
 import type { User, Order, OrderItem } from "@prisma/client";
 
 export async function seedExtras(
-  ctx: SeedContext, counts: SeedCounts,
-  users: User[], products: any[],
+  ctx: SeedContext,
+  counts: SeedCounts,
+  users: User[],
+  products: any[],
 ): Promise<void> {
   const orders = await ctx.prisma.order.findMany();
-  const orderItems = await ctx.prisma.orderItem.findMany({ include: { order: true } });
-  const allStatuses = ["DRAFT", "SENT", "PAID", "OVERDUE", "CANCELLED"] as const;
-  const returnReasons = ["DEFECTIVE", "NOT_AS_DESCRIBED", "WRONG_ITEM", "SIZE_ISSUE", "OTHER"] as const;
-  const returnStatuses = ["PENDING", "APPROVED", "REJECTED", "RECEIVED", "REFUNDED"] as const;
-  const ticketStatuses = ["OPEN", "IN_PROGRESS", "WAITING_ON_CUSTOMER", "RESOLVED", "CLOSED"] as const;
+  const orderItems = await ctx.prisma.orderItem.findMany({
+    include: { order: true },
+  });
+  const allStatuses = [
+    "DRAFT",
+    "SENT",
+    "PAID",
+    "OVERDUE",
+    "CANCELLED",
+  ] as const;
+
+  const returnReasons = [
+    "DEFECTIVE",
+    "NOT_AS_DESCRIBED",
+    "WRONG_ITEM",
+    "SIZE_ISSUE",
+    "OTHER",
+  ] as const;
+
+  const returnStatuses = [
+    "PENDING",
+    "APPROVED",
+    "REJECTED",
+    "RECEIVED",
+    "REFUNDED",
+  ] as const;
+
+  const ticketStatuses = [
+    "OPEN",
+    "IN_PROGRESS",
+    "WAITING_ON_CUSTOMER",
+    "RESOLVED",
+    "CLOSED",
+  ] as const;
+
   const priorities: any[] = ["LOW", "MEDIUM", "HIGH", "URGENT"];
-  const categories = ["general", "billing", "technical", "account", "shipping", "returns"];
+
+  const categories = [
+    "general",
+    "billing",
+    "technical",
+    "account",
+    "shipping",
+    "returns",
+  ];
 
   // === Invoices ===
   console.log("Seeding invoices...");
   const invoiceData: Array<{
-    orderId: string; invoiceNumber: string; amount: number;
-    status: InvoiceStatus; issuedAt: Date; paidAt?: Date; dueDate: Date;
+    orderId: string;
+    invoiceNumber: string;
+    amount: number;
+    status: InvoiceStatus;
+    issuedAt: Date;
+    paidAt?: Date;
+    dueDate: Date;
   }> = [];
 
   let invIdx = 0;
@@ -35,25 +80,40 @@ export async function seedExtras(
       amount: order.totalAmount,
       status,
       issuedAt: issued,
-      paidAt: status === "PAID" ? faker.date.between({ from: issued, to: new Date() }) : undefined,
+      paidAt:
+        status === "PAID"
+          ? faker.date.between({ from: issued, to: new Date() })
+          : undefined,
       dueDate: due,
     });
   }
 
   for (let i = 0; i < invoiceData.length; i += 500) {
-    await ctx.prisma.invoice.createMany({ data: invoiceData.slice(i, i + 500) });
+    await ctx.prisma.invoice.createMany({
+      data: invoiceData.slice(i, i + 500),
+    });
   }
   counts.invoices = invoiceData.length;
 
   // === Return Requests ===
   console.log("Seeding return requests...");
   const returnData: Array<{
-    orderItemId: string; userId: string; reason: string;
-    status: string; quantity: number; requestedAt: Date; resolvedAt?: Date;
+    orderItemId: string;
+    userId: string;
+    reason: string;
+    status: string;
+    quantity: number;
+    requestedAt: Date;
+    resolvedAt?: Date;
   }> = [];
 
-  const returnCandidates = orderItems.filter((oi) => oi.order.status !== "CANCELLED");
-  const sampleReturns = faker.helpers.arrayElements(returnCandidates, Math.min(500, returnCandidates.length));
+  const returnCandidates = orderItems.filter(
+    (oi) => oi.order.status !== "CANCELLED",
+  );
+  const sampleReturns = faker.helpers.arrayElements(
+    returnCandidates,
+    Math.min(500, returnCandidates.length),
+  );
 
   for (const oi of sampleReturns) {
     const status = faker.helpers.arrayElement(returnStatuses);
@@ -65,20 +125,30 @@ export async function seedExtras(
       status,
       quantity: faker.number.int({ min: 1, max: oi.quantity }),
       requestedAt: requested,
-      resolvedAt: status !== "PENDING" ? faker.date.between({ from: requested, to: new Date() }) : undefined,
+      resolvedAt:
+        status !== "PENDING"
+          ? faker.date.between({ from: requested, to: new Date() })
+          : undefined,
     });
   }
 
   for (let i = 0; i < returnData.length; i += 500) {
-    await ctx.prisma.returnRequest.createMany({ data: returnData.slice(i, i + 500) });
+    await ctx.prisma.returnRequest.createMany({
+      data: returnData.slice(i, i + 500),
+    });
   }
   counts.returns = returnData.length;
 
   // === Support Tickets ===
   console.log("Seeding support tickets...");
   const ticketData: Array<{
-    userId: string; subject: string; description: string;
-    status: string; priority: string; category: string; assignedTo?: string;
+    userId: string;
+    subject: string;
+    description: string;
+    status: string;
+    priority: string;
+    category: string;
+    assignedTo?: string;
   }> = [];
 
   for (let i = 0; i < 300; i++) {
@@ -101,12 +171,16 @@ export async function seedExtras(
       status: faker.helpers.arrayElement(ticketStatuses),
       priority: faker.helpers.arrayElement(priorities),
       category: faker.helpers.arrayElement(categories),
-      assignedTo: faker.datatype.boolean(0.4) ? faker.helpers.arrayElement(users.filter((u) => u.role !== "USER")).id : undefined,
+      assignedTo: faker.datatype.boolean(0.4)
+        ? faker.helpers.arrayElement(users.filter((u) => u.role !== "USER")).id
+        : undefined,
     });
   }
 
   for (let i = 0; i < ticketData.length; i += 100) {
-    await ctx.prisma.supportTicket.createMany({ data: ticketData.slice(i, i + 100) });
+    await ctx.prisma.supportTicket.createMany({
+      data: ticketData.slice(i, i + 100),
+    });
   }
   counts.tickets = ticketData.length;
 
@@ -115,10 +189,15 @@ export async function seedExtras(
   // === Ticket Replies ===
   console.log("Seeding ticket replies...");
   const replyData: Array<{
-    ticketId: string; userId: string; content: string; isStaff: boolean;
+    ticketId: string;
+    userId: string;
+    content: string;
+    isStaff: boolean;
   }> = [];
 
-  const staffUsers = users.filter((u) => u.role === "ADMIN" || u.role === "MODERATOR");
+  const staffUsers = users.filter(
+    (u) => u.role === "ADMIN" || u.role === "MODERATOR",
+  );
   const staffUser = staffUsers.length > 0 ? staffUsers[0] : users[0];
 
   for (const ticket of tickets) {
@@ -135,7 +214,9 @@ export async function seedExtras(
   }
 
   for (let i = 0; i < replyData.length; i += 500) {
-    await ctx.prisma.ticketReply.createMany({ data: replyData.slice(i, i + 500) });
+    await ctx.prisma.ticketReply.createMany({
+      data: replyData.slice(i, i + 500),
+    });
   }
   counts.ticketReplies = replyData.length;
 }

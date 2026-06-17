@@ -14,17 +14,23 @@ const FIXED_USERS = [
   { email: "eve@test.com", name: "Eve Adams", role: "USER" },
 ];
 
-export async function seedUsers(ctx: SeedContext, counts: SeedCounts): Promise<User[]> {
+export async function seedUsers(
+  ctx: SeedContext,
+  counts: SeedCounts,
+): Promise<User[]> {
   console.log("Seeding users...");
   const password = await bcrypt.hash("password123", 10);
   const fixed = FIXED_USERS.map((u) => ({ ...u, password }));
 
-  const random = Array.from({ length: SEED_USERS - FIXED_USERS.length }, () => ({
-    email: faker.internet.email().toLowerCase(),
-    name: faker.person.fullName(),
-    password,
-    role: faker.helpers.arrayElement(USER_ROLES),
-  }));
+  const random = Array.from(
+    { length: SEED_USERS - FIXED_USERS.length },
+    () => ({
+      email: faker.internet.email().toLowerCase(),
+      name: faker.person.fullName(),
+      password,
+      role: faker.helpers.arrayElement(USER_ROLES),
+    }),
+  );
 
   await ctx.prisma.user.createMany({ data: [...fixed, ...random] });
   const users = await ctx.prisma.user.findMany();

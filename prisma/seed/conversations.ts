@@ -5,10 +5,16 @@ import type { User } from "@prisma/client";
 const SEED_CONVERSATIONS = 500;
 const MSGS_PER_CONV = 40;
 
-export async function seedConversations(ctx: SeedContext, counts: SeedCounts, users: User[]): Promise<void> {
+export async function seedConversations(
+  ctx: SeedContext,
+  counts: SeedCounts,
+  users: User[],
+): Promise<void> {
   // Conversations (no participants yet — need IDs back)
   const convData = Array.from({ length: SEED_CONVERSATIONS }, () => ({
-    title: faker.datatype.boolean(0.5) ? faker.lorem.words({ min: 2, max: 6 }) : undefined,
+    title: faker.datatype.boolean(0.5)
+      ? faker.lorem.words({ min: 2, max: 6 })
+      : undefined,
   }));
 
   await ctx.prisma.conversation.createMany({ data: convData });
@@ -18,7 +24,11 @@ export async function seedConversations(ctx: SeedContext, counts: SeedCounts, us
 
   // Conversation participants — 2 per conversation
   const cpSet = new Set<string>();
-  const cpData: Array<{ conversationId: string; userId: string; lastReadAt?: Date }> = [];
+  const cpData: Array<{
+    conversationId: string;
+    userId: string;
+    lastReadAt?: Date;
+  }> = [];
   for (const conv of conversations) {
     const [u1, u2] = faker.helpers.arrayElements(users, 2);
     for (const u of [u1, u2]) {
@@ -28,7 +38,9 @@ export async function seedConversations(ctx: SeedContext, counts: SeedCounts, us
       cpData.push({
         conversationId: conv.id,
         userId: u.id,
-        lastReadAt: faker.datatype.boolean(0.6) ? faker.date.recent() : undefined,
+        lastReadAt: faker.datatype.boolean(0.6)
+          ? faker.date.recent()
+          : undefined,
       });
     }
   }
@@ -36,7 +48,11 @@ export async function seedConversations(ctx: SeedContext, counts: SeedCounts, us
   await ctx.prisma.conversationParticipant.createMany({ data: cpData });
 
   // Messages — bulk insert in batches
-  const msgData: Array<{ conversationId: string; senderId: string; content: string }> = [];
+  const msgData: Array<{
+    conversationId: string;
+    senderId: string;
+    content: string;
+  }> = [];
   for (const conv of conversations) {
     const participants = cpData.filter((cp) => cp.conversationId === conv.id);
     if (participants.length < 2) continue;
@@ -54,7 +70,7 @@ export async function seedConversations(ctx: SeedContext, counts: SeedCounts, us
   for (let i = 0; i < msgData.length; i += 2000) {
     await ctx.prisma.message.createMany({ data: msgData.slice(i, i + 2000) });
   }
-  
+
   counts.messages = msgData.length;
   console.log(`Created ${msgData.length} messages`);
 }

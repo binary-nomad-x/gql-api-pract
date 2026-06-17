@@ -3,19 +3,36 @@ import type { SeedContext, SeedCounts } from "./types.js";
 import type { User, Post, Product } from "@prisma/client";
 
 const NT = [
-  "SYSTEM", "ORDER_UPDATE", "PAYMENT_RECEIVED", "SHIPMENT_UPDATE",
-  "NEW_FOLLOWER", "NEW_COMMENT", "NEW_LIKE", "REVIEW_REPLY",
-  "PROMOTION", "NEW_MESSAGE", "SUBSCRIPTION_EXPIRING", "DISCOUNT_AVAILABLE",
+  "SYSTEM",
+  "ORDER_UPDATE",
+  "PAYMENT_RECEIVED",
+  "SHIPMENT_UPDATE",
+  "NEW_FOLLOWER",
+  "NEW_COMMENT",
+  "NEW_LIKE",
+  "REVIEW_REPLY",
+  "PROMOTION",
+  "NEW_MESSAGE",
+  "SUBSCRIPTION_EXPIRING",
+  "DISCOUNT_AVAILABLE",
 ];
 
 export async function seedRemaining(
-  ctx: SeedContext, counts: SeedCounts,
-  users: User[], posts: Post[], products: Product[],
+  ctx: SeedContext,
+  counts: SeedCounts,
+  users: User[],
+  posts: Post[],
+  products: Product[],
 ): Promise<void> {
   // Notifications
   const notifData: Array<{
-    userId: string; type: string; title: string;
-    message?: string; link?: string; isRead: boolean; readAt?: Date;
+    userId: string;
+    type: string;
+    title: string;
+    message?: string;
+    link?: string;
+    isRead: boolean;
+    readAt?: Date;
   }> = [];
   for (const u of users) {
     const n = faker.number.int({ min: 3, max: 12 });
@@ -24,8 +41,13 @@ export async function seedRemaining(
         userId: u.id,
         type: faker.helpers.arrayElement(NT),
         title: faker.lorem.sentence({ min: 3, max: 6 }),
-        message: faker.helpers.maybe(() => faker.lorem.paragraph()) ?? undefined,
-        link: faker.helpers.maybe(() => `/${faker.helpers.arrayElement(["orders", "posts", "products"])}`) ?? undefined,
+        message:
+          faker.helpers.maybe(() => faker.lorem.paragraph()) ?? undefined,
+        link:
+          faker.helpers.maybe(
+            () =>
+              `/${faker.helpers.arrayElement(["orders", "posts", "products"])}`,
+          ) ?? undefined,
         isRead: faker.datatype.boolean(0.5),
         readAt: faker.datatype.boolean(0.3) ? faker.date.recent() : undefined,
       });
@@ -70,7 +92,9 @@ export async function seedRemaining(
     for (let i = 0; i < n; i++) {
       pvData.push({
         postId: post.id,
-        userId: faker.datatype.boolean(0.7) ? faker.helpers.arrayElement(users).id : undefined,
+        userId: faker.datatype.boolean(0.7)
+          ? faker.helpers.arrayElement(users).id
+          : undefined,
         ip: faker.internet.ip(),
       });
     }
@@ -81,8 +105,13 @@ export async function seedRemaining(
   counts.postViews = pvData.length;
 
   // ProductImages
-  const piData: Array<{ productId: string; url: string; alt?: string; sortOrder: number }> = [];
-  
+  const piData: Array<{
+    productId: string;
+    url: string;
+    alt?: string;
+    sortOrder: number;
+  }> = [];
+
   for (const product of products) {
     const n = faker.number.int({ min: 1, max: 4 });
     for (let i = 0; i < n; i++) {
@@ -96,7 +125,9 @@ export async function seedRemaining(
   }
 
   for (let i = 0; i < piData.length; i += 1000) {
-    await ctx.prisma.productImage.createMany({ data: piData.slice(i, i + 1000) });
+    await ctx.prisma.productImage.createMany({
+      data: piData.slice(i, i + 1000),
+    });
   }
 
   counts.productImages = piData.length;

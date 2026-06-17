@@ -6,20 +6,14 @@ import type { User } from "@prisma/client";
 const SEED_USERS = 500;
 const USER_ROLES = ["USER", "USER", "USER", "ADMIN", "MODERATOR"] as const;
 
-const FIXED_USERS = [
-  { email: "alice@test.com", name: "Alice Johnson", role: "ADMIN" },
-  { email: "bob@test.com", name: "Bob Smith", role: "USER" },
-  { email: "charlie@test.com", name: "Charlie Brown", role: "USER" },
-  { email: "diana@test.com", name: "Diana Prince", role: "MODERATOR" },
-  { email: "eve@test.com", name: "Eve Adams", role: "USER" },
-];
-
 export async function seedUsers(
   ctx: SeedContext,
   counts: SeedCounts,
 ): Promise<User[]> {
   console.log("Seeding users...");
-  const password = await bcrypt.hash("password123", 10);
+
+  const defaultPasswrod = process.env.DEFUALT_USER_PASSWORD || "password123";
+  const password = await bcrypt.hash(defaultPasswrod, 10);
   const fixed = FIXED_USERS.map((u) => ({ ...u, password }));
 
   const random = Array.from(

@@ -1,6 +1,6 @@
 import { faker } from "@faker-js/faker";
 import type { SeedContext, SeedCounts } from "./types.js";
-import type { User } from "@prisma/client";
+import { User } from "@prisma/client";
 
 const SEED_CONVERSATIONS = 500;
 const MSGS_PER_CONV = 40;

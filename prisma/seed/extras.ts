@@ -1,4 +1,4 @@
-import { faker } from "@faker-js/faker";
+import { Faker, faker } from "@faker-js/faker";
 import type { SeedContext, SeedCounts } from "./types.js";
 import type { User, Order, OrderItem } from "@prisma/client";
 
@@ -8,10 +8,14 @@ export async function seedExtras(
   users: User[],
   products: any[],
 ): Promise<void> {
+  // orders
   const orders = await ctx.prisma.order.findMany();
+
+  // order items
   const orderItems = await ctx.prisma.orderItem.findMany({
     include: { order: true },
   });
+
   const allStatuses = [
     "DRAFT",
     "SENT",
@@ -61,7 +65,7 @@ export async function seedExtras(
     orderId: string;
     invoiceNumber: string;
     amount: number;
-    status: InvoiceStatus;
+    status: string;
     issuedAt: Date;
     paidAt?: Date;
     dueDate: Date;
@@ -70,7 +74,7 @@ export async function seedExtras(
   let invIdx = 0;
   for (const order of orders) {
     const status = faker.helpers.arrayElement(allStatuses);
-    const issued = faker.date.past({ days: 30 });
+    const issued = faker.date.past({ years: 1 });
     const due = new Date(issued);
     due.setDate(due.getDate() + faker.number.int({ min: 14, max: 45 }));
 
@@ -97,6 +101,7 @@ export async function seedExtras(
 
   // === Return Requests ===
   console.log("Seeding return requests...");
+
   const returnData: Array<{
     orderItemId: string;
     userId: string;
@@ -110,6 +115,7 @@ export async function seedExtras(
   const returnCandidates = orderItems.filter(
     (oi) => oi.order.status !== "CANCELLED",
   );
+
   const sampleReturns = faker.helpers.arrayElements(
     returnCandidates,
     Math.min(500, returnCandidates.length),
@@ -117,7 +123,7 @@ export async function seedExtras(
 
   for (const oi of sampleReturns) {
     const status = faker.helpers.arrayElement(returnStatuses);
-    const requested = faker.date.past({ days: 20 });
+    const requested = faker.date.past({ years: 1 });
     returnData.push({
       orderItemId: oi.id,
       userId: oi.order.userId,
@@ -137,6 +143,7 @@ export async function seedExtras(
       data: returnData.slice(i, i + 500),
     });
   }
+
   counts.returns = returnData.length;
 
   // === Support Tickets ===
@@ -182,12 +189,14 @@ export async function seedExtras(
       data: ticketData.slice(i, i + 100),
     });
   }
+
   counts.tickets = ticketData.length;
 
   const tickets = await ctx.prisma.supportTicket.findMany();
 
   // === Ticket Replies ===
   console.log("Seeding ticket replies...");
+
   const replyData: Array<{
     ticketId: string;
     userId: string;
@@ -198,6 +207,7 @@ export async function seedExtras(
   const staffUsers = users.filter(
     (u) => u.role === "ADMIN" || u.role === "MODERATOR",
   );
+
   const staffUser = staffUsers.length > 0 ? staffUsers[0] : users[0];
 
   for (const ticket of tickets) {
@@ -218,5 +228,6 @@ export async function seedExtras(
       data: replyData.slice(i, i + 500),
     });
   }
+
   counts.ticketReplies = replyData.length;
 }

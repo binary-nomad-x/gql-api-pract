@@ -1,17 +1,17 @@
 import "dotenv/config";
 import { ApolloServer } from "apollo-server";
-import { ApolloServerPluginLandingPageGraphQLPlayground } from "apollo-server-core";
 import { createContext } from "./context.js";
 import { typeDefs } from "./schema/typeDefs.js";
 import { resolvers } from "./modules/index.js";
 import { logger } from "./utils/logger.js";
+import { ApolloServerPluginLandingPageModernLocal } from "./landingPage.js";
 
 const server = new ApolloServer({
   typeDefs,
   resolvers,
   context: createContext,
   introspection: true,
-  plugins: [ApolloServerPluginLandingPageGraphQLPlayground()],
+  plugins: [ApolloServerPluginLandingPageModernLocal()],
 });
 
 const port = process.env.PORT || 4000;

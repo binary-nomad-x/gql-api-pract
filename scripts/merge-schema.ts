@@ -11,7 +11,7 @@ const order = ["base.graphql", ...files.filter((f) => f !== "base.graphql").sort
 let combined = "";
 for (const file of order) {
   const content = readFileSync(join(schemaDir, file), "utf-8");
-  combined += `# === ${file} ===\n${content.trim()}\n\n`;
+  combined += `${content.trim()}\n\n`;
 }
 
 writeFileSync(outFile, combined.trim() + "\n");

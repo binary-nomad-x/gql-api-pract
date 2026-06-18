@@ -1,13 +1,13 @@
 import { PrismaClient } from "@prisma/client";
 import { PrismaPg } from "@prisma/adapter-pg";
-import type { Request } from "express";
+import type { IncomingMessage } from "http";
 import { verifyToken } from "./utils/auth.js";
 import type { Context } from "./types/context.js";
 
 const adapter = new PrismaPg({ connectionString: process.env.DATABASE_URL });
 const prisma = new PrismaClient({ adapter });
 
-export async function createContext({ req }: { req: Request }): Promise<Context> {
+export async function createContext({ req }: { req: IncomingMessage }): Promise<Context> {
   const token = req.headers.authorization?.replace("Bearer ", "");
   let userId: string | undefined;
 
@@ -20,7 +20,7 @@ export async function createContext({ req }: { req: Request }): Promise<Context>
     }
   }
 
-  return { prisma, userId, req };
+  return { prisma, userId };
 }
 
 process.on("beforeExit", async () => {

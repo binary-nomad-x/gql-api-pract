@@ -1,5 +1,9 @@
 import type { PrismaClient, Prisma } from "@prisma/client";
-import type { CreateProductInput, UpdateProductInput, PlaceOrderInput, ProcessPaymentInput, CreateRefundInput } from "@gql-prisma-api/modules/commerce/inputs.js";
+import type {
+  CreateProductInput, UpdateProductInput, PlaceOrderInput,
+  ProcessPaymentInput, CreateRefundInput,
+  ProductFilterInput, OrderFilterInput, PaymentFilterInput, RefundFilterInput,
+} from "@gql-prisma-api/modules/commerce/inputs.js";
 import { requireAuth, requireOwner } from "@gql-prisma-api/utils/errors.js";
 import { triggerNovuWorkflow } from "@gql-prisma-api/utils/novu.js";
 import { logger } from "@gql-prisma-api/utils/logger.js";
@@ -291,30 +295,32 @@ export async function updateRefundStatus(
 
 export function getProducts(
   prisma: PrismaClient,
-  args: {
-    categorySlug?: string;
-    search?: string;
-    minPrice?: number;
-    maxPrice?: number;
-    limit?: number;
-    offset?: number;
-  },
+  args: ProductFilterInput,
 ) {
-  const where: Record<string, unknown> = {};
-  if (args.categorySlug) where.category = { slug: args.categorySlug };
+  const conditions: Prisma.ProductWhereInput[] = [];
+
+  if (args.categorySlug) {
+    conditions.push({ category: { slug: args.categorySlug } });
+  }
+
   if (args.search) {
-    where.OR = [
-      { name: { contains: args.search, mode: "insensitive" as const } },
-      { description: { contains: args.search, mode: "insensitive" as const } },
-    ];
+    conditions.push({
+      OR: [
+        { name: { contains: args.search, mode: "insensitive" } },
+        { description: { contains: args.search, mode: "insensitive" } },
+      ],
+    });
   }
+
   if (args.minPrice !== undefined || args.maxPrice !== undefined) {
-    where.price = {};
-    if (args.minPrice !== undefined)
-      (where.price as Record<string, unknown>).gte = args.minPrice;
-    if (args.maxPrice !== undefined)
-      (where.price as Record<string, unknown>).lte = args.maxPrice;
+    const priceFilter: Prisma.FloatFilter = {};
+    if (args.minPrice !== undefined) priceFilter.gte = args.minPrice;
+    if (args.maxPrice !== undefined) priceFilter.lte = args.maxPrice;
+    conditions.push({ price: priceFilter });
   }
+
+  const where: Prisma.ProductWhereInput = conditions.length > 0 ? { AND: conditions } : {};
+
   return prisma.product.findMany({
     where,
     take: args.limit ?? 20,
@@ -334,11 +340,17 @@ export function getProductBySku(prisma: PrismaClient, sku: string) {
 export async function getMyOrders(
   prisma: PrismaClient,
   userId: string | undefined,
-  args: { status?: string; limit?: number; offset?: number },
+  args: OrderFilterInput,
 ) {
   requireAuth(userId);
-  const where: Record<string, unknown> = { userId: userId! };
-  if (args.status) where.status = args.status;
+  const conditions: Prisma.OrderWhereInput[] = [{ userId: userId! }];
+
+  if (args.status) {
+    conditions.push({ status: args.status });
+  }
+
+  const where: Prisma.OrderWhereInput = { AND: conditions };
+
   return prisma.order.findMany({
     where,
     take: args.limit ?? 20,
@@ -359,11 +371,17 @@ export async function getOrder(
 export async function getMyPayments(
   prisma: PrismaClient,
   userId: string | undefined,
-  args: { status?: string; limit?: number; offset?: number },
+  args: PaymentFilterInput,
 ) {
   requireAuth(userId);
-  const where: Record<string, unknown> = { order: { userId: userId! } };
-  if (args.status) where.status = args.status;
+  const conditions: Prisma.PaymentWhereInput[] = [{ order: { userId: userId! } }];
+
+  if (args.status) {
+    conditions.push({ status: args.status });
+  }
+
+  const where: Prisma.PaymentWhereInput = { AND: conditions };
+
   return prisma.payment.findMany({
     where,
     take: args.limit ?? 20,
@@ -386,11 +404,17 @@ export async function getPayment(
 export async function getMyRefunds(
   prisma: PrismaClient,
   userId: string | undefined,
-  args: { status?: string; limit?: number; offset?: number },
+  args: RefundFilterInput,
 ) {
   requireAuth(userId);
-  const where: Record<string, unknown> = { order: { userId: userId! } };
-  if (args.status) where.status = args.status;
+  const conditions: Prisma.RefundWhereInput[] = [{ order: { userId: userId! } }];
+
+  if (args.status) {
+    conditions.push({ status: args.status });
+  }
+
+  const where: Prisma.RefundWhereInput = { AND: conditions };
+
   return prisma.refund.findMany({
     where,
     take: args.limit ?? 20,

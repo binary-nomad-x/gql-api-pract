@@ -10,8 +10,13 @@ export async function findMyReturns(
   filter?: ReturnFilterInput,
 ) {
   requireAuth(userId);
-  const where: Prisma.ReturnRequestWhereInput = { userId };
-  if (filter?.status) where.status = filter.status as any;
+  const conditions: Prisma.ReturnRequestWhereInput[] = [{ userId }];
+
+  if (filter?.status) {
+    conditions.push({ status: filter.status });
+  }
+
+  const where: Prisma.ReturnRequestWhereInput = { AND: conditions };
 
   return prisma.returnRequest.findMany({
     where,
@@ -54,7 +59,7 @@ export async function createReturn(
     data: {
       orderItemId: input.orderItemId,
       userId,
-      reason: input.reason as any,
+      reason: input.reason,
       quantity: input.quantity,
     },
     include: { orderItem: true, user: true },

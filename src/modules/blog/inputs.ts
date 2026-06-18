@@ -22,3 +22,10 @@ export interface CreateCategoryInput {
   slug: string;
   description?: string | null;
 }
+
+export interface PostFilterInput {
+  published?: boolean;
+  search?: string;
+  limit?: number;
+  offset?: number;
+}

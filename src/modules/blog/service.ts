@@ -1,5 +1,5 @@
 import type { PrismaClient, Prisma } from "@prisma/client";
-import type { CreatePostInput, UpdatePostInput, CreateCommentInput, CreateCategoryInput } from "@gql-prisma-api/modules/blog/inputs.js";
+import type { CreatePostInput, UpdatePostInput, CreateCommentInput, CreateCategoryInput, PostFilterInput } from "@gql-prisma-api/modules/blog/inputs.js";
 import { requireAuth, requireOwner } from "@gql-prisma-api/utils/errors.js";
 import { triggerNovuWorkflow } from "@gql-prisma-api/utils/novu.js";
 import { logger } from "@gql-prisma-api/utils/logger.js";
@@ -143,16 +143,25 @@ export async function toggleLike(
 
 export function getPosts(
   prisma: PrismaClient,
-  args: { published?: boolean; search?: string; limit?: number; offset?: number },
+  args: PostFilterInput,
 ) {
-  const where: Record<string, unknown> = {};
-  if (args.published !== undefined) where.published = args.published;
-  if (args.search) {
-    where.OR = [
-      { title: { contains: args.search, mode: "insensitive" } },
-      { content: { contains: args.search, mode: "insensitive" } },
-    ];
+  const conditions: Prisma.PostWhereInput[] = [];
+
+  if (args.published !== undefined) {
+    conditions.push({ published: args.published });
   }
+
+  if (args.search) {
+    conditions.push({
+      OR: [
+        { title: { contains: args.search, mode: "insensitive" } },
+        { content: { contains: args.search, mode: "insensitive" } },
+      ],
+    });
+  }
+
+  const where: Prisma.PostWhereInput = conditions.length > 0 ? { AND: conditions } : {};
+
   return prisma.post.findMany({
     where,
     take: args.limit ?? 10,

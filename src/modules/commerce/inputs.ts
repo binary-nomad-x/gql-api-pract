@@ -40,3 +40,30 @@ export interface CreateRefundInput {
   amount: number;
   reason?: string | null;
 }
+
+export interface ProductFilterInput {
+  categorySlug?: string;
+  search?: string;
+  minPrice?: number;
+  maxPrice?: number;
+  limit?: number;
+  offset?: number;
+}
+
+export interface OrderFilterInput {
+  status?: string;
+  limit?: number;
+  offset?: number;
+}
+
+export interface PaymentFilterInput {
+  status?: string;
+  limit?: number;
+  offset?: number;
+}
+
+export interface RefundFilterInput {
+  status?: string;
+  limit?: number;
+  offset?: number;
+}

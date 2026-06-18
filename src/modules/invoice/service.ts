@@ -10,8 +10,13 @@ export async function findMyInvoices(
   filter?: InvoiceFilterInput,
 ) {
   requireAuth(userId);
-  const where: Prisma.InvoiceWhereInput = { order: { userId } };
-  if (filter?.status) where.status = filter.status as any;
+  const conditions: Prisma.InvoiceWhereInput[] = [{ order: { userId } }];
+
+  if (filter?.status) {
+    conditions.push({ status: filter.status });
+  }
+
+  const where: Prisma.InvoiceWhereInput = { AND: conditions };
 
   return prisma.invoice.findMany({
     where,

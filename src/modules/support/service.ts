@@ -10,8 +10,13 @@ export async function findMyTickets(
   filter?: TicketFilterInput,
 ) {
   requireAuth(userId);
-  const where: Prisma.SupportTicketWhereInput = { userId };
-  if (filter?.status) where.status = filter.status as any;
+  const conditions: Prisma.SupportTicketWhereInput[] = [{ userId }];
+
+  if (filter?.status) {
+    conditions.push({ status: filter.status });
+  }
+
+  const where: Prisma.SupportTicketWhereInput = { AND: conditions };
 
   return prisma.supportTicket.findMany({
     where,
@@ -47,7 +52,7 @@ export async function createTicket(
       userId,
       subject: input.subject,
       description: input.description,
-      priority: (input.priority ?? "MEDIUM") as any,
+      priority: input.priority ?? "MEDIUM",
       category: input.category ?? "general",
     },
     include: { replies: true },
@@ -91,7 +96,7 @@ export async function addTicketReply(
 
   await prisma.supportTicket.update({
     where: { id: input.ticketId },
-    data: { status: "IN_PROGRESS" as any },
+    data: { status: "IN_PROGRESS" },
   });
 
   await triggerNovuWorkflow(userId!, "ticket-updated", { ticketId: input.ticketId, replyId: reply.id });
@@ -110,7 +115,7 @@ export async function resolveTicket(
 
   const updated = await prisma.supportTicket.update({
     where: { id },
-    data: { status: "RESOLVED" as any },
+    data: { status: "RESOLVED" },
     include: { replies: { include: { user: true } } },
   });
 
@@ -130,7 +135,7 @@ export async function closeTicket(
 
   const updated = await prisma.supportTicket.update({
     where: { id },
-    data: { status: "CLOSED" as any },
+    data: { status: "CLOSED" },
     include: { replies: { include: { user: true } } },
   });
 

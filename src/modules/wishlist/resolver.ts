@@ -1,9 +1,16 @@
 import type { Context } from "@gql-prisma-api/types/context.js";
 import type { Parent, IdArg } from "@gql-prisma-api/types/graphql.js";
-import type { CreateWishlistInput, AddToWishlistInput } from "@gql-prisma-api/modules/wishlist/inputs.js";
+import type {
+  CreateWishlistInput,
+  AddToWishlistInput,
+} from "@gql-prisma-api/modules/wishlist/inputs.js";
 import {
-  createWishlist, addToWishlist, removeFromWishlist, deleteWishlist,
-  getMyWishlists, getWishlist,
+  createWishlist,
+  addToWishlist,
+  removeFromWishlist,
+  deleteWishlist,
+  getMyWishlists,
+  getWishlist,
 } from "./service.js";
 
 export const WishlistResolver = {
@@ -20,9 +27,13 @@ export const WishlistResolver = {
 
 export const WishlistItemResolver = {
   wishlist: (parent: Parent, _args: unknown, ctx: Context) =>
-    ctx.prisma.wishlist.findUnique({ where: { id: parent.wishlistId as string } }),
+    ctx.prisma.wishlist.findUnique({
+      where: { id: parent.wishlistId as string },
+    }),
   product: (parent: Parent, _args: unknown, ctx: Context) =>
-    ctx.prisma.product.findUnique({ where: { id: parent.productId as string } }),
+    ctx.prisma.product.findUnique({
+      where: { id: parent.productId as string },
+    }),
 };
 
 export const WishlistQueries = {
@@ -34,13 +45,23 @@ export const WishlistQueries = {
 };
 
 export const WishlistMutations = {
-  createWishlist: async (_parent: unknown, { input }: { input: CreateWishlistInput }, ctx: Context) =>
-    createWishlist(ctx.prisma, ctx.userId, input),
+  createWishlist: async (
+    _parent: unknown,
+    { input }: { input: CreateWishlistInput },
+    ctx: Context,
+  ) => createWishlist(ctx.prisma, ctx.userId, input),
 
-  addToWishlist: async (_parent: unknown, { input }: { input: AddToWishlistInput }, ctx: Context) =>
-    addToWishlist(ctx.prisma, ctx.userId, input),
+  addToWishlist: async (
+    _parent: unknown,
+    { input }: { input: AddToWishlistInput },
+    ctx: Context,
+  ) => addToWishlist(ctx.prisma, ctx.userId, input),
 
-  removeFromWishlist: async (_parent: unknown, args: { wishlistId: string; productId: string }, ctx: Context) =>
+  removeFromWishlist: async (
+    _parent: unknown,
+    args: { wishlistId: string; productId: string },
+    ctx: Context,
+  ) =>
     removeFromWishlist(ctx.prisma, ctx.userId, args.wishlistId, args.productId),
 
   deleteWishlist: async (_parent: unknown, { id }: IdArg, ctx: Context) =>

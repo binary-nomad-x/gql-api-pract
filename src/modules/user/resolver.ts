@@ -1,9 +1,16 @@
 import type { Context } from "@gql-prisma-api/types/context.js";
 import type { Parent, IdArg } from "@gql-prisma-api/types/graphql.js";
-import type { UpdateUserInput, UpdateProfileInput } from "@gql-prisma-api/modules/user/inputs.js";
+import type {
+  UpdateUserInput,
+  UpdateProfileInput,
+} from "@gql-prisma-api/modules/user/inputs.js";
 import {
-  updateUser, deleteUser, updateProfile,
-  getUsers, getUser, getMe,
+  updateUser,
+  deleteUser,
+  updateProfile,
+  getUsers,
+  getUser,
+  getMe,
 } from "./service.js";
 
 export const UserResolver = {

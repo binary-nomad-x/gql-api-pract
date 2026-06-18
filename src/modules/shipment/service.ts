@@ -19,11 +19,23 @@ export async function updateShipmentStatus(
   status: string,
 ) {
   requireAuth(userId);
-  const shipment = await prisma.shipment.update({ where: { id }, data: { status } });
-  const order = await prisma.order.findUnique({ where: { id: shipment.orderId } });
+  const shipment = await prisma.shipment.update({
+    where: { id },
+    data: { status },
+  });
+
+  const order = await prisma.order.findUnique({
+    where: { id: shipment.orderId },
+  });
+
   if (order) {
-    await triggerNovuWorkflow(order.userId, "shipment-updated", { shipmentId: id, orderId: shipment.orderId, status });
+    await triggerNovuWorkflow(order.userId, "shipment-updated", {
+      shipmentId: id,
+      orderId: shipment.orderId,
+      status,
+    });
   }
+
   return shipment;
 }
 

@@ -1,5 +1,8 @@
 import type { PrismaClient, Prisma } from "@prisma/client";
-import type { UpdateUserInput, UpdateProfileInput } from "@gql-prisma-api/modules/user/inputs.js";
+import type {
+  UpdateUserInput,
+  UpdateProfileInput,
+} from "@gql-prisma-api/modules/user/inputs.js";
 import { hashPassword } from "@gql-prisma-api/utils/auth.js";
 import { requireAuth, requireOwner } from "@gql-prisma-api/utils/errors.js";
 
@@ -34,7 +37,9 @@ export async function updateProfile(
 ) {
   requireAuth(userId);
   const { clean } = await import("@gql-prisma-api/utils/clean.js");
-  const data: Prisma.ProfileUpdateInput = clean(input as unknown as Record<string, unknown>) as Prisma.ProfileUpdateInput;
+  const data: Prisma.ProfileUpdateInput = clean(
+    input as unknown as Record<string, unknown>,
+  ) as Prisma.ProfileUpdateInput;
   return prisma.profile.upsert({
     where: { userId: userId! },
     update: data,

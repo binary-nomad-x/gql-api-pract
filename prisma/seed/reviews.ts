@@ -10,6 +10,7 @@ export async function seedReviews(
 ): Promise<void> {
   const reviewed = faker.helpers.arrayElements(products, 800);
   const used = new Set<string>();
+
   const data: Array<{
     rating: number;
     title?: string;

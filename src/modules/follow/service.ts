@@ -2,6 +2,16 @@ import type { PrismaClient } from "@prisma/client";
 import { requireAuth } from "@gql-prisma-api/utils/errors.js";
 import { triggerNovuWorkflow } from "@gql-prisma-api/utils/novu.js";
 
+// --- Type-field resolver functions ---
+export function resolveFollowFollower(prisma: PrismaClient, followerId: string) {
+  return prisma.user.findUnique({ where: { id: followerId } });
+}
+
+export function resolveFollowFollowing(prisma: PrismaClient, followingId: string) {
+  return prisma.user.findUnique({ where: { id: followingId } });
+}
+
+// --- Existing business logic functions ---
 export async function toggleFollow(
   prisma: PrismaClient,
   userId: string | undefined,

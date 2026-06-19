@@ -1,32 +1,33 @@
 import type { Context } from "@gql-prisma-api/types/context.js";
-import type { Parent } from "@gql-prisma-api/types/graphql.js";
-import type { CreateShipmentInput } from "@gql-prisma-api/modules/shipment/inputs.js";
+import type { Shipment as ShipmentModel } from "@prisma/client";
+import type { CreateShipmentInput } from "./inputs.js";
 import {
   createShipment,
   updateShipmentStatus,
   getOrderShipments,
+  resolveShipmentOrder,
 } from "./service.js";
 
-export const ShipmentResolver = {
-  order: (parent: Parent, _args: unknown, ctx: Context) =>
-    ctx.prisma.order.findUnique({ where: { id: parent.orderId as string } }),
+export const Shipment = {
+  order: (parent: ShipmentModel, _args: unknown, ctx: Context) =>
+    resolveShipmentOrder(ctx.prisma, parent.orderId),
 };
 
-export const ShipmentQueries = {
-  orderShipments: async (
+export const Query = {
+  orderShipments: (
     _parent: unknown,
     { orderId }: { orderId: string },
     ctx: Context,
   ) => getOrderShipments(ctx.prisma, ctx.userId, orderId),
 };
 
-export const ShipmentMutations = {
-  createShipment: async (
+export const Mutation = {
+  createShipment: (
     _parent: unknown,
     { input }: { input: CreateShipmentInput },
     ctx: Context,
   ) => createShipment(ctx.prisma, ctx.userId, input),
-  updateShipmentStatus: async (
+  updateShipmentStatus: (
     _parent: unknown,
     { id, status }: { id: string; status: string },
     ctx: Context,

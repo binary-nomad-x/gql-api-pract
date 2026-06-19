@@ -1,9 +1,19 @@
 import type { PrismaClient, Prisma } from "@prisma/client";
-import type { CreateReturnInput, ReturnFilterInput } from "@gql-prisma-api/modules/return/inputs.js";
+import type { CreateReturnInput, ReturnFilterInput } from "./inputs.js";
 import { requireAuth } from "@gql-prisma-api/utils/errors.js";
 import { triggerNovuWorkflow } from "@gql-prisma-api/utils/novu.js";
 import { logger } from "@gql-prisma-api/utils/logger.js";
 
+// --- Type-field resolver functions ---
+export function resolveReturnRequestOrderItem(prisma: PrismaClient, orderItemId: string) {
+  return prisma.orderItem.findUnique({ where: { id: orderItemId } });
+}
+
+export function resolveReturnRequestUser(prisma: PrismaClient, userId: string) {
+  return prisma.user.findUnique({ where: { id: userId } });
+}
+
+// --- Existing business logic functions ---
 export async function findMyReturns(
   prisma: PrismaClient,
   userId: string | undefined,

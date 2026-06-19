@@ -1,19 +1,19 @@
 import type { Context } from "@gql-prisma-api/types/context.js";
-import type { Parent } from "@gql-prisma-api/types/graphql.js";
-import type { CreateCouponInput } from "@gql-prisma-api/modules/coupon/inputs.js";
-import { createCoupon, getCouponByCode } from "./service.js";
+import type { Coupon as CouponModel } from "@prisma/client";
+import type { CreateCouponInput } from "./inputs.js";
+import { createCoupon, getCouponByCode, resolveCouponOrders } from "./service.js";
 
-export const CouponResolver = {
-  orders: (parent: Parent, _args: unknown, ctx: Context) =>
-    ctx.prisma.order.findMany({ where: { couponId: parent.id } }),
+export const Coupon = {
+  orders: (parent: CouponModel, _args: unknown, ctx: Context) =>
+    resolveCouponOrders(ctx.prisma, parent.id),
 };
 
-export const CouponQueries = {
+export const Query = {
   couponByCode: (_parent: unknown, { code }: { code: string }, ctx: Context) =>
     getCouponByCode(ctx.prisma, code),
 };
 
-export const CouponMutations = {
-  createCoupon: async (_parent: unknown, { input }: { input: CreateCouponInput }, ctx: Context) =>
+export const Mutation = {
+  createCoupon: (_parent: unknown, { input }: { input: CreateCouponInput }, ctx: Context) =>
     createCoupon(ctx.prisma, ctx.userId, input),
 };

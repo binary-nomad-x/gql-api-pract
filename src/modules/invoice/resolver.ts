@@ -1,29 +1,32 @@
 import type { Context } from "@gql-prisma-api/types/context.js";
-import type { CreateInvoiceInput, InvoiceFilterInput } from "@gql-prisma-api/modules/invoice/inputs.js";
+import type { Invoice as InvoiceModel } from "@prisma/client";
+import type { CreateInvoiceInput, InvoiceFilterInput } from "./inputs.js";
 import {
+  resolveInvoiceOrder,
   findMyInvoices,
   findInvoiceById,
   createInvoice,
   markInvoicePaid,
   cancelInvoice,
-} from "@gql-prisma-api/modules/invoice/service.js";
+} from "./service.js";
 
-export const invoiceResolver = {
-  Query: {
-    myInvoices: (_: unknown, args: InvoiceFilterInput, ctx: Context) =>
-      findMyInvoices(ctx.prisma, ctx.userId, args),
-    invoice: (_: unknown, args: { id: string }, ctx: Context) =>
-      findInvoiceById(ctx.prisma, ctx.userId, args.id),
-  },
-  Mutation: {
-    createInvoice: (_: unknown, args: { input: CreateInvoiceInput }, ctx: Context) =>
-      createInvoice(ctx.prisma, ctx.userId, args.input),
-    markInvoicePaid: (_: unknown, args: { id: string }, ctx: Context) =>
-      markInvoicePaid(ctx.prisma, ctx.userId, args.id),
-    cancelInvoice: (_: unknown, args: { id: string }, ctx: Context) =>
-      cancelInvoice(ctx.prisma, ctx.userId, args.id),
-  },
-  Invoice: {
-    order: (parent: any) => parent.order,
-  },
+export const Query = {
+  myInvoices: (_parent: unknown, args: InvoiceFilterInput, ctx: Context) =>
+    findMyInvoices(ctx.prisma, ctx.userId, args),
+  invoice: (_parent: unknown, { id }: { id: string }, ctx: Context) =>
+    findInvoiceById(ctx.prisma, ctx.userId, id),
+};
+
+export const Mutation = {
+  createInvoice: (_parent: unknown, { input }: { input: CreateInvoiceInput }, ctx: Context) =>
+    createInvoice(ctx.prisma, ctx.userId, input),
+  markInvoicePaid: (_parent: unknown, { id }: { id: string }, ctx: Context) =>
+    markInvoicePaid(ctx.prisma, ctx.userId, id),
+  cancelInvoice: (_parent: unknown, { id }: { id: string }, ctx: Context) =>
+    cancelInvoice(ctx.prisma, ctx.userId, id),
+};
+
+export const Invoice = {
+  order: (parent: InvoiceModel, _args: unknown, ctx: Context) =>
+    resolveInvoiceOrder(ctx.prisma, parent.orderId),
 };

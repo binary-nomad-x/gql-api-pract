@@ -1,9 +1,75 @@
 import type { PrismaClient, Prisma } from "@prisma/client";
-import type { CreatePostInput, UpdatePostInput, CreateCommentInput, CreateCategoryInput, PostFilterInput } from "@gql-prisma-api/modules/blog/inputs.js";
+import type { CreatePostInput, UpdatePostInput, CreateCommentInput, CreateCategoryInput, PostFilterInput } from "./inputs.js";
 import { requireAuth, requireOwner } from "@gql-prisma-api/utils/errors.js";
 import { triggerNovuWorkflow } from "@gql-prisma-api/utils/novu.js";
 import { logger } from "@gql-prisma-api/utils/logger.js";
 
+// --- Type-field resolver functions ---
+export function resolvePostAuthor(prisma: PrismaClient, authorId: string) {
+  return prisma.user.findUnique({ where: { id: authorId } });
+}
+
+export function resolvePostTags(prisma: PrismaClient, postId: string) {
+  return prisma.tag.findMany({ where: { posts: { some: { id: postId } } } });
+}
+
+export function resolvePostCategories(prisma: PrismaClient, postId: string) {
+  return prisma.category.findMany({ where: { posts: { some: { id: postId } } } });
+}
+
+export function resolvePostComments(prisma: PrismaClient, postId: string) {
+  return prisma.comment.findMany({ where: { postId } });
+}
+
+export function resolvePostLikes(prisma: PrismaClient, postId: string) {
+  return prisma.like.findMany({ where: { postId } });
+}
+
+export function resolvePostSavedBy(prisma: PrismaClient, postId: string) {
+  return prisma.savedPost.findMany({ where: { postId } });
+}
+
+export function resolvePostViews(prisma: PrismaClient, postId: string) {
+  return prisma.postView.findMany({ where: { postId } });
+}
+
+export function resolvePostLikeCount(prisma: PrismaClient, postId: string) {
+  return prisma.like.count({ where: { postId } });
+}
+
+export function resolvePostCommentCount(prisma: PrismaClient, postId: string) {
+  return prisma.comment.count({ where: { postId } });
+}
+
+export function resolvePostViewCount(prisma: PrismaClient, postId: string) {
+  return prisma.postView.count({ where: { postId } });
+}
+
+export function resolvePostSaveCount(prisma: PrismaClient, postId: string) {
+  return prisma.savedPost.count({ where: { postId } });
+}
+
+export function resolveTagPostCount(prisma: PrismaClient, tagId: string) {
+  return prisma.post.count({ where: { tags: { some: { id: tagId } } } });
+}
+
+export function resolveCategoryPosts(prisma: PrismaClient, categoryId: string) {
+  return prisma.post.findMany({ where: { categories: { some: { id: categoryId } } } });
+}
+
+export function resolveCategoryProducts(prisma: PrismaClient, categoryId: string) {
+  return prisma.product.findMany({ where: { categoryId } });
+}
+
+export function resolveCategoryPostCount(prisma: PrismaClient, categoryId: string) {
+  return prisma.post.count({ where: { categories: { some: { id: categoryId } } } });
+}
+
+export function resolveCategoryProductCount(prisma: PrismaClient, categoryId: string) {
+  return prisma.product.count({ where: { categoryId } });
+}
+
+// --- Existing business logic functions ---
 export async function createPost(
   prisma: PrismaClient,
   userId: string | undefined,

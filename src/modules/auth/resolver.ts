@@ -1,15 +1,15 @@
 import type { Context } from "@gql-prisma-api/types/context.js";
-import type { CreateUserInput } from "@gql-prisma-api/modules/auth/inputs.js";
+import type { CreateUserInput } from "./inputs.js";
 import { signupUser, loginUser } from "./service.js";
 
-export const AuthMutations = {
-  signup: async (
+export const Mutation = {
+  signup: (
     _parent: unknown,
     { input }: { input: CreateUserInput },
     ctx: Context,
   ) => signupUser(ctx.prisma, input),
 
-  login: async (
+  login: (
     _parent: unknown,
     { email, password }: { email: string; password: string },
     ctx: Context,

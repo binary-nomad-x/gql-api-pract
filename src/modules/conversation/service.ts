@@ -2,6 +2,51 @@ import type { PrismaClient } from "@prisma/client";
 import { requireAuth } from "@gql-prisma-api/utils/errors.js";
 import { logger } from "@gql-prisma-api/utils/logger.js";
 
+// --- Type-field resolver functions ---
+export function resolveConversationParticipants(prisma: PrismaClient, conversationId: string) {
+  return prisma.conversationParticipant.findMany({
+    where: { conversationId },
+    include: { user: true },
+  });
+}
+
+export function resolveConversationMessages(prisma: PrismaClient, conversationId: string, limit?: number, offset?: number) {
+  return prisma.message.findMany({
+    where: { conversationId },
+    orderBy: { createdAt: "asc" },
+    take: limit ?? 50,
+    skip: offset ?? 0,
+  });
+}
+
+export function resolveConversationLastMessage(prisma: PrismaClient, conversationId: string) {
+  return prisma.message.findFirst({
+    where: { conversationId },
+    orderBy: { createdAt: "desc" },
+  });
+}
+
+export function resolveConversationMessageCount(prisma: PrismaClient, conversationId: string) {
+  return prisma.message.count({ where: { conversationId } });
+}
+
+export function resolveConversationParticipantConversation(prisma: PrismaClient, conversationId: string) {
+  return prisma.conversation.findUnique({ where: { id: conversationId } });
+}
+
+export function resolveConversationParticipantUser(prisma: PrismaClient, userId: string) {
+  return prisma.user.findUnique({ where: { id: userId } });
+}
+
+export function resolveMessageConversation(prisma: PrismaClient, conversationId: string) {
+  return prisma.conversation.findUnique({ where: { id: conversationId } });
+}
+
+export function resolveMessageSender(prisma: PrismaClient, senderId: string) {
+  return prisma.user.findUnique({ where: { id: senderId } });
+}
+
+// --- Existing business logic functions ---
 export async function startConversation(
   prisma: PrismaClient,
   userId: string | undefined,

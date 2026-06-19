@@ -1,8 +1,18 @@
 import type { PrismaClient } from "@prisma/client";
-import type { CreateReviewInput } from "@gql-prisma-api/modules/review/inputs.js";
+import type { CreateReviewInput } from "./inputs.js";
 import { requireAuth, requireOwner } from "@gql-prisma-api/utils/errors.js";
 import { triggerNovuWorkflow } from "@gql-prisma-api/utils/novu.js";
 
+// --- Type-field resolver functions ---
+export function resolveReviewProduct(prisma: PrismaClient, productId: string) {
+  return prisma.product.findUnique({ where: { id: productId } });
+}
+
+export function resolveReviewUser(prisma: PrismaClient, userId: string) {
+  return prisma.user.findUnique({ where: { id: userId } });
+}
+
+// --- Existing business logic functions ---
 export async function createReview(
   prisma: PrismaClient,
   userId: string | undefined,

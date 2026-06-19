@@ -1,9 +1,15 @@
 import type { PrismaClient, Prisma } from "@prisma/client";
-import type { CreateInvoiceInput, InvoiceFilterInput } from "@gql-prisma-api/modules/invoice/inputs.js";
+import type { CreateInvoiceInput, InvoiceFilterInput } from "./inputs.js";
 import { requireAuth } from "@gql-prisma-api/utils/errors.js";
 import { triggerNovuWorkflow } from "@gql-prisma-api/utils/novu.js";
 import { logger } from "@gql-prisma-api/utils/logger.js";
 
+// --- Type-field resolver functions ---
+export function resolveInvoiceOrder(prisma: PrismaClient, orderId: string) {
+  return prisma.order.findUnique({ where: { id: orderId } });
+}
+
+// --- Existing business logic functions ---
 export async function findMyInvoices(
   prisma: PrismaClient,
   userId: string | undefined,

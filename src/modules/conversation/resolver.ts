@@ -1,74 +1,68 @@
 import type { Context } from "@gql-prisma-api/types/context.js";
-import type { Parent, PaginationArgs } from "@gql-prisma-api/types/graphql.js";
+import type { Conversation as ConversationModel, ConversationParticipant as ConversationParticipantModel, Message as MessageModel } from "@prisma/client";
+import type { PaginationArgs } from "@gql-prisma-api/types/graphql.js";
 import {
   startConversation, sendMessage, markConversationRead,
   getMyConversations, getConversation, getConversationMessages,
+  resolveConversationParticipants, resolveConversationMessages,
+  resolveConversationLastMessage, resolveConversationMessageCount,
+  resolveConversationParticipantConversation, resolveConversationParticipantUser,
+  resolveMessageConversation, resolveMessageSender,
 } from "./service.js";
 
-export const ConversationResolver = {
-  participants: (parent: Parent, _args: unknown, ctx: Context) =>
-    ctx.prisma.conversationParticipant.findMany({
-      where: { conversationId: parent.id },
-      include: { user: true },
-    }),
-  messages: (parent: Parent, args: PaginationArgs, ctx: Context) =>
-    ctx.prisma.message.findMany({
-      where: { conversationId: parent.id },
-      orderBy: { createdAt: "asc" },
-      take: args.limit ?? 50,
-      skip: args.offset ?? 0,
-    }),
-  lastMessage: (parent: Parent, _args: unknown, ctx: Context) =>
-    ctx.prisma.message.findFirst({
-      where: { conversationId: parent.id },
-      orderBy: { createdAt: "desc" },
-    }),
-  messageCount: (parent: Parent, _args: unknown, ctx: Context) =>
-    ctx.prisma.message.count({ where: { conversationId: parent.id } }),
+export const Conversation = {
+  participants: (parent: ConversationModel, _args: unknown, ctx: Context) =>
+    resolveConversationParticipants(ctx.prisma, parent.id),
+  messages: (parent: ConversationModel, args: PaginationArgs, ctx: Context) =>
+    resolveConversationMessages(ctx.prisma, parent.id, args.limit, args.offset),
+  lastMessage: (parent: ConversationModel, _args: unknown, ctx: Context) =>
+    resolveConversationLastMessage(ctx.prisma, parent.id),
+  messageCount: (parent: ConversationModel, _args: unknown, ctx: Context) =>
+    resolveConversationMessageCount(ctx.prisma, parent.id),
 };
 
-export const ConversationParticipantResolver = {
-  conversation: (parent: Parent, _args: unknown, ctx: Context) =>
-    ctx.prisma.conversation.findUnique({ where: { id: parent.conversationId as string } }),
-  user: (parent: Parent, _args: unknown, ctx: Context) =>
-    ctx.prisma.user.findUnique({ where: { id: parent.userId as string } }),
+export const ConversationParticipant = {
+  conversation: (parent: ConversationParticipantModel, _args: unknown, ctx: Context) =>
+    resolveConversationParticipantConversation(ctx.prisma, parent.conversationId),
+  user: (parent: ConversationParticipantModel, _args: unknown, ctx: Context) =>
+    resolveConversationParticipantUser(ctx.prisma, parent.userId),
 };
 
-export const MessageResolver = {
-  conversation: (parent: Parent, _args: unknown, ctx: Context) =>
-    ctx.prisma.conversation.findUnique({ where: { id: parent.conversationId as string } }),
-  sender: (parent: Parent, _args: unknown, ctx: Context) =>
-    ctx.prisma.user.findUnique({ where: { id: parent.senderId as string } }),
+export const Message = {
+  conversation: (parent: MessageModel, _args: unknown, ctx: Context) =>
+    resolveMessageConversation(ctx.prisma, parent.conversationId),
+  sender: (parent: MessageModel, _args: unknown, ctx: Context) =>
+    resolveMessageSender(ctx.prisma, parent.senderId),
 };
 
-export const ConversationQueries = {
-  myConversations: async (_parent: unknown, _args: unknown, ctx: Context) =>
+export const Query = {
+  myConversations: (_parent: unknown, _args: unknown, ctx: Context) =>
     getMyConversations(ctx.prisma, ctx.userId),
 
-  conversation: async (_parent: unknown, { id }: { id: string }, ctx: Context) =>
+  conversation: (_parent: unknown, { id }: { id: string }, ctx: Context) =>
     getConversation(ctx.prisma, ctx.userId, id),
 
-  messages: async (
+  messages: (
     _parent: unknown,
     args: { conversationId: string } & PaginationArgs,
     ctx: Context,
   ) => getConversationMessages(ctx.prisma, ctx.userId, args.conversationId, args.limit, args.offset),
 };
 
-export const ConversationMutations = {
-  startConversation: async (
+export const Mutation = {
+  startConversation: (
     _parent: unknown,
     { userId, title }: { userId: string; title?: string },
     ctx: Context,
   ) => startConversation(ctx.prisma, ctx.userId, userId, title),
 
-  sendMessage: async (
+  sendMessage: (
     _parent: unknown,
     { conversationId, content }: { conversationId: string; content: string },
     ctx: Context,
   ) => sendMessage(ctx.prisma, ctx.userId, conversationId, content),
 
-  markConversationRead: async (
+  markConversationRead: (
     _parent: unknown,
     { conversationId }: { conversationId: string },
     ctx: Context,

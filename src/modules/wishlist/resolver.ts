@@ -1,9 +1,9 @@
 import type { Context } from "@gql-prisma-api/types/context.js";
-import type { Parent, IdArg } from "@gql-prisma-api/types/graphql.js";
+import type { Wishlist as WishlistModel, WishlistItem as WishlistItemModel } from "@prisma/client";
 import type {
   CreateWishlistInput,
   AddToWishlistInput,
-} from "@gql-prisma-api/modules/wishlist/inputs.js";
+} from "./inputs.js";
 import {
   createWishlist,
   addToWishlist,
@@ -11,59 +11,57 @@ import {
   deleteWishlist,
   getMyWishlists,
   getWishlist,
+  resolveWishlistUser,
+  resolveWishlistItems,
+  resolveWishlistItemCount,
+  resolveWishlistItemWishlist,
+  resolveWishlistItemProduct,
 } from "./service.js";
 
-export const WishlistResolver = {
-  user: (parent: Parent, _args: unknown, ctx: Context) =>
-    ctx.prisma.user.findUnique({ where: { id: parent.userId as string } }),
-  items: (parent: Parent, _args: unknown, ctx: Context) =>
-    ctx.prisma.wishlistItem.findMany({
-      where: { wishlistId: parent.id },
-      include: { product: true },
-    }),
-  itemCount: (parent: Parent, _args: unknown, ctx: Context) =>
-    ctx.prisma.wishlistItem.count({ where: { wishlistId: parent.id } }),
+export const Wishlist = {
+  user: (parent: WishlistModel, _args: unknown, ctx: Context) =>
+    resolveWishlistUser(ctx.prisma, parent.userId),
+  items: (parent: WishlistModel, _args: unknown, ctx: Context) =>
+    resolveWishlistItems(ctx.prisma, parent.id),
+  itemCount: (parent: WishlistModel, _args: unknown, ctx: Context) =>
+    resolveWishlistItemCount(ctx.prisma, parent.id),
 };
 
-export const WishlistItemResolver = {
-  wishlist: (parent: Parent, _args: unknown, ctx: Context) =>
-    ctx.prisma.wishlist.findUnique({
-      where: { id: parent.wishlistId as string },
-    }),
-  product: (parent: Parent, _args: unknown, ctx: Context) =>
-    ctx.prisma.product.findUnique({
-      where: { id: parent.productId as string },
-    }),
+export const WishlistItem = {
+  wishlist: (parent: WishlistItemModel, _args: unknown, ctx: Context) =>
+    resolveWishlistItemWishlist(ctx.prisma, parent.wishlistId),
+  product: (parent: WishlistItemModel, _args: unknown, ctx: Context) =>
+    resolveWishlistItemProduct(ctx.prisma, parent.productId),
 };
 
-export const WishlistQueries = {
+export const Query = {
   myWishlists: (_parent: unknown, _args: unknown, ctx: Context) =>
     getMyWishlists(ctx.prisma, ctx.userId),
 
-  wishlist: async (_parent: unknown, { id }: IdArg, ctx: Context) =>
+  wishlist: (_parent: unknown, { id }: { id: string }, ctx: Context) =>
     getWishlist(ctx.prisma, ctx.userId, id),
 };
 
-export const WishlistMutations = {
-  createWishlist: async (
+export const Mutation = {
+  createWishlist: (
     _parent: unknown,
     { input }: { input: CreateWishlistInput },
     ctx: Context,
   ) => createWishlist(ctx.prisma, ctx.userId, input),
 
-  addToWishlist: async (
+  addToWishlist: (
     _parent: unknown,
     { input }: { input: AddToWishlistInput },
     ctx: Context,
   ) => addToWishlist(ctx.prisma, ctx.userId, input),
 
-  removeFromWishlist: async (
+  removeFromWishlist: (
     _parent: unknown,
     args: { wishlistId: string; productId: string },
     ctx: Context,
   ) =>
     removeFromWishlist(ctx.prisma, ctx.userId, args.wishlistId, args.productId),
 
-  deleteWishlist: async (_parent: unknown, { id }: IdArg, ctx: Context) =>
+  deleteWishlist: (_parent: unknown, { id }: { id: string }, ctx: Context) =>
     deleteWishlist(ctx.prisma, ctx.userId, id),
 };

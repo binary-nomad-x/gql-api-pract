@@ -1,5 +1,5 @@
 import type { PrismaClient } from "@prisma/client";
-import type { SubscriptionPlan } from "@gql-prisma-api/modules/subscription/types/index.js";
+import type { SubscriptionPlan } from "./types/index.js";
 import { requireAuth } from "@gql-prisma-api/utils/errors.js";
 import { logger } from "@gql-prisma-api/utils/logger.js";
 import { triggerTrialEndingNotification as triggerNovu } from "@gql-prisma-api/utils/novu.js";
@@ -16,6 +16,12 @@ export interface TrialEndingInput {
   notifyAdmin: boolean;
 }
 
+// --- Type-field resolver functions ---
+export function resolveSubscriptionUser(prisma: PrismaClient, userId: string) {
+  return prisma.user.findUnique({ where: { id: userId } });
+}
+
+// --- Existing business logic functions ---
 export async function createSubscription(
   prisma: PrismaClient,
   userId: string | undefined,

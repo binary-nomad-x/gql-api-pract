@@ -1,7 +1,13 @@
 import type { PrismaClient, Prisma } from "@prisma/client";
-import type { CreateDiscountInput, UpdateDiscountInput } from "@gql-prisma-api/modules/discount/inputs.js";
+import type { CreateDiscountInput, UpdateDiscountInput } from "./inputs.js";
 import { requireAuth } from "@gql-prisma-api/utils/errors.js";
 
+// --- Type-field resolver functions ---
+export function resolveDiscountProduct(prisma: PrismaClient, productId: string) {
+  return prisma.product.findUnique({ where: { id: productId } });
+}
+
+// --- Helper functions ---
 function toDiscountCreate(input: CreateDiscountInput): Prisma.DiscountUncheckedCreateInput {
   return {
     productId: input.productId,
@@ -25,6 +31,7 @@ function toDiscountUpdate(input: UpdateDiscountInput): Prisma.DiscountUpdateInpu
   return data;
 }
 
+// --- Existing business logic functions ---
 export async function createDiscount(
   prisma: PrismaClient,
   userId: string | undefined,

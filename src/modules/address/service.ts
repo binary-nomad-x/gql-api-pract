@@ -1,11 +1,14 @@
 import type { PrismaClient, Prisma } from "@prisma/client";
-import type {
-  CreateAddressInput,
-  UpdateAddressInput,
-} from "@gql-prisma-api/modules/address/inputs.js";
+import type { CreateAddressInput, UpdateAddressInput } from "./inputs.js";
 import { requireAuth } from "@gql-prisma-api/utils/errors.js";
 import { unescape } from "querystring";
 
+// --- Type-field resolver functions ---
+export function resolveAddressUser(prisma: PrismaClient, userId: string) {
+  return prisma.user.findUnique({ where: { id: userId } });
+}
+
+// --- Existing business logic functions ---
 export async function createAddress(
   prisma: PrismaClient,
   userId: string | undefined,

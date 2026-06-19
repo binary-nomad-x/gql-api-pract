@@ -24,6 +24,7 @@ export async function seedRemaining(
   posts: Post[],
   products: Product[],
 ): Promise<void> {
+
   // Notifications
   const notifData: Array<{
     userId: string;
@@ -34,6 +35,7 @@ export async function seedRemaining(
     isRead: boolean;
     readAt?: Date;
   }> = [];
+
   for (const u of users) {
     const n = faker.number.int({ min: 3, max: 12 });
     for (let i = 0; i < n; i++) {
@@ -53,6 +55,7 @@ export async function seedRemaining(
       });
     }
   }
+
   await ctx.prisma.notification.createMany({ data: notifData });
   counts.notifications = notifData.length;
 
@@ -82,6 +85,7 @@ export async function seedRemaining(
     spSet.add(key);
     spData.push({ userId: u.id, postId: p.id });
   }
+
   await ctx.prisma.savedPost.createMany({ data: spData });
   counts.savedPosts = spData.length;
 
@@ -99,9 +103,11 @@ export async function seedRemaining(
       });
     }
   }
+
   for (let i = 0; i < pvData.length; i += 2000) {
     await ctx.prisma.postView.createMany({ data: pvData.slice(i, i + 2000) });
   }
+
   counts.postViews = pvData.length;
 
   // ProductImages

@@ -1,30 +1,32 @@
 import type { Context } from "@gql-prisma-api/types/context.js";
-import type { Parent, IdArg, PaginationArgs } from "@gql-prisma-api/types/graphql.js";
-import type { CreateReviewInput } from "@gql-prisma-api/modules/review/inputs.js";
+import type { Review as ReviewModel } from "@prisma/client";
+import type { CreateReviewInput } from "./inputs.js";
 import {
-  createReview, deleteReview,
-  getReviews, getReview,
+  resolveReviewProduct,
+  resolveReviewUser,
+  createReview,
+  deleteReview,
+  getReviews,
+  getReview,
 } from "./service.js";
 
-export const ReviewResolver = {
-  product: (parent: Parent, _args: unknown, ctx: Context) =>
-    ctx.prisma.product.findUnique({ where: { id: parent.productId as string } }),
-  user: (parent: Parent, _args: unknown, ctx: Context) =>
-    ctx.prisma.user.findUnique({ where: { id: parent.userId as string } }),
+export const Review = {
+  product: (parent: ReviewModel, _args: unknown, ctx: Context) =>
+    resolveReviewProduct(ctx.prisma, parent.productId),
+  user: (parent: ReviewModel, _args: unknown, ctx: Context) =>
+    resolveReviewUser(ctx.prisma, parent.userId),
 };
 
-export const ReviewQueries = {
-  reviews: (_parent: unknown, args: { productId: string } & PaginationArgs, ctx: Context) =>
+export const Query = {
+  reviews: (_parent: unknown, args: { productId: string; limit?: number; offset?: number }, ctx: Context) =>
     getReviews(ctx.prisma, args),
-
-  review: (_parent: unknown, { id }: IdArg, ctx: Context) =>
+  review: (_parent: unknown, { id }: { id: string }, ctx: Context) =>
     getReview(ctx.prisma, id),
 };
 
-export const ReviewMutations = {
-  createReview: async (_parent: unknown, { input }: { input: CreateReviewInput }, ctx: Context) =>
+export const Mutation = {
+  createReview: (_parent: unknown, { input }: { input: CreateReviewInput }, ctx: Context) =>
     createReview(ctx.prisma, ctx.userId, input),
-
-  deleteReview: async (_parent: unknown, { id }: IdArg, ctx: Context) =>
+  deleteReview: (_parent: unknown, { id }: { id: string }, ctx: Context) =>
     deleteReview(ctx.prisma, ctx.userId, id),
 };

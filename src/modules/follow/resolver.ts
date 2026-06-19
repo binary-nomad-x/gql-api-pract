@@ -1,15 +1,16 @@
 import type { Context } from "@gql-prisma-api/types/context.js";
-import type { Parent, UserIdArg } from "@gql-prisma-api/types/graphql.js";
-import { toggleFollow, getFollowers, getFollowing } from "./service.js";
+import type { Follow as FollowModel } from "@prisma/client";
+import type { UserIdArg } from "@gql-prisma-api/types/graphql.js";
+import { toggleFollow, getFollowers, getFollowing, resolveFollowFollower, resolveFollowFollowing } from "./service.js";
 
-export const FollowResolver = {
-  follower: (parent: Parent, _args: unknown, ctx: Context) =>
-    ctx.prisma.user.findUnique({ where: { id: parent.followerId as string } }),
-  following: (parent: Parent, _args: unknown, ctx: Context) =>
-    ctx.prisma.user.findUnique({ where: { id: parent.followingId as string } }),
+export const Follow = {
+  follower: (parent: FollowModel, _args: unknown, ctx: Context) =>
+    resolveFollowFollower(ctx.prisma, parent.followerId),
+  following: (parent: FollowModel, _args: unknown, ctx: Context) =>
+    resolveFollowFollowing(ctx.prisma, parent.followingId),
 };
 
-export const FollowQueries = {
+export const Query = {
   followers: (_parent: unknown, { userId }: UserIdArg, ctx: Context) =>
     getFollowers(ctx.prisma, userId),
 
@@ -17,7 +18,7 @@ export const FollowQueries = {
     getFollowing(ctx.prisma, userId),
 };
 
-export const FollowMutations = {
-  toggleFollow: async (_parent: unknown, { userId }: UserIdArg, ctx: Context) =>
+export const Mutation = {
+  toggleFollow: (_parent: unknown, { userId }: UserIdArg, ctx: Context) =>
     toggleFollow(ctx.prisma, ctx.userId, userId),
 };

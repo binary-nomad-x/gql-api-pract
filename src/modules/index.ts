@@ -1,208 +1,114 @@
 import type { Context } from "@gql-prisma-api/types/context.js";
 
-// Auth
-import { AuthMutations } from "./auth/resolver.js";
-
-// User
-import { UserResolver, UserQueries, UserMutations } from "./user/resolver.js";
-
-// Blog
-import {
-  PostResolver,
-  PostQueries,
-  PostMutations,
-  TagResolver,
-  CategoryResolver,
-} from "./blog/resolver.js";
-
-// Commerce
-import {
-  ProductResolver,
-  CommerceQueries,
-  CommerceMutations,
-  PaymentResolver,
-  RefundResolver,
-  OrderResolver,
-  OrderItemResolver,
-  CommerceQueriesExtra,
-} from "./commerce/resolver.js";
-
-// Review
-import {
-  ReviewResolver,
-  ReviewQueries,
-  ReviewMutations,
-} from "./review/resolver.js";
-
-// Address
-import {
-  AddressResolver,
-  AddressQueries,
-  AddressMutations,
-} from "./address/resolver.js";
-
-// Cart
-import {
-  CartResolver,
-  CartItemResolver,
-  CartQueries,
-  CartMutations,
-} from "./cart/resolver.js";
-
-// Wishlist
-import {
-  WishlistResolver,
-  WishlistItemResolver,
-  WishlistQueries,
-  WishlistMutations,
-} from "./wishlist/resolver.js";
-
-// Coupon
-import {
-  CouponResolver,
-  CouponQueries,
-  CouponMutations,
-} from "./coupon/resolver.js";
-
-// Shipment
-import {
-  ShipmentResolver,
-  ShipmentQueries,
-  ShipmentMutations,
-} from "./shipment/resolver.js";
-
-// Notification
-import {
-  NotificationResolver,
-  NotificationQueries,
-  NotificationMutations,
-} from "./notification/resolver.js";
-
-// Follow
-import {
-  FollowResolver,
-  FollowQueries,
-  FollowMutations,
-} from "./follow/resolver.js";
-
-// SavedPost
-import {
-  SavedPostResolver,
-  SavedPostQueries,
-  SavedPostMutations,
-} from "./savedPost/resolver.js";
-
-// PostView
-import { PostViewResolver, PostViewMutations } from "./postView/resolver.js";
-
-// ProductImage
-import { ProductImageResolver } from "./productImage/resolver.js";
-
-// Stats
-import { StatsQueries } from "./stats/resolver.js";
-
-// Subscription
-import { SubscriptionResolver, SubscriptionQueries, SubscriptionMutations } from "./subscription/resolver.js";
-
-// Discount
-import { DiscountResolver, DiscountQueries, DiscountMutations } from "./discount/resolver.js";
-
-// Invoice
-import { invoiceResolver } from "./invoice/resolver.js";
-
-// Return
-import { returnResolver } from "./return/resolver.js";
-
-// Support
-import { supportResolver } from "./support/resolver.js";
-
-// Conversation
-import {
-  ConversationResolver,
-  ConversationParticipantResolver,
-  MessageResolver,
-  ConversationQueries,
-  ConversationMutations,
-} from "./conversation/resolver.js";
+import { Mutation as AuthMutation } from "./auth/resolver.js";
+import { User, Query as UserQuery, Mutation as UserMutation } from "./user/resolver.js";
+import { Post, Tag, Category, Query as PostQuery, Mutation as PostMutation } from "./blog/resolver.js";
+import { Product, Query as ProductQuery, Mutation as ProductMutation } from "./product/resolver.js";
+import { Order, OrderItem, Query as OrderQuery, Mutation as OrderMutation } from "./order/resolver.js";
+import { Payment, Query as PaymentQuery, Mutation as PaymentMutation } from "./payment/resolver.js";
+import { Refund, Query as RefundQuery, Mutation as RefundMutation } from "./refund/resolver.js";
+import { Review, Query as ReviewQuery, Mutation as ReviewMutation } from "./review/resolver.js";
+import { Address, Query as AddressQuery, Mutation as AddressMutation } from "./address/resolver.js";
+import { Cart, CartItem, Query as CartQuery, Mutation as CartMutation } from "./cart/resolver.js";
+import { Wishlist, WishlistItem, Query as WishlistQuery, Mutation as WishlistMutation } from "./wishlist/resolver.js";
+import { Coupon, Query as CouponQuery, Mutation as CouponMutation } from "./coupon/resolver.js";
+import { Shipment, Query as ShipmentQuery, Mutation as ShipmentMutation } from "./shipment/resolver.js";
+import { Notification, Query as NotificationQuery, Mutation as NotificationMutation } from "./notification/resolver.js";
+import { Follow, Query as FollowQuery, Mutation as FollowMutation } from "./follow/resolver.js";
+import { SavedPost, Query as SavedPostQuery, Mutation as SavedPostMutation } from "./savedPost/resolver.js";
+import { PostView, Mutation as PostViewMutation } from "./postView/resolver.js";
+import { ProductImage } from "./productImage/resolver.js";
+import { Query as StatsQuery } from "./stats/resolver.js";
+import { Subscription, Query as SubscriptionQuery, Mutation as SubscriptionMutation } from "./subscription/resolver.js";
+import { Discount, Query as DiscountQuery, Mutation as DiscountMutation } from "./discount/resolver.js";
+import { Invoice, Query as InvoiceQuery, Mutation as InvoiceMutation } from "./invoice/resolver.js";
+import { ReturnRequest, Query as ReturnQuery, Mutation as ReturnMutation } from "./return/resolver.js";
+import { SupportTicket, TicketReply, Query as SupportQuery, Mutation as SupportMutation } from "./support/resolver.js";
+import { Conversation, ConversationParticipant, Message, Query as ConversationQuery, Mutation as ConversationMutation } from "./conversation/resolver.js";
 
 export const resolvers = {
   Query: {
-    ...UserQueries,
-    ...PostQueries,
-    ...CommerceQueries,
-    ...CommerceQueriesExtra,
-    ...ReviewQueries,
-    ...AddressQueries,
-    ...CartQueries,
-    ...WishlistQueries,
-    ...CouponQueries,
-    ...ShipmentQueries,
-    ...NotificationQueries,
-    ...FollowQueries,
-    ...SavedPostQueries,
-    ...StatsQueries,
-    ...SubscriptionQueries,
-    ...DiscountQueries,
-    ...invoiceResolver.Query,
-    ...returnResolver.Query,
-    ...supportResolver.Query,
-    ...ConversationQueries,
+    ...UserQuery,
+    ...PostQuery,
+    ...ProductQuery,
+    ...OrderQuery,
+    ...PaymentQuery,
+    ...RefundQuery,
+    ...ReviewQuery,
+    ...AddressQuery,
+    ...CartQuery,
+    ...WishlistQuery,
+    ...CouponQuery,
+    ...ShipmentQuery,
+    ...NotificationQuery,
+    ...FollowQuery,
+    ...SavedPostQuery,
+    ...StatsQuery,
+    ...SubscriptionQuery,
+    ...DiscountQuery,
+    ...InvoiceQuery,
+    ...ReturnQuery,
+    ...SupportQuery,
+    ...ConversationQuery,
   },
 
   Mutation: {
-    ...AuthMutations,
-    ...UserMutations,
-    ...PostMutations,
-    ...CommerceMutations,
-    ...ReviewMutations,
-    ...AddressMutations,
-    ...CartMutations,
-    ...WishlistMutations,
-    ...CouponMutations,
-    ...ShipmentMutations,
-    ...NotificationMutations,
-    ...FollowMutations,
-    ...SavedPostMutations,
-    ...PostViewMutations,
-    ...SubscriptionMutations,
-    ...DiscountMutations,
-    ...invoiceResolver.Mutation,
-    ...returnResolver.Mutation,
-    ...supportResolver.Mutation,
-    ...ConversationMutations,
+    ...AuthMutation,
+    ...UserMutation,
+    ...PostMutation,
+    ...ProductMutation,
+    ...OrderMutation,
+    ...PaymentMutation,
+    ...RefundMutation,
+    ...ReviewMutation,
+    ...AddressMutation,
+    ...CartMutation,
+    ...WishlistMutation,
+    ...CouponMutation,
+    ...ShipmentMutation,
+    ...NotificationMutation,
+    ...FollowMutation,
+    ...SavedPostMutation,
+    ...PostViewMutation,
+    ...SubscriptionMutation,
+    ...DiscountMutation,
+    ...InvoiceMutation,
+    ...ReturnMutation,
+    ...SupportMutation,
+    ...ConversationMutation,
   },
 
-  User: { ...UserResolver },
-  Post: { ...PostResolver },
-  Tag: { ...TagResolver },
-  Category: { ...CategoryResolver },
-  Product: { ...ProductResolver },
-  Review: { ...ReviewResolver },
-  Address: { ...AddressResolver },
-  Cart: { ...CartResolver },
-  CartItem: { ...CartItemResolver },
-  Wishlist: { ...WishlistResolver },
-  WishlistItem: { ...WishlistItemResolver },
-  Coupon: { ...CouponResolver },
-  Shipment: { ...ShipmentResolver },
-  Notification: { ...NotificationResolver },
-  Follow: { ...FollowResolver },
-  SavedPost: { ...SavedPostResolver },
-  PostView: { ...PostViewResolver },
-  ProductImage: { ...ProductImageResolver },
-  Payment: { ...PaymentResolver },
-  Refund: { ...RefundResolver },
-  Order: { ...OrderResolver },
-  OrderItem: { ...OrderItemResolver },
-  Subscription: { ...SubscriptionResolver },
-  Discount: { ...DiscountResolver },
-  Invoice: { ...invoiceResolver.Invoice },
-  ReturnRequest: { ...returnResolver.ReturnRequest },
-  SupportTicket: { ...supportResolver.SupportTicket },
-  TicketReply: { ...supportResolver.TicketReply },
-  Conversation: { ...ConversationResolver },
-  ConversationParticipant: { ...ConversationParticipantResolver },
-  Message: { ...MessageResolver },
+  User: { ...User },
+  Post: { ...Post },
+  Tag: { ...Tag },
+  Category: { ...Category },
+  Product: { ...Product },
+  Review: { ...Review },
+  Address: { ...Address },
+  Cart: { ...Cart },
+  CartItem: { ...CartItem },
+  Wishlist: { ...Wishlist },
+  WishlistItem: { ...WishlistItem },
+  Coupon: { ...Coupon },
+  Shipment: { ...Shipment },
+  Notification: { ...Notification },
+  Follow: { ...Follow },
+  SavedPost: { ...SavedPost },
+  PostView: { ...PostView },
+  ProductImage: { ...ProductImage },
+  Payment: { ...Payment },
+  Refund: { ...Refund },
+  Order: { ...Order },
+  OrderItem: { ...OrderItem },
+  Subscription: { ...Subscription },
+  Discount: { ...Discount },
+  Invoice: { ...Invoice },
+  ReturnRequest: { ...ReturnRequest },
+  SupportTicket: { ...SupportTicket },
+  TicketReply: { ...TicketReply },
+  Conversation: { ...Conversation },
+  ConversationParticipant: { ...ConversationParticipant },
+  Message: { ...Message },
 };
 
 export type ResolverContext = Context;

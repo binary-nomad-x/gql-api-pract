@@ -1,6 +1,12 @@
 import type { PrismaClient } from "@prisma/client";
 import { requireAuth } from "@gql-prisma-api/utils/errors.js";
 
+// --- Type-field resolver functions ---
+export function resolveNotificationUser(prisma: PrismaClient, userId: string) {
+  return prisma.user.findUnique({ where: { id: userId } });
+}
+
+// --- Existing business logic functions ---
 export async function markNotificationRead(
   prisma: PrismaClient,
   userId: string | undefined,

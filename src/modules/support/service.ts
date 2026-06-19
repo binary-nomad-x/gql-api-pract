@@ -1,9 +1,28 @@
 import type { PrismaClient, Prisma } from "@prisma/client";
-import type { CreateTicketInput, TicketFilterInput, AddTicketReplyInput } from "@gql-prisma-api/modules/support/inputs.js";
+import type {
+  CreateTicketInput,
+  TicketFilterInput,
+  AddTicketReplyInput,
+} from "./inputs.js";
 import { requireAuth } from "@gql-prisma-api/utils/errors.js";
 import { triggerNovuWorkflow } from "@gql-prisma-api/utils/novu.js";
 import { logger } from "@gql-prisma-api/utils/logger.js";
 
+// --- Type-field resolver functions ---
+export function resolveSupportTicketUser(parent: Record<string, unknown>) {
+  return parent.user;
+}
+export function resolveSupportTicketReplies(parent: Record<string, unknown>) {
+  return parent.replies;
+}
+export function resolveTicketReplyTicket(parent: Record<string, unknown>) {
+  return parent.ticket;
+}
+export function resolveTicketReplyUser(parent: Record<string, unknown>) {
+  return parent.user;
+}
+
+// --- Existing business logic functions ---
 export async function findMyTickets(
   prisma: PrismaClient,
   userId: string | undefined,
@@ -23,7 +42,9 @@ export async function findMyTickets(
     orderBy: { updatedAt: "desc" },
     take: filter?.limit ?? 20,
     skip: filter?.offset ?? 0,
-    include: { replies: { include: { user: true }, orderBy: { createdAt: "asc" } } },
+    include: {
+      replies: { include: { user: true }, orderBy: { createdAt: "asc" } },
+    },
   });
 }
 
@@ -35,7 +56,9 @@ export async function findTicketById(
   requireAuth(userId);
   const ticket = await prisma.supportTicket.findUnique({
     where: { id },
-    include: { replies: { include: { user: true }, orderBy: { createdAt: "asc" } } },
+    include: {
+      replies: { include: { user: true }, orderBy: { createdAt: "asc" } },
+    },
   });
   if (!ticket) throw new Error("Ticket not found");
   return ticket;
@@ -67,7 +90,10 @@ export async function createTicket(
     },
   });
 
-  await triggerNovuWorkflow(userId!, "ticket-created", { ticketId: ticket.id, subject: input.subject });
+  await triggerNovuWorkflow(userId!, "ticket-created", {
+    ticketId: ticket.id,
+    subject: input.subject,
+  });
   logger.info("Support ticket created", { ticketId: ticket.id, userId });
   return ticket;
 }
@@ -78,7 +104,9 @@ export async function addTicketReply(
   input: AddTicketReplyInput,
 ) {
   requireAuth(userId);
-  const ticket = await prisma.supportTicket.findUnique({ where: { id: input.ticketId } });
+  const ticket = await prisma.supportTicket.findUnique({
+    where: { id: input.ticketId },
+  });
   if (!ticket) throw new Error("Ticket not found");
 
   const user = await prisma.user.findUnique({ where: { id: userId } });
@@ -99,7 +127,10 @@ export async function addTicketReply(
     data: { status: "IN_PROGRESS" },
   });
 
-  await triggerNovuWorkflow(userId!, "ticket-updated", { ticketId: input.ticketId, replyId: reply.id });
+  await triggerNovuWorkflow(userId!, "ticket-updated", {
+    ticketId: input.ticketId,
+    replyId: reply.id,
+  });
   logger.info("Ticket reply added", { ticketId: input.ticketId, userId });
   return reply;
 }

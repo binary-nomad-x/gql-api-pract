@@ -1,8 +1,14 @@
 import type { PrismaClient } from "@prisma/client";
-import type { CreateShipmentInput } from "@gql-prisma-api/modules/shipment/inputs.js";
+import type { CreateShipmentInput } from "./inputs.js";
 import { requireAuth } from "@gql-prisma-api/utils/errors.js";
 import { triggerNovuWorkflow } from "@gql-prisma-api/utils/novu.js";
 
+// --- Type-field resolver functions ---
+export function resolveShipmentOrder(prisma: PrismaClient, orderId: string) {
+  return prisma.order.findUnique({ where: { id: orderId } });
+}
+
+// --- Existing business logic functions ---
 export async function createShipment(
   prisma: PrismaClient,
   userId: string | undefined,

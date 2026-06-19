@@ -1,7 +1,32 @@
 import type { PrismaClient } from "@prisma/client";
-import type { CreateWishlistInput, AddToWishlistInput } from "@gql-prisma-api/modules/wishlist/inputs.js";
+import type { CreateWishlistInput, AddToWishlistInput } from "./inputs.js";
 import { requireAuth } from "@gql-prisma-api/utils/errors.js";
 
+// --- Type-field resolver functions ---
+export function resolveWishlistUser(prisma: PrismaClient, userId: string) {
+  return prisma.user.findUnique({ where: { id: userId } });
+}
+
+export function resolveWishlistItems(prisma: PrismaClient, wishlistId: string) {
+  return prisma.wishlistItem.findMany({
+    where: { wishlistId },
+    include: { product: true },
+  });
+}
+
+export function resolveWishlistItemCount(prisma: PrismaClient, wishlistId: string) {
+  return prisma.wishlistItem.count({ where: { wishlistId } });
+}
+
+export function resolveWishlistItemWishlist(prisma: PrismaClient, wishlistId: string) {
+  return prisma.wishlist.findUnique({ where: { id: wishlistId } });
+}
+
+export function resolveWishlistItemProduct(prisma: PrismaClient, productId: string) {
+  return prisma.product.findUnique({ where: { id: productId } });
+}
+
+// --- Existing business logic functions ---
 export async function createWishlist(
   prisma: PrismaClient,
   userId: string | undefined,
@@ -29,7 +54,7 @@ export async function addToWishlist(
     update: { note: input.note ?? null },
     create: { wishlistId: input.wishlistId, productId: input.productId, note: input.note ?? null },
   });
-  
+
   return prisma.wishlist.findUnique({ where: { id: input.wishlistId } });
 }
 

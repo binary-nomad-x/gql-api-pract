@@ -1,6 +1,34 @@
-import type { PrismaClient } from "@prisma/client";
-import type { AddToCartInput, UpdateCartItemInput } from "@gql-prisma-api/modules/cart/inputs.js";
+import type { PrismaClient, Product } from "@prisma/client";
+import type { AddToCartInput, UpdateCartItemInput } from "./inputs.js";
 import { requireAuth } from "@gql-prisma-api/utils/errors.js";
+
+export function resolveCartUser(prisma: PrismaClient, userId: string) {
+  return prisma.user.findUnique({ where: { id: userId } });
+}
+
+export function resolveCartItems(prisma: PrismaClient, cartId: string) {
+  return prisma.cartItem.findMany({ where: { cartId }, include: { product: true } });
+}
+
+export async function resolveCartTotalAmount(prisma: PrismaClient, cartId: string) {
+  const items = await prisma.cartItem.findMany({
+    where: { cartId },
+    include: { product: true },
+  });
+  return items.reduce((sum: number, i: { product: Product; quantity: number }) => sum + i.product.price * i.quantity, 0);
+}
+
+export function resolveCartItemCount(prisma: PrismaClient, cartId: string) {
+  return prisma.cartItem.count({ where: { cartId } });
+}
+
+export function resolveCartItemCart(prisma: PrismaClient, cartId: string) {
+  return prisma.cart.findUnique({ where: { id: cartId } });
+}
+
+export function resolveCartItemProduct(prisma: PrismaClient, productId: string) {
+  return prisma.product.findUnique({ where: { id: productId } });
+}
 
 async function getOrCreateCart(prisma: PrismaClient, userId: string) {
   let cart = await prisma.cart.findUnique({ where: { userId } });

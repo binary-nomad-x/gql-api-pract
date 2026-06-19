@@ -1,6 +1,16 @@
 import type { PrismaClient } from "@prisma/client";
 import { requireAuth } from "@gql-prisma-api/utils/errors.js";
 
+// --- Type-field resolver functions ---
+export function resolveSavedPostUser(prisma: PrismaClient, userId: string) {
+  return prisma.user.findUnique({ where: { id: userId } });
+}
+
+export function resolveSavedPostPost(prisma: PrismaClient, postId: string) {
+  return prisma.post.findUnique({ where: { id: postId } });
+}
+
+// --- Existing business logic functions ---
 export async function toggleSavePost(
   prisma: PrismaClient,
   userId: string | undefined,

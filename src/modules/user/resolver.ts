@@ -1,10 +1,23 @@
 import type { Context } from "@gql-prisma-api/types/context.js";
-import type { Parent, IdArg } from "@gql-prisma-api/types/graphql.js";
-import type {
-  UpdateUserInput,
-  UpdateProfileInput,
-} from "@gql-prisma-api/modules/user/inputs.js";
+import type { User as UserModel } from "@prisma/client";
+import type { IdArg } from "@gql-prisma-api/types/graphql.js";
+import type { UpdateUserInput, UpdateProfileInput } from "./inputs.js";
 import {
+  resolveUserProfile,
+  resolveUserPosts,
+  resolveUserComments,
+  resolveUserLikes,
+  resolveUserProducts,
+  resolveUserOrders,
+  resolveUserReviews,
+  resolveUserAddresses,
+  resolveUserWishlists,
+  resolveUserCart,
+  resolveUserNotifications,
+  resolveUserFollowers,
+  resolveUserFollowing,
+  resolveUserSavedPosts,
+  resolveUserPostViews,
   updateUser,
   deleteUser,
   updateProfile,
@@ -13,61 +26,57 @@ import {
   getMe,
 } from "./service.js";
 
-export const UserResolver = {
-  profile: (parent: Parent, _args: unknown, ctx: Context) =>
-    ctx.prisma.profile.findUnique({ where: { userId: parent.id } }),
-  posts: (parent: Parent, _args: unknown, ctx: Context) =>
-    ctx.prisma.post.findMany({ where: { authorId: parent.id } }),
-  comments: (parent: Parent, _args: unknown, ctx: Context) =>
-    ctx.prisma.comment.findMany({ where: { authorId: parent.id } }),
-  likes: (parent: Parent, _args: unknown, ctx: Context) =>
-    ctx.prisma.like.findMany({ where: { userId: parent.id } }),
-  products: (parent: Parent, _args: unknown, ctx: Context) =>
-    ctx.prisma.product.findMany({ where: { sellerId: parent.id } }),
-  orders: (parent: Parent, _args: unknown, ctx: Context) =>
-    ctx.prisma.order.findMany({ where: { userId: parent.id } }),
-  reviews: (parent: Parent, _args: unknown, ctx: Context) =>
-    ctx.prisma.review.findMany({ where: { userId: parent.id } }),
-  addresses: (parent: Parent, _args: unknown, ctx: Context) =>
-    ctx.prisma.address.findMany({ where: { userId: parent.id } }),
-  wishlists: (parent: Parent, _args: unknown, ctx: Context) =>
-    ctx.prisma.wishlist.findMany({ where: { userId: parent.id } }),
-  cart: (parent: Parent, _args: unknown, ctx: Context) =>
-    ctx.prisma.cart.findUnique({ where: { userId: parent.id } }),
-  notifications: (parent: Parent, _args: unknown, ctx: Context) =>
-    ctx.prisma.notification.findMany({ where: { userId: parent.id } }),
-  followers: (parent: Parent, _args: unknown, ctx: Context) =>
-    ctx.prisma.follow.findMany({ where: { followingId: parent.id } }),
-  following: (parent: Parent, _args: unknown, ctx: Context) =>
-    ctx.prisma.follow.findMany({ where: { followerId: parent.id } }),
-  savedPosts: (parent: Parent, _args: unknown, ctx: Context) =>
-    ctx.prisma.savedPost.findMany({ where: { userId: parent.id } }),
-  postViews: (parent: Parent, _args: unknown, ctx: Context) =>
-    ctx.prisma.postView.findMany({ where: { userId: parent.id } }),
+export const User = {
+  profile: (parent: UserModel, _args: unknown, ctx: Context) =>
+    resolveUserProfile(ctx.prisma, parent.id),
+  posts: (parent: UserModel, _args: unknown, ctx: Context) =>
+    resolveUserPosts(ctx.prisma, parent.id),
+  comments: (parent: UserModel, _args: unknown, ctx: Context) =>
+    resolveUserComments(ctx.prisma, parent.id),
+  likes: (parent: UserModel, _args: unknown, ctx: Context) =>
+    resolveUserLikes(ctx.prisma, parent.id),
+  products: (parent: UserModel, _args: unknown, ctx: Context) =>
+    resolveUserProducts(ctx.prisma, parent.id),
+  orders: (parent: UserModel, _args: unknown, ctx: Context) =>
+    resolveUserOrders(ctx.prisma, parent.id),
+  reviews: (parent: UserModel, _args: unknown, ctx: Context) =>
+    resolveUserReviews(ctx.prisma, parent.id),
+  addresses: (parent: UserModel, _args: unknown, ctx: Context) =>
+    resolveUserAddresses(ctx.prisma, parent.id),
+  wishlists: (parent: UserModel, _args: unknown, ctx: Context) =>
+    resolveUserWishlists(ctx.prisma, parent.id),
+  cart: (parent: UserModel, _args: unknown, ctx: Context) =>
+    resolveUserCart(ctx.prisma, parent.id),
+  notifications: (parent: UserModel, _args: unknown, ctx: Context) =>
+    resolveUserNotifications(ctx.prisma, parent.id),
+  followers: (parent: UserModel, _args: unknown, ctx: Context) =>
+    resolveUserFollowers(ctx.prisma, parent.id),
+  following: (parent: UserModel, _args: unknown, ctx: Context) =>
+    resolveUserFollowing(ctx.prisma, parent.id),
+  savedPosts: (parent: UserModel, _args: unknown, ctx: Context) =>
+    resolveUserSavedPosts(ctx.prisma, parent.id),
+  postViews: (parent: UserModel, _args: unknown, ctx: Context) =>
+    resolveUserPostViews(ctx.prisma, parent.id),
 };
 
-export const UserQueries = {
+export const Query = {
   users: (_parent: unknown, _args: unknown, ctx: Context) =>
     getUsers(ctx.prisma),
-
   user: (_parent: unknown, { id }: IdArg, ctx: Context) =>
     getUser(ctx.prisma, id),
-
   me: (_parent: unknown, _args: unknown, ctx: Context) =>
     getMe(ctx.prisma, ctx.userId),
 };
 
-export const UserMutations = {
-  updateUser: async (
+export const Mutation = {
+  updateUser: (
     _parent: unknown,
     args: { id: string; input: UpdateUserInput },
     ctx: Context,
   ) => updateUser(ctx.prisma, ctx.userId, args),
-
-  deleteUser: async (_parent: unknown, { id }: IdArg, ctx: Context) =>
+  deleteUser: (_parent: unknown, { id }: IdArg, ctx: Context) =>
     deleteUser(ctx.prisma, ctx.userId, id),
-
-  updateProfile: async (
+  updateProfile: (
     _parent: unknown,
     args: UpdateProfileInput,
     ctx: Context,

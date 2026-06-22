@@ -2,7 +2,7 @@ import { faker } from "@faker-js/faker";
 import type { SeedContext, SeedCounts } from "./types.js";
 import type { User, Post, Product } from "@prisma/client";
 
-const NT = [
+const NOTIFICATION_TYPES = [
   "SYSTEM",
   "ORDER_UPDATE",
   "PAYMENT_RECEIVED",
@@ -15,7 +15,19 @@ const NT = [
   "NEW_MESSAGE",
   "SUBSCRIPTION_EXPIRING",
   "DISCOUNT_AVAILABLE",
-];
+] as const;
+
+const BATCH_SIZE = 2000;
+
+type NotificationData = {
+  userId: string;
+  type: (typeof NOTIFICATION_TYPES)[number];
+  title: string;
+  message?: string;
+  link?: string;
+  isRead: boolean;
+  readAt?: Date;
+};
 
 export async function seedRemaining(
   ctx: SeedContext,
@@ -24,117 +36,138 @@ export async function seedRemaining(
   posts: Post[],
   products: Product[],
 ): Promise<void> {
+  await Promise.all([
+    seedNotifications(ctx, counts, users),
+    seedFollows(ctx, counts, users),
+    seedSavedPosts(ctx, counts, users, posts),
+    seedPostViews(ctx, counts, posts, users),
+    seedProductImages(ctx, counts, products),
+  ]);
+}
 
-  // Notifications
-  const notifData: Array<{
-    userId: string;
-    type: string;
-    title: string;
-    message?: string;
-    link?: string;
-    isRead: boolean;
-    readAt?: Date;
-  }> = [];
+async function seedNotifications(
+  ctx: SeedContext,
+  counts: SeedCounts,
+  users: User[],
+): Promise<void> {
+  const notifications = users.flatMap((user) => {
+    const count = faker.number.int({ min: 3, max: 12 });
+    return Array.from({ length: count }, () => ({
+      userId: user.id,
+      type: faker.helpers.arrayElement(NOTIFICATION_TYPES),
+      title: faker.lorem.sentence({ min: 3, max: 6 }),
+      ...(faker.datatype.boolean(0.5) && { message: faker.lorem.paragraph() }),
+      ...(faker.datatype.boolean(0.3) && {
+        link: `/${faker.helpers.arrayElement(["orders", "posts", "products"])}`,
+      }),
+      isRead: faker.datatype.boolean(0.5),
+      ...(faker.datatype.boolean(0.3) && {
+        readAt: faker.date.recent(),
+      }),
+    })) as NotificationData[];
+  });
 
-  for (const u of users) {
-    const n = faker.number.int({ min: 3, max: 12 });
-    for (let i = 0; i < n; i++) {
-      notifData.push({
-        userId: u.id,
-        type: faker.helpers.arrayElement(NT),
-        title: faker.lorem.sentence({ min: 3, max: 6 }),
-        message:
-          faker.helpers.maybe(() => faker.lorem.paragraph()) ?? undefined,
-        link:
-          faker.helpers.maybe(
-            () =>
-              `/${faker.helpers.arrayElement(["orders", "posts", "products"])}`,
-          ) ?? undefined,
-        isRead: faker.datatype.boolean(0.5),
-        readAt: faker.datatype.boolean(0.3) ? faker.date.recent() : undefined,
-      });
+  await insertInBatches(ctx.prisma.notification, notifications);
+  counts.notifications = notifications.length;
+}
+
+async function seedFollows(
+  ctx: SeedContext,
+  counts: SeedCounts,
+  users: User[],
+): Promise<void> {
+  const follows = new Set<string>();
+  const data: Array<{ followerId: string; followingId: string }> = [];
+
+  while (
+    data.length < 500 &&
+    follows.size < users.length * (users.length - 1)
+  ) {
+    const follower = faker.helpers.arrayElement(users);
+    const following = faker.helpers.arrayElement(users);
+
+    if (follower.id === following.id) continue;
+
+    const key = `${follower.id}_${following.id}`;
+    if (!follows.has(key)) {
+      follows.add(key);
+      data.push({ followerId: follower.id, followingId: following.id });
     }
   }
 
-  await ctx.prisma.notification.createMany({ data: notifData });
-  counts.notifications = notifData.length;
+  await ctx.prisma.follow.createMany({ data });
+  counts.follows = data.length;
+}
 
-  // Follows
-  const followSet = new Set<string>();
-  const followData: Array<{ followerId: string; followingId: string }> = [];
-  for (let i = 0; i < 500; i++) {
-    const f1 = faker.helpers.arrayElement(users);
-    const f2 = faker.helpers.arrayElement(users);
-    if (f1.id === f2.id) continue;
-    const key = `${f1.id}_${f2.id}`;
-    if (followSet.has(key)) continue;
-    followSet.add(key);
-    followData.push({ followerId: f1.id, followingId: f2.id });
-  }
-  await ctx.prisma.follow.createMany({ data: followData });
-  counts.follows = followData.length;
+async function seedSavedPosts(
+  ctx: SeedContext,
+  counts: SeedCounts,
+  users: User[],
+  posts: Post[],
+): Promise<void> {
+  const saved = new Set<string>();
+  const data: Array<{ userId: string; postId: string }> = [];
 
-  // SavedPosts
-  const spSet = new Set<string>();
-  const spData: Array<{ userId: string; postId: string }> = [];
-  for (let i = 0; i < 500; i++) {
-    const u = faker.helpers.arrayElement(users);
-    const p = faker.helpers.arrayElement(posts);
-    const key = `${u.id}_${p.id}`;
-    if (spSet.has(key)) continue;
-    spSet.add(key);
-    spData.push({ userId: u.id, postId: p.id });
-  }
+  while (data.length < 500 && saved.size < users.length * posts.length) {
+    const user = faker.helpers.arrayElement(users);
+    const post = faker.helpers.arrayElement(posts);
+    const key = `${user.id}_${post.id}`;
 
-  await ctx.prisma.savedPost.createMany({ data: spData });
-  counts.savedPosts = spData.length;
-
-  // PostViews — generate and insert in batches of 2000
-  const pvData: Array<{ postId: string; userId?: string; ip: string }> = [];
-  for (const post of posts) {
-    const n = faker.number.int({ min: 10, max: 80 });
-    for (let i = 0; i < n; i++) {
-      pvData.push({
-        postId: post.id,
-        userId: faker.datatype.boolean(0.7)
-          ? faker.helpers.arrayElement(users).id
-          : undefined,
-        ip: faker.internet.ip(),
-      });
+    if (!saved.has(key)) {
+      saved.add(key);
+      data.push({ userId: user.id, postId: post.id });
     }
   }
 
-  for (let i = 0; i < pvData.length; i += 2000) {
-    await ctx.prisma.postView.createMany({ data: pvData.slice(i, i + 2000) });
+  await ctx.prisma.savedPost.createMany({ data });
+  counts.savedPosts = data.length;
+}
+
+async function seedPostViews(
+  ctx: SeedContext,
+  counts: SeedCounts,
+  posts: Post[],
+  users: User[],
+): Promise<void> {
+  const views = posts.flatMap((post) => {
+    const count = faker.number.int({ min: 10, max: 80 });
+    return Array.from({ length: count }, () => ({
+      postId: post.id,
+      ...(faker.datatype.boolean(0.7) && {
+        userId: faker.helpers.arrayElement(users).id,
+      }),
+      ip: faker.internet.ip(),
+    }));
+  });
+
+  await insertInBatches(ctx.prisma.postView, views);
+  counts.postViews = views.length;
+}
+
+async function seedProductImages(
+  ctx: SeedContext,
+  counts: SeedCounts,
+  products: Product[],
+): Promise<void> {
+  const images = products.flatMap((product) => {
+    const count = faker.number.int({ min: 1, max: 4 });
+    return Array.from({ length: count }, (_, i) => ({
+      productId: product.id,
+      url: `https://picsum.photos/seed/${product.sku}-${i}/400/400`,
+      alt: `${product.name} - Image ${i + 1}`,
+      sortOrder: i,
+    }));
+  });
+
+  await insertInBatches(ctx.prisma.productImage, images);
+  counts.productImages = images.length;
+}
+
+async function insertInBatches<T>(
+  model: { createMany: (args: { data: T[] }) => Promise<unknown> },
+  data: T[],
+): Promise<void> {
+  for (let i = 0; i < data.length; i += BATCH_SIZE) {
+    await model.createMany({ data: data.slice(i, i + BATCH_SIZE) });
   }
-
-  counts.postViews = pvData.length;
-
-  // ProductImages
-  const piData: Array<{
-    productId: string;
-    url: string;
-    alt?: string;
-    sortOrder: number;
-  }> = [];
-
-  for (const product of products) {
-    const n = faker.number.int({ min: 1, max: 4 });
-    for (let i = 0; i < n; i++) {
-      piData.push({
-        productId: product.id,
-        url: `https://picsum.photos/seed/${product.sku}-${i}/400/400`,
-        alt: `${product.name} - Image ${i + 1}`,
-        sortOrder: i,
-      });
-    }
-  }
-
-  for (let i = 0; i < piData.length; i += 1000) {
-    await ctx.prisma.productImage.createMany({
-      data: piData.slice(i, i + 1000),
-    });
-  }
-
-  counts.productImages = piData.length;
 }

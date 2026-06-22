@@ -5,7 +5,7 @@ A GraphQL API built with Apollo Server, Prisma (v7), and PostgreSQL. Covers blog
 ## Prerequisites
 
 - **Node.js** 18+
-- **PostgreSQL** 13+ running locally or remotely
+- **PostgreSQL** 13+ running locally or remotely (should be 18.3+)
 - **npm** 9+
 
 ## Quick Start
@@ -183,6 +183,8 @@ See [API.md](./API.md) for a complete reference of all queries, mutations, input
 * Make the novu working (use the new approach that supports the ts files - code level workflows and steps)
 * Introduce mcp in the project
 * Use pgsql mcp for the project
-* introduce stripe
+* introduce stripe / apple pay / paypal / jazzcash (if local)
 * when i hit localhost:4000 port and im offline, it does not open graphql appollo server for me to play with offline
-*
+* add or remove a table or column without the migrations, add a new column or table
+* `git reset --hard origin/<branch-name>` move local code to remote code (no matter what)
+* 

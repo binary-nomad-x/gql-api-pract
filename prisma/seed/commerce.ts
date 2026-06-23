@@ -1,77 +1,43 @@
 import { faker } from "@faker-js/faker";
 import type { SeedContext, SeedCounts } from "./types.js";
-import type { User, Category, Product } from "@prisma/client";
+import { generateIds } from "./utils.js";
 
 const SEED_PRODUCTS = 5000;
 const SEED_ORDERS = 5000;
 
 const ORDER_STATUSES = [
-  "PENDING",
-  "CONFIRMED",
-  "PROCESSING",
-  "SHIPPED",
-  "DELIVERED",
-  "CANCELLED",
+  "PENDING", "CONFIRMED", "PROCESSING", "SHIPPED", "DELIVERED", "CANCELLED",
 ];
 const PAYMENT_METHODS = [
-  "CREDIT_CARD",
-  "DEBIT_CARD",
-  "PAYPAL",
-  "BANK_TRANSFER",
-  "CASH_ON_DELIVERY",
+  "CREDIT_CARD", "DEBIT_CARD", "PAYPAL", "BANK_TRANSFER", "CASH_ON_DELIVERY",
 ] as const;
 const PAYMENT_STATUSES = [
-  "COMPLETED",
-  "COMPLETED",
-  "COMPLETED",
-  "FAILED",
-  "REFUNDED",
+  "COMPLETED", "COMPLETED", "COMPLETED", "FAILED", "REFUNDED",
 ] as const;
 const REFUND_REASONS = [
-  "Defective product",
-  "Wrong item shipped",
-  "Changed mind",
-  "Item not as described",
-  "Damaged during shipping",
+  "Defective product", "Wrong item shipped", "Changed mind",
+  "Item not as described", "Damaged during shipping",
 ];
-const REFUND_STATUSES = [
-  "PENDING",
-  "APPROVED",
-  "COMPLETED",
-  "REJECTED",
-] as const;
+const REFUND_STATUSES = ["PENDING", "APPROVED", "COMPLETED", "REJECTED"] as const;
 
 export async function seedCommerce(
   ctx: SeedContext,
   counts: SeedCounts,
-  users: User[],
-  categories: Category[],
-): Promise<{ products: Product[] }> {
-  const prodCatIds = categories.slice(6).map((c) => c.id);
-  const allCatIds = categories.map((c) => c.id);
+  userIds: string[],
+  catIds: string[],
+): Promise<{ productIds: string[] }> {
+  const prodCatIds = catIds.slice(6);
 
-  // Products — bulk insert in batches
+  // Products — pre-generate IDs
   console.log("Seeding products...");
+  const productIds = generateIds(SEED_PRODUCTS);
   const usedSkus = new Set<string>();
-  const productData: Array<{
-    name: string;
-    description: string;
-    price: number;
-    stock: number;
-    sku: string;
-    imageUrl: string;
-    isActive: boolean;
-    sellerId: string;
-    categoryId: string | undefined;
-  }> = [];
-
-  for (let i = 0; i < SEED_PRODUCTS; i++) {
+  const productData = productIds.map((id) => {
     let sku: string;
-    do {
-      sku = faker.string.alphanumeric({ length: 10, casing: "upper" });
-    } while (usedSkus.has(sku));
+    do { sku = faker.string.alphanumeric({ length: 10, casing: "upper" }); } while (usedSkus.has(sku));
     usedSkus.add(sku);
-    productData.push({
+    return {
+      id,
       name: faker.commerce.productName(),
       description: faker.commerce.productDescription(),
       price: parseFloat(faker.commerce.price({ min: 5, max: 500 })),
@@ -79,26 +45,24 @@ export async function seedCommerce(
       sku,
       imageUrl: `https://picsum.photos/seed/${sku}/400/400`,
       isActive: faker.datatype.boolean(0.95),
-      sellerId: faker.helpers.arrayElement(users).id,
+      sellerId: faker.helpers.arrayElement(userIds),
       categoryId: faker.helpers.arrayElement(
-        faker.datatype.boolean(0.7) ? prodCatIds : allCatIds,
+        faker.datatype.boolean(0.7) ? prodCatIds : catIds,
       ),
-    });
+    };
+  });
+
+  for (let i = 0; i < productIds.length; i += 500) {
+    await ctx.prisma.product.createMany({ data: productData.slice(i, i + 500) });
   }
+  counts.products = productIds.length;
+  console.log(`Created ${productIds.length} products`);
 
-  for (let i = 0; i < productData.length; i += 500) {
-    await ctx.prisma.product.createMany({
-      data: productData.slice(i, i + 500),
-    });
-  }
-
-  const products = await ctx.prisma.product.findMany();
-  counts.products = products.length;
-  console.log(`Created ${products.length} products`);
-
-  // Orders + OrderItems — create orders first, then items in bulk
+  // Orders — pre-generate IDs and build items inline
   console.log("Seeding orders...");
+  const orderIds = generateIds(SEED_ORDERS);
   const orderData: Array<{
+    id: string;
     userId: string;
     status: string;
     totalAmount: number;
@@ -106,132 +70,114 @@ export async function seedCommerce(
     shippingAddress: string;
   }> = [];
 
+  // Build items grouped by order in a Map to avoid O(n²) later
+  const orderItemsByOrder = new Map<string, Array<{
+    productId: string;
+    quantity: number;
+    unitPrice: number;
+  }>>();
+
+  for (let i = 0; i < SEED_ORDERS; i++) {
+    const buyerId = faker.helpers.arrayElement(userIds);
+    const numItems = faker.number.int({ min: 1, max: 6 });
+    const selectedProducts = faker.helpers.arrayElements(productIds, numItems);
+    const items = selectedProducts.map((pid) => ({
+      productId: pid,
+      quantity: faker.number.int({ min: 1, max: 4 }),
+      unitPrice: 0, // filled after we know products
+    }));
+    orderItemsByOrder.set(orderIds[i], items);
+  }
+
+  // Resolve prices from productData
+  const productPriceMap = new Map(productData.map((p) => [p.id, p.price]));
+  for (const [, items] of orderItemsByOrder) {
+    for (const item of items) {
+      item.unitPrice = productPriceMap.get(item.productId) ?? 0;
+    }
+  }
+
+  for (const [oid, items] of orderItemsByOrder) {
+    const total = items.reduce((s, it) => s + it.unitPrice * it.quantity, 0);
+    orderData.push({
+      id: oid,
+      userId: faker.helpers.arrayElement(userIds),
+      status: faker.helpers.arrayElement(ORDER_STATUSES),
+      totalAmount: total,
+      discountAmount: 0,
+      shippingAddress: faker.location.streetAddress(),
+    });
+  }
+
+  for (let i = 0; i < orderData.length; i += 500) {
+    await ctx.prisma.order.createMany({ data: orderData.slice(i, i + 500) });
+  }
+  counts.orders = orderData.length;
+  console.log(`Created ${orderData.length} orders`);
+
+  // Order items — bulk insert from the pre-built map
   const orderItemData: Array<{
     orderId: string;
     productId: string;
     quantity: number;
     unitPrice: number;
   }> = [];
-
-  // Pre-generate order items data grouped by order
-  const tempOrderIds: string[] = [];
-  for (let i = 0; i < SEED_ORDERS; i++) {
-    const buyer = faker.helpers.arrayElement(users);
-    const numItems = faker.number.int({ min: 1, max: 6 });
-    const op = faker.helpers.arrayElements(products, numItems);
-    const items = op.map((p) => ({
-      productId: p.id,
-      quantity: faker.number.int({ min: 1, max: 4 }),
-      unitPrice: p.price,
-    }));
-    const total = items.reduce((s, it) => s + it.unitPrice * it.quantity, 0);
-
-    // Use a synthetic temp ID to group items, real ID assigned after createMany
-    const tempId = `temp_${i}`;
-    tempOrderIds.push(tempId);
-    orderData.push({
-      userId: buyer.id,
-      status: faker.helpers.arrayElement(ORDER_STATUSES),
-      totalAmount: total,
-      discountAmount: 0,
-      shippingAddress: faker.location.streetAddress(),
-    });
-    // We can't link items until orders exist, store by index
-  }
-
-  // We need order IDs back → create orders in chunks with returning IDs
-  // createMany doesn't return IDs, so use individual creates in transaction batches for order
-  // Actually, let's batch orders with individual creates but in parallel transactions
-  const BATCH = 100;
-  const orderMap = new Map<string, string>(); // tempId → realId
-  const orders: Array<{
-    id: string;
-    userId: string;
-    status: string;
-    totalAmount: number;
-  }> = [];
-
-  for (let i = 0; i < orderData.length; i += BATCH) {
-    const batch = orderData.slice(i, i + BATCH);
-    const results = await Promise.all(
-      batch.map((d) => ctx.prisma.order.create({ data: d })),
-    );
-    for (let j = 0; j < results.length; j++) {
-      const idx = i + j;
-      orderMap.set(tempOrderIds[idx], results[j].id);
-      orders.push(results[j]);
-    }
-  }
-
-  counts.orders = orders.length;
-  console.log(`Created ${orders.length} orders`);
-
-  // Now build order items with real order IDs
-  for (let i = 0; i < SEED_ORDERS; i++) {
-    const realOrderId = orderMap.get(tempOrderIds[i])!;
-    const buyer = faker.helpers.arrayElement(users);
-    const numItems = faker.number.int({ min: 1, max: 6 });
-    const op = faker.helpers.arrayElements(products, numItems);
-
-    for (const p of op) {
+  for (const [oid, items] of orderItemsByOrder) {
+    for (const item of items) {
       orderItemData.push({
-        orderId: realOrderId,
-        productId: p.id,
-        quantity: faker.number.int({ min: 1, max: 4 }),
-        unitPrice: p.price,
+        orderId: oid,
+        productId: item.productId,
+        quantity: item.quantity,
+        unitPrice: item.unitPrice,
       });
     }
-
-    // No need to regenerate total — it's already in orderData[i].totalAmount
   }
 
-  // Bulk insert order items in batches
   for (let i = 0; i < orderItemData.length; i += 1000) {
-    await ctx.prisma.orderItem.createMany({
-      data: orderItemData.slice(i, i + 1000),
-    });
+    await ctx.prisma.orderItem.createMany({ data: orderItemData.slice(i, i + 1000) });
   }
-
   counts.orderItems = orderItemData.length;
 
-  // Decrement stock for non-cancelled orders (batch update)
-  for (let i = 0; i < orders.length; i++) {
-    if (orders[i].status === "CANCELLED") continue;
-    // Get items for this order
-    const items = orderItemData.filter((it) => it.orderId === orders[i].id);
+  // Stock decrement — aggregate per product, batch update
+  const stockChanges = new Map<string, number>();
+  for (const [oid, items] of orderItemsByOrder) {
+    const orderStatus = orderData.find((o) => o.id === oid)!.status;
+    if (orderStatus === "CANCELLED") continue;
     for (const item of items) {
-      await ctx.prisma.product.update({
-        where: { id: item.productId },
-        data: { stock: { decrement: item.quantity } },
-      });
+      const prev = stockChanges.get(item.productId) ?? 0;
+      stockChanges.set(item.productId, prev + item.quantity);
     }
   }
+  await Promise.all(
+    Array.from(stockChanges.entries()).map(([pid, qty]) =>
+      ctx.prisma.product.update({
+        where: { id: pid },
+        data: { stock: { decrement: qty } },
+      }),
+    ),
+  );
 
-  // Payments — bulk
-  const paymentData = orders
-    .filter((o) => o.status !== "CANCELLED")
-    .map((o) => ({
-      orderId: o.id,
-      amount: o.totalAmount,
-      method: faker.helpers.arrayElement(PAYMENT_METHODS),
-      status: faker.helpers.arrayElement(PAYMENT_STATUSES),
-      transactionId: `TXN-${faker.string.alphanumeric({ length: 12, casing: "upper" })}`,
-    }));
+  // Payments — pre-generate IDs, bulk from non-cancelled orders
+  const nonCancelled = orderData.filter((o) => o.status !== "CANCELLED");
+  const paymentIds = generateIds(nonCancelled.length);
+  const paymentData = nonCancelled.map((o, i) => ({
+    id: paymentIds[i],
+    orderId: o.id,
+    amount: o.totalAmount,
+    method: faker.helpers.arrayElement(PAYMENT_METHODS),
+    status: faker.helpers.arrayElement(PAYMENT_STATUSES),
+    transactionId: `TXN-${faker.string.alphanumeric({ length: 12, casing: "upper" })}`,
+  }));
 
-  await ctx.prisma.payment.createMany({ data: paymentData });
+  for (let i = 0; i < paymentData.length; i += 1000) {
+    await ctx.prisma.payment.createMany({ data: paymentData.slice(i, i + 1000) });
+  }
   counts.payments = paymentData.length;
 
-  // Refunds — bulk
-  const completedPayments = await ctx.prisma.payment.findMany({
-    where: { status: "COMPLETED" },
-    take: 200,
-    orderBy: { createdAt: "desc" },
-  });
-
+  // Refunds — bulk from a limited sample of completed payments
+  const completedPayments = paymentData.filter((p) => p.status === "COMPLETED").slice(0, 200);
   const refundData = completedPayments.map((p) => {
-    const amt = parseFloat(
-      faker.commerce.price({ min: 10, max: Math.min(p.amount, 200) }),
-    );
+    const amt = parseFloat(faker.commerce.price({ min: 10, max: Math.min(p.amount, 200) }));
     return {
       paymentId: p.id,
       orderId: p.orderId,
@@ -244,5 +190,5 @@ export async function seedCommerce(
   await ctx.prisma.refund.createMany({ data: refundData });
   counts.refunds = refundData.length;
 
-  return { products };
+  return { productIds };
 }

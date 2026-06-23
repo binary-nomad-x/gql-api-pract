@@ -38,50 +38,47 @@ async function main(): Promise<void> {
 
   // Phase 1 — independent
   console.log("[Phase 1] Users, Categories, Tags...");
-  const [users, { categories, tags }] = await Promise.all([
+  const [userIds, { categories: catIds, tags: tagIds }] = await Promise.all([
     seedUsers({ prisma }, counts),
     seedCategoriesAndTags({ prisma }, counts),
   ]);
 
   // Phase 2 — posts, products (depend on users+categories+tags)
   console.log("[Phase 2] Posts, Products...");
-  const [posts, { products }] = await Promise.all([
-    seedPostsCommentsLikes({ prisma }, counts, users, categories, tags),
-    seedCommerce({ prisma }, counts, users, categories),
+  const [postIds, { productIds }] = await Promise.all([
+    seedPostsCommentsLikes({ prisma }, counts, userIds, catIds, tagIds),
+    seedCommerce({ prisma }, counts, userIds, catIds),
   ]);
 
-  // Phase 3 — comments/likes (from posts), reviews/addresses/wishlists/carts (from products+users)
+  // Phase 3 — reviews, address/account (from products+users)
   console.log("[Phase 3] Reviews, Addresses, Account-related...");
   await Promise.all([
-    seedReviews({ prisma }, counts, users, products),
-    seedAccountRelated({ prisma }, counts, users, products),
+    seedReviews({ prisma }, counts, userIds, productIds),
+    seedAccountRelated({ prisma }, counts, userIds, productIds),
   ]);
 
-  // Phase 4 — promotions (from orders — already seeded inside commerce)
+  // Phase 4 — promotions (from orders)
   console.log("[Phase 4] Coupons, Shipments...");
-
-  // Orders are already created inside seedCommerce; load them fresh
   const orders = await prisma.order.findMany();
   await seedPromotions({ prisma }, counts, orders);
 
-  // Phase 5 — everything else (all independent of each other, depend on users/posts/products)
+  // Phase 5 — everything else
   console.log(
     "[Phase 5] Notifications, Follows, SavedPosts, PostViews, ProductImages, Subscriptions, Discounts...",
   );
-
   await Promise.all([
-    seedRemaining({ prisma }, counts, users, posts, products),
-    seedSubscriptions({ prisma }, counts, users),
-    seedDiscounts({ prisma }, counts, products),
+    seedRemaining({ prisma }, counts, userIds, postIds, productIds),
+    seedSubscriptions({ prisma }, counts, userIds),
+    seedDiscounts({ prisma }, counts, productIds),
   ]);
 
-  // Phase 6 — conversations + messages (needs users)
+  // Phase 6 — conversations + messages
   console.log("[Phase 6] Conversations, Messages...");
-  await seedConversations({ prisma }, counts, users);
+  await seedConversations({ prisma }, counts, userIds);
 
   // Phase 7 — extras: invoices, returns, support tickets, ticket replies
   console.log("[Phase 7] Invoices, Return Requests, Support Tickets...");
-  await seedExtras({ prisma }, counts, users, products);
+  await seedExtras({ prisma }, counts, userIds);
 
   // Summary
   printElapsed(start);

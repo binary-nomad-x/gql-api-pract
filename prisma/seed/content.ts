@@ -1,7 +1,6 @@
 import { faker } from "@faker-js/faker";
 import type { SeedContext, SeedCounts } from "./types.js";
-import type { User } from "@prisma/client";
-import { attachPostTags, attachPostCategories } from "./utils.js";
+import { generateIds, batchInsertImplicitJoin } from "./utils.js";
 
 const SEED_POSTS = 500;
 const SEED_COMMENTS = 2000;
@@ -12,158 +11,102 @@ const CATEGORY_DATA: Array<{
   slug: string;
   description: string;
 }> = [
-  {
-    name: "Technology",
-    slug: "technology",
-    description: "Tech, software, and gadgets",
-  },
+  { name: "Technology", slug: "technology", description: "Tech, software, and gadgets" },
   { name: "Science", slug: "science", description: "Scientific discoveries" },
   { name: "Travel", slug: "travel", description: "Travel experiences" },
   { name: "Food", slug: "food", description: "Cooking and food culture" },
   { name: "Health", slug: "health", description: "Health and wellness" },
   { name: "Sports", slug: "sports", description: "Sports news and analysis" },
-  {
-    name: "Electronics",
-    slug: "electronics",
-    description: "Electronic devices and accessories",
-  },
+  { name: "Electronics", slug: "electronics", description: "Electronic devices and accessories" },
   { name: "Clothing", slug: "clothing", description: "Apparel and fashion" },
-  {
-    name: "Home & Garden",
-    slug: "home-garden",
-    description: "Home improvement and gardening",
-  },
+  { name: "Home & Garden", slug: "home-garden", description: "Home improvement and gardening" },
   { name: "Books", slug: "books", description: "Books and literature" },
   { name: "Music", slug: "music", description: "Music and audio" },
-  {
-    name: "Gaming",
-    slug: "gaming",
-    description: "Video games and accessories",
-  },
-  {
-    name: "Photography",
-    slug: "photography",
-    description: "Cameras and photography",
-  },
-  {
-    name: "Automotive",
-    slug: "automotive",
-    description: "Cars and automotive",
-  },
+  { name: "Gaming", slug: "gaming", description: "Video games and accessories" },
+  { name: "Photography", slug: "photography", description: "Cameras and photography" },
+  { name: "Automotive", slug: "automotive", description: "Cars and automotive" },
   { name: "Pets", slug: "pets", description: "Pet supplies and care" },
 ];
 
 const TAG_NAMES = [
-  "javascript",
-  "typescript",
-  "graphql",
-  "prisma",
-  "react",
-  "nodejs",
-  "python",
-  "ai",
-  "database",
-  "api",
-  "webdev",
-  "tutorial",
-  "docker",
-  "devops",
-  "testing",
-  "performance",
-  "security",
-  "css",
-  "html",
-  "mobile",
+  "javascript", "typescript", "graphql", "prisma", "react",
+  "nodejs", "python", "ai", "database", "api",
+  "webdev", "tutorial", "docker", "devops", "testing",
+  "performance", "security", "css", "html", "mobile",
 ];
 
 export async function seedCategoriesAndTags(
   ctx: SeedContext,
   counts: SeedCounts,
 ) {
-  await ctx.prisma.category.createMany({ data: CATEGORY_DATA });
-  const categories = await ctx.prisma.category.findMany();
-  counts.categories = categories.length;
-  console.log(`Created ${categories.length} categories`);
-
-  await ctx.prisma.tag.createMany({
-    data: TAG_NAMES.map((n) => ({ name: n })),
+  const catIds = generateIds(CATEGORY_DATA.length);
+  await ctx.prisma.category.createMany({
+    data: CATEGORY_DATA.map((c, i) => ({ id: catIds[i], ...c })),
   });
-  const tags = await ctx.prisma.tag.findMany();
-  counts.tags = tags.length;
-  console.log(`Created ${tags.length} tags`);
-  return { categories, tags };
+  counts.categories = catIds.length;
+  console.log(`Created ${catIds.length} categories`);
+
+  const tagIds = generateIds(TAG_NAMES.length);
+  await ctx.prisma.tag.createMany({
+    data: TAG_NAMES.map((n, i) => ({ id: tagIds[i], name: n })),
+  });
+  counts.tags = tagIds.length;
+  console.log(`Created ${tagIds.length} tags`);
+
+  return { categories: catIds, tags: tagIds };
 }
 
 export async function seedPostsCommentsLikes(
   ctx: SeedContext,
   counts: SeedCounts,
-  users: User[],
-  categories: { id: string }[],
-  tags: { id: string }[],
+  userIds: string[],
+  catIds: string[],
+  tagIds: string[],
 ) {
   console.log("Seeding posts...");
-  // Bulk create posts without M2M relations
-  const postBatch = 500;
-  const allPostData: Array<{
-    title: string;
-    content: string;
-    published: boolean;
-    authorId: string;
-  }> = [];
-  const postTagData: Array<{ postId: string; tagId: string }> = [];
-  const postCatData: Array<{ postId: string; categoryId: string }> = [];
-
-  for (let i = 0; i < SEED_POSTS; i++) {
-    allPostData.push({
-      title: faker.lorem.sentence({ min: 5, max: 12 }),
-      content: faker.lorem.paragraphs({ min: 3, max: 8 }),
-      published: faker.datatype.boolean(0.7),
-      authorId: faker.helpers.arrayElement(users).id,
-    });
-  }
-
-  await ctx.prisma.post.createMany({ data: allPostData });
-  const posts = await ctx.prisma.post.findMany();
-  counts.posts = posts.length;
-  console.log(`Created ${posts.length} posts`);
-
-  // Build M2M join data — need post IDs which we now have
-  for (const post of posts) {
-    const postTags = faker.helpers.arrayElements(
-      tags,
-      faker.number.int({ min: 1, max: 4 }),
-    );
-    for (const t of postTags)
-      postTagData.push({ postId: post.id, tagId: t.id });
-    const postCats = faker.helpers.arrayElements(
-      categories.slice(0, 6),
-      faker.number.int({ min: 1, max: 3 }),
-    );
-    for (const c of postCats)
-      postCatData.push({ postId: post.id, categoryId: c.id });
-  }
-
-  // Raw batch inserts into implicit join tables
-  await attachPostTags(ctx.prisma, postTagData);
-  await attachPostCategories(ctx.prisma, postCatData);
-
-  // Comments — bulk
-  const commentData = Array.from({ length: SEED_COMMENTS }, () => ({
-    content: faker.lorem.sentences({ min: 1, max: 3 }),
-    authorId: faker.helpers.arrayElement(users).id,
-    postId: faker.helpers.arrayElement(posts).id,
+  const postIds = generateIds(SEED_POSTS);
+  const postData = postIds.map((id) => ({
+    id,
+    title: faker.lorem.sentence({ min: 5, max: 12 }),
+    content: faker.lorem.paragraphs({ min: 3, max: 8 }),
+    published: faker.datatype.boolean(0.7),
+    authorId: faker.helpers.arrayElement(userIds),
   }));
 
+  await ctx.prisma.post.createMany({ data: postData });
+  counts.posts = postData.length;
+  console.log(`Created ${postData.length} posts`);
+
+  // M2M joins — build and batch-insert via raw SQL
+  const postTagPairs: Array<{ a: string; b: string }> = [];
+  const postCatPairs: Array<{ a: string; b: string }> = [];
+  for (const id of postIds) {
+    const tags = faker.helpers.arrayElements(tagIds, faker.number.int({ min: 1, max: 4 }));
+    for (const t of tags) postTagPairs.push({ a: id, b: t });
+    const cats = faker.helpers.arrayElements(catIds.slice(0, 6), faker.number.int({ min: 1, max: 3 }));
+    // A=Category, B=Post (alphabetical order in Prisma's join table)
+    for (const c of cats) postCatPairs.push({ a: c, b: id });
+  }
+
+  await batchInsertImplicitJoin(ctx.prisma, "_PostToTag", "A", "B", postTagPairs);
+  await batchInsertImplicitJoin(ctx.prisma, "_PostToCategory", "A", "B", postCatPairs);
+
+  // Comments
+  const commentData = Array.from({ length: SEED_COMMENTS }, () => ({
+    content: faker.lorem.sentences({ min: 1, max: 3 }),
+    authorId: faker.helpers.arrayElement(userIds),
+    postId: faker.helpers.arrayElement(postIds),
+  }));
   await ctx.prisma.comment.createMany({ data: commentData });
   counts.comments = SEED_COMMENTS;
   console.log(`Created ${SEED_COMMENTS} comments`);
 
-  // Likes — deduped pairs, then bulk
+  // Likes — deduped
   const likeSet = new Set<string>();
   const likeData: Array<{ userId: string; postId: string }> = [];
   for (let i = 0; i < SEED_LIKES; i++) {
-    const userId = faker.helpers.arrayElement(users).id;
-    const postId = faker.helpers.arrayElement(posts).id;
+    const userId = faker.helpers.arrayElement(userIds);
+    const postId = faker.helpers.arrayElement(postIds);
     const key = `${userId}_${postId}`;
     if (likeSet.has(key)) continue;
     likeSet.add(key);
@@ -174,5 +117,5 @@ export async function seedPostsCommentsLikes(
   counts.likes = likeData.length;
   console.log(`Created ${likeData.length} likes`);
 
-  return posts;
+  return postIds;
 }

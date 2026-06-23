@@ -3,35 +3,12 @@ import type { SeedContext, SeedCounts } from "./types.js";
 import type { Order } from "@prisma/client";
 
 const COUPON_CODES = [
-  "WELCOME10",
-  "SAVE20",
-  "FREESHIP",
-  "HOLIDAY25",
-  "FLASH50",
-  "NEWUSER",
-  "LOYALTY",
-  "VIP15",
-  "MEGA50",
-  "DEAL25",
-  "SAVE100",
+  "WELCOME10", "SAVE20", "FREESHIP", "HOLIDAY25", "FLASH50",
+  "NEWUSER", "LOYALTY", "VIP15", "MEGA50", "DEAL25", "SAVE100",
 ];
 
-const CARRIERS = [
-  "UPS",
-  "FedEx",
-  "USPS",
-  "DHL",
-  "Amazon Logistics",
-  "Ontrac",
-  "Canada Post",
-];
-
-const SHIP_STATUSES = [
-  "PICKED_UP",
-  "IN_TRANSIT",
-  "OUT_FOR_DELIVERY",
-  "DELIVERED",
-] as const;
+const CARRIERS = ["UPS", "FedEx", "USPS", "DHL", "Amazon Logistics", "Ontrac", "Canada Post"];
+const SHIP_STATUSES = ["PICKED_UP", "IN_TRANSIT", "OUT_FOR_DELIVERY", "DELIVERED"] as const;
 
 export async function seedPromotions(
   ctx: SeedContext,
@@ -50,28 +27,21 @@ export async function seedPromotions(
       expiresAt: faker.date.future(),
     })),
   });
-
   counts.coupons = COUPON_CODES.length;
 
   const shipped = orders
-    .filter((o) => ["SHIPPED", "DELIVERED"].includes(o.status))
+    .filter((o) => o.status === "SHIPPED" || o.status === "DELIVERED")
     .slice(0, 500);
 
   await ctx.prisma.shipment.createMany({
     data: shipped.map((o) => ({
       orderId: o.id,
       carrier: faker.helpers.arrayElement(CARRIERS),
-      trackingNumber: faker.string.alphanumeric({
-        length: 15,
-        casing: "upper",
-      }),
+      trackingNumber: faker.string.alphanumeric({ length: 15, casing: "upper" }),
       status: faker.helpers.arrayElement(SHIP_STATUSES),
       estimatedDelivery: faker.date.future(),
-      deliveredAt: faker.datatype.boolean(0.4)
-        ? faker.date.recent()
-        : undefined,
+      deliveredAt: faker.datatype.boolean(0.4) ? faker.date.recent() : undefined,
     })),
   });
-
   counts.shipments = shipped.length;
 }

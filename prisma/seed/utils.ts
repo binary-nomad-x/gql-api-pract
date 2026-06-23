@@ -1,4 +1,11 @@
 import type { PrismaClient } from "@prisma/client";
+import { randomUUID } from "node:crypto";
+
+export function generateIds(n: number): string[] {
+  const ids = new Array<string>(n);
+  for (let i = 0; i < n; i++) ids[i] = randomUUID();
+  return ids;
+}
 
 export async function resetDatabase(prisma: PrismaClient): Promise<void> {
   console.log("Resetting database...");
@@ -40,48 +47,21 @@ export async function resetDatabase(prisma: PrismaClient): Promise<void> {
   ]);
 }
 
-/** Group a flat post-tag array by postId and connect via Prisma */
-export async function attachPostTags(
+export async function batchInsertImplicitJoin(
   prisma: PrismaClient,
-  data: Array<{ postId: string; tagId: string }>,
+  table: string,
+  colA: string,
+  colB: string,
+  pairs: Array<{ a: string; b: string }>,
+  batchSize = 2000,
 ): Promise<void> {
-  const grouped = new Map<string, string[]>();
-
-  for (const { postId, tagId } of data) {
-    if (!grouped.has(postId)) grouped.set(postId, []);
-    grouped.get(postId)!.push(tagId);
+  for (let i = 0; i < pairs.length; i += batchSize) {
+    const chunk = pairs.slice(i, i + batchSize);
+    const values = chunk.map((p) => `('${p.a}','${p.b}')`).join(",");
+    await prisma.$executeRawUnsafe(
+      `INSERT INTO "${table}" ("${colA}","${colB}") VALUES ${values} ON CONFLICT DO NOTHING`,
+    );
   }
-
-  await Promise.all(
-    Array.from(grouped.entries()).map(([postId, tagIds]) =>
-      prisma.post.update({
-        where: { id: postId },
-        data: { tags: { connect: tagIds.map((id) => ({ id })) } },
-      }),
-    ),
-  );
-}
-
-/** Group a flat post-category array by postId and connect via Prisma */
-export async function attachPostCategories(
-  prisma: PrismaClient,
-  data: Array<{ postId: string; categoryId: string }>,
-): Promise<void> {
-  const grouped = new Map<string, string[]>();
-
-  for (const { postId, categoryId } of data) {
-    if (!grouped.has(postId)) grouped.set(postId, []);
-    grouped.get(postId)!.push(categoryId);
-  }
-
-  await Promise.all(
-    Array.from(grouped.entries()).map(([postId, categoryIds]) =>
-      prisma.post.update({
-        where: { id: postId },
-        data: { categories: { connect: categoryIds.map((id) => ({ id })) } },
-      }),
-    ),
-  );
 }
 
 export function printElapsed(start: number): void {

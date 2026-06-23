@@ -1,6 +1,6 @@
 import { faker } from "@faker-js/faker";
 import type { SeedContext, SeedCounts } from "./types.js";
-import { User } from "@prisma/client";
+import { generateIds } from "./utils.js";
 
 const SEED_CONVERSATIONS = 500;
 const MSGS_PER_CONV = 40;
@@ -8,19 +8,17 @@ const MSGS_PER_CONV = 40;
 export async function seedConversations(
   ctx: SeedContext,
   counts: SeedCounts,
-  users: User[],
+  userIds: string[],
 ): Promise<void> {
-  // Conversations (no participants yet — need IDs back)
-  const convData = Array.from({ length: SEED_CONVERSATIONS }, () => ({
-    title: faker.datatype.boolean(0.5)
-      ? faker.lorem.words({ min: 2, max: 6 })
-      : undefined,
+  // Conversations — pre-generate IDs
+  const convIds = generateIds(SEED_CONVERSATIONS);
+  const convData = convIds.map((id) => ({
+    id,
+    title: faker.datatype.boolean(0.5) ? faker.lorem.words({ min: 2, max: 6 }) : undefined,
   }));
-
   await ctx.prisma.conversation.createMany({ data: convData });
-  const conversations = await ctx.prisma.conversation.findMany();
-  counts.conversations = conversations.length;
-  console.log(`Created ${conversations.length} conversations`);
+  counts.conversations = convData.length;
+  console.log(`Created ${convData.length} conversations`);
 
   // Conversation participants — 2 per conversation
   const cpSet = new Set<string>();
@@ -29,31 +27,28 @@ export async function seedConversations(
     userId: string;
     lastReadAt?: Date;
   }> = [];
-  for (const conv of conversations) {
-    const [u1, u2] = faker.helpers.arrayElements(users, 2);
+  for (const conv of convData) {
+    const [u1, u2] = faker.helpers.arrayElements(userIds, 2);
     for (const u of [u1, u2]) {
-      const key = `${conv.id}_${u.id}`;
+      const key = `${conv.id}_${u}`;
       if (cpSet.has(key)) continue;
       cpSet.add(key);
       cpData.push({
         conversationId: conv.id,
-        userId: u.id,
-        lastReadAt: faker.datatype.boolean(0.6)
-          ? faker.date.recent()
-          : undefined,
+        userId: u,
+        lastReadAt: faker.datatype.boolean(0.6) ? faker.date.recent() : undefined,
       });
     }
   }
-
   await ctx.prisma.conversationParticipant.createMany({ data: cpData });
 
-  // Messages — bulk insert in batches
+  // Messages — build with pre-generated IDs
   const msgData: Array<{
     conversationId: string;
     senderId: string;
     content: string;
   }> = [];
-  for (const conv of conversations) {
+  for (const conv of convData) {
     const participants = cpData.filter((cp) => cp.conversationId === conv.id);
     if (participants.length < 2) continue;
     const n = faker.number.int({ min: 10, max: MSGS_PER_CONV });
@@ -70,7 +65,6 @@ export async function seedConversations(
   for (let i = 0; i < msgData.length; i += 2000) {
     await ctx.prisma.message.createMany({ data: msgData.slice(i, i + 2000) });
   }
-
   counts.messages = msgData.length;
   console.log(`Created ${msgData.length} messages`);
 }

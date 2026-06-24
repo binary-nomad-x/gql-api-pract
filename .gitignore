@@ -15,8 +15,6 @@ out/
 .env.test.local
 .env.production.local
 
-# Prisma specific
-/prisma/migrations/
 # Agar aap SQLite use kar rahe hain (optional)
 *.db
 *.db-journal

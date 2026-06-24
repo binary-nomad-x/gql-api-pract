@@ -1,20 +1,39 @@
 import "dotenv/config";
-import pg from "pg";
 import { PrismaClient } from "@prisma/client";
 import { PrismaPg } from "@prisma/adapter-pg";
+import pg from "pg";
 import { createEmptyCounts, type SeedCounts } from "./types.js";
 import { resetDatabase, printElapsed } from "./utils.js";
-import { seedUsers } from "./users.js";
-import { seedCategoriesAndTags, seedPostsCommentsLikes } from "./content.js";
-import { seedCommerce } from "./commerce.js";
-import { seedReviews } from "./reviews.js";
-import { seedAccountRelated } from "./account.js";
-import { seedPromotions } from "./promotions.js";
-import { seedRemaining } from "./notifications.js";
-import { seedSubscriptions } from "./subscriptions.js";
-import { seedDiscounts } from "./discounts.js";
-import { seedConversations } from "./conversations.js";
-import { seedExtras } from "./extras.js";
+import { seedUsers } from "./seed-users.js";
+import { seedAddresses } from "./seed-addresses.js";
+import { seedTags } from "./seed-tags.js";
+import { seedCategories } from "./seed-categories.js";
+import { seedPosts } from "./seed-posts.js";
+import { seedComments } from "./seed-comments.js";
+import { seedLikes } from "./seed-likes.js";
+import { seedFollows } from "./seed-follows.js";
+import { seedNotifications } from "./seed-notifications.js";
+import { seedSavedPosts } from "./seed-savedPosts.js";
+import { seedPostViews } from "./seed-postViews.js";
+import { seedProducts } from "./seed-products.js";
+import { seedReviews } from "./seed-reviews.js";
+import { seedWishlists } from "./seed-wishlists.js";
+import { seedCarts } from "./seed-carts.js";
+import { seedCoupons } from "./seed-coupons.js";
+import { seedOrders } from "./seed-orders.js";
+import { seedPayments } from "./seed-payments.js";
+import { seedShipments } from "./seed-shipments.js";
+import { seedRefunds } from "./seed-refunds.js";
+import { seedDiscounts } from "./seed-discounts.js";
+import { seedSubscriptions } from "./seed-subscriptions.js";
+import { seedConversations } from "./seed-conversations.js";
+import { seedInvoices } from "./seed-invoices.js";
+import { seedReturns } from "./seed-returns.js";
+import { seedTickets } from "./seed-tickets.js";
+
+const USER_COUNT = 50;
+const POST_COUNT = 100;
+const PRODUCT_COUNT = 100;
 
 const pool = new pg.Pool({ connectionString: process.env.DATABASE_URL });
 const adapter = new PrismaPg(pool);
@@ -22,7 +41,7 @@ const prisma = new PrismaClient({ adapter });
 
 async function main(): Promise<void> {
   const flag = process.argv[2] ?? "";
-  const ctx = { prisma, pool };
+  const ctx = { prisma };
 
   if (flag === "--reset" || flag === "-r") {
     await resetDatabase(prisma);
@@ -39,61 +58,79 @@ async function main(): Promise<void> {
   const start = Date.now();
   const counts: SeedCounts = createEmptyCounts();
 
-  // Phase 1 — independent
-  console.log("[Phase 1] Users, Categories, Tags...");
-  const [userIds, { categories: catIds, tags: tagIds }] = await Promise.all([
-    seedUsers(ctx, counts),
-    seedCategoriesAndTags(ctx, counts),
+  // Phase 1 — Independent tables
+  console.log("[1/8] Users, Tags, Categories...");
+  const [userIds, tagIds, categoryIds] = await Promise.all([
+    seedUsers(ctx, counts, USER_COUNT),
+    seedTags(ctx, counts),
+    seedCategories(ctx, counts),
   ]);
 
-  // Phase 2 — posts, products (depend on users+categories+tags)
-  console.log("[Phase 2] Posts, Products...");
-  const [postIds, { productIds }] = await Promise.all([
-    seedPostsCommentsLikes(ctx, counts, userIds, catIds, tagIds),
-    seedCommerce(ctx, counts, userIds, catIds),
+  // Phase 2 — Content tables (depend on users, tags, categories)
+  console.log("[2/8] Posts, Products...");
+  const [postIds, productIds] = await Promise.all([
+    seedPosts(ctx, counts, userIds, tagIds, categoryIds, POST_COUNT),
+    seedProducts(ctx, counts, userIds, categoryIds, PRODUCT_COUNT),
   ]);
 
-  // Phase 3 — reviews, address/account (from products+users)
-  console.log("[Phase 3] Reviews, Addresses, Account-related...");
+  // Phase 3 — Comments, Likes, Follows, Addresses
+  console.log("[3/8] Comments, Likes, Follows, Addresses...");
   await Promise.all([
+    seedComments(ctx, counts, userIds, postIds),
+    seedLikes(ctx, counts, userIds, postIds),
+    seedFollows(ctx, counts, userIds),
+    seedAddresses(ctx, counts, userIds),
+  ]);
+
+  // Phase 4 — Shopping-related (carts, wishlists, reviews)
+  console.log("[4/8] Carts, Wishlists, Reviews...");
+  await Promise.all([
+    seedCarts(ctx, counts, userIds, productIds),
+    seedWishlists(ctx, counts, userIds, productIds),
     seedReviews(ctx, counts, userIds, productIds),
-    seedAccountRelated(ctx, counts, userIds, productIds),
   ]);
 
-  // Phase 4 — promotions (from orders)
-  console.log("[Phase 4] Coupons, Shipments...");
-  const orders = await prisma.order.findMany();
-  await seedPromotions(ctx, counts, orders);
-
-  // Phase 5 — everything else
-  console.log(
-    "[Phase 5] Notifications, Follows, SavedPosts, PostViews, ProductImages, Subscriptions, Discounts...",
-  );
+  // Phase 5 — Commerce (coupons, orders, payments, shipments, refunds)
+  console.log("[5/8] Coupons, Orders, Payments, Shipments, Refunds...");
+  const couponIds = await seedCoupons(ctx, counts);
+  const orderIds = await seedOrders(ctx, counts, userIds, productIds, couponIds);
   await Promise.all([
-    seedRemaining(ctx, counts, userIds, postIds, productIds),
-    seedSubscriptions(ctx, counts, userIds),
+    seedPayments(ctx, counts, orderIds),
+    seedShipments(ctx, counts, orderIds),
+  ]);
+  await seedRefunds(ctx, counts, orderIds);
+
+  // Phase 6 — Discounts, Notifications, Subscriptions
+  console.log("[6/8] Discounts, Notifications, Subscriptions...");
+  await Promise.all([
     seedDiscounts(ctx, counts, productIds),
+    seedNotifications(ctx, counts, userIds),
+    seedSubscriptions(ctx, counts, userIds),
   ]);
 
-  // Phase 6 — conversations + messages
-  console.log("[Phase 6] Conversations, Messages...");
-  await seedConversations(ctx, counts, userIds);
+  // Phase 7 — Saved posts, Post views, Conversations
+  console.log("[7/8] Saved Posts, Post Views, Conversations...");
+  await Promise.all([
+    seedSavedPosts(ctx, counts, userIds, postIds),
+    seedPostViews(ctx, counts, postIds),
+    seedConversations(ctx, counts, userIds),
+  ]);
 
-  // Phase 7 — extras: invoices, returns, support tickets, ticket replies
-  console.log("[Phase 7] Invoices, Return Requests, Support Tickets...");
-  await seedExtras(ctx, counts, userIds);
+  // Phase 8 — Invoices, Returns, Support Tickets
+  console.log("[8/8] Invoices, Returns, Support Tickets...");
+  await Promise.all([
+    seedInvoices(ctx, counts, orderIds),
+    seedReturns(ctx, counts, userIds, orderIds),
+    seedTickets(ctx, counts, userIds),
+  ]);
 
   // Summary
   printElapsed(start);
   console.log(
-    `Summary: ${counts.users} users, ${counts.products} products, ${counts.orders} orders, ` +
-      `${counts.messages} messages, ${counts.postViews} post views, ${counts.productImages} product images, ` +
-      `${counts.invoices} invoices, ${counts.returns} returns, ${counts.tickets} tickets, ${counts.ticketReplies} replies`,
-  );
-
-  console.log(
-    "\nTest accounts (password123): alice@test.com (ADMIN), bob@test.com (USER), " +
-      "charlie@test.com (USER), diana@test.com (MODERATOR), eve@test.com (USER)",
+    `Summary: ${counts.users} users, ${counts.products} products, ` +
+    `${counts.orders} orders, ${counts.messages} messages, ` +
+    `${counts.posts} posts, ${counts.comments} comments, ` +
+    `${counts.reviews} reviews, ${counts.tickets} tickets`,
   );
 }
 

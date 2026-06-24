@@ -1,0 +1,48 @@
+import { faker } from "@faker-js/faker";
+import type { SeedContext, SeedCounts } from "./types.js";
+
+export async function seedReturns(
+  ctx: SeedContext,
+  counts: SeedCounts,
+  userIds: string[],
+  orderIds: string[],
+): Promise<void> {
+  const orderItems = await ctx.prisma.orderItem.findMany({
+    where: {
+      order: {
+        id: { in: orderIds },
+        status: "DELIVERED",
+      },
+    },
+    select: { id: true, orderId: true, productId: true, quantity: true },
+    take: 200,
+  });
+
+  if (orderItems.length === 0) return;
+
+  // Only return ~15% of delivered order items
+  const returnItems = orderItems.filter(() => Math.random() > 0.85);
+  const pickRandom = <T>(arr: T[]): T =>
+    arr[Math.floor(Math.random() * arr.length)];
+
+  const data: Array<{
+    orderItemId: string;
+    userId: string;
+    reason: string;
+    status: string;
+    quantity: number;
+  }> = [];
+
+  for (const item of returnItems) {
+    data.push({
+      orderItemId: item.id,
+      userId: pickRandom(userIds),
+      reason: faker.lorem.sentence(),
+      status: pickRandom(["PENDING", "APPROVED", "REJECTED", "REFUNDED"]),
+      quantity: faker.number.int({ min: 1, max: Math.min(item.quantity, 2) }),
+    });
+  }
+
+  await ctx.prisma.returnRequest.createMany({ data });
+  counts.returns += data.length;
+}

@@ -59,15 +59,19 @@ export async function seedCommerce(
   const productPriceMap = new Map(productData.map((p) => [p.id, p.price]));
 
   for (const oid of orderIds) {
+
     const numItems = faker.number.int({ min: 1, max: 6 });
     const selectedProducts = faker.helpers.arrayElements(productIds, numItems);
+
     const items = selectedProducts.map((pid) => ({
       productId: pid,
       quantity: faker.number.int({ min: 1, max: 4 }),
       unitPrice: productPriceMap.get(pid) ?? 0,
     }));
+
     const total = items.reduce((s, it) => s + it.unitPrice * it.quantity, 0);
     orderItemsByOrder.set(oid, items);
+
     orderData.push({
       id: oid,
       userId: faker.helpers.arrayElement(userIds),
@@ -93,6 +97,7 @@ export async function seedCommerce(
       orderItemData.push({ id: orderItemIds[oiIdx++], orderId: oid, ...item });
     }
   }
+
   await bulkInsert(ctx.pool, "order_items", orderItemData, 1000);
   counts.orderItems = orderItemData.length;
 

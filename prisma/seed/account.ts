@@ -34,6 +34,7 @@ export async function seedAccountRelated(
       });
     }
   }
+
   await bulkInsert(ctx.pool, "addresses", addrRows, 500);
   counts.addresses = addrRows.length;
 

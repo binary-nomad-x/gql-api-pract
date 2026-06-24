@@ -11,6 +11,7 @@ model User {
   id        String    @id @default(cuid())
   email     String    @unique
   name      String?
+  age       Int?
   password  String
   role      String    @default("USER")
   profile   Profile?
@@ -595,5 +596,3 @@ model TicketReply {
   @@index([userId])
   @@map("ticket_replies")
 }
-
-

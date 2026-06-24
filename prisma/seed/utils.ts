@@ -1,4 +1,5 @@
 import type { PrismaClient } from "@prisma/client";
+import type { Pool } from "pg";
 import { randomUUID } from "node:crypto";
 
 export function generateIds(n: number): string[] {
@@ -47,19 +48,59 @@ export async function resetDatabase(prisma: PrismaClient): Promise<void> {
   ]);
 }
 
-export async function batchInsertImplicitJoin(
-  prisma: PrismaClient,
+/** Multi-row INSERT via direct pg Pool — bypasses Prisma ORM entirely */
+export async function bulkInsert<T extends Record<string, unknown>>(
+  pool: Pool,
   table: string,
-  colA: string,
-  colB: string,
-  pairs: Array<{ a: string; b: string }>,
-  batchSize = 2000,
+  rows: T[],
+  batchSize = 500,
 ): Promise<void> {
+  if (rows.length === 0) return;
+  const columns = Object.keys(rows[0]);
+  const colList = columns.map((c) => `"${c}"`).join(", ");
+
+  for (let i = 0; i < rows.length; i += batchSize) {
+    const batch = rows.slice(i, i + batchSize);
+    const values: unknown[] = [];
+    const placeholders: string[] = [];
+
+    for (let j = 0; j < batch.length; j++) {
+      const row = batch[j];
+      const offset = j * columns.length;
+      placeholders.push(
+        `(${columns.map((_, k) => `$${offset + k + 1}`).join(",")})`,
+      );
+      for (const col of columns) {
+        values.push(row[col] ?? null);
+      }
+    }
+
+    await pool.query(
+      `INSERT INTO "${table}" (${colList}) VALUES ${placeholders.join(",")}`,
+      values,
+    );
+  }
+}
+
+/** Batch insert into Prisma implicit M2M join tables (A/B columns) */
+export async function bulkInsertJoin(
+  pool: Pool,
+  table: string,
+  pairs: Array<{ a: string; b: string }>,
+  batchSize = 500,
+): Promise<void> {
+  if (pairs.length === 0) return;
   for (let i = 0; i < pairs.length; i += batchSize) {
-    const chunk = pairs.slice(i, i + batchSize);
-    const values = chunk.map((p) => `('${p.a}','${p.b}')`).join(",");
-    await prisma.$executeRawUnsafe(
-      `INSERT INTO "${table}" ("${colA}","${colB}") VALUES ${values} ON CONFLICT DO NOTHING`,
+    const batch = pairs.slice(i, i + batchSize);
+    const values: string[] = [];
+    const params: string[] = [];
+    for (let j = 0; j < batch.length; j++) {
+      values.push(`($${j * 2 + 1},$${j * 2 + 2})`);
+      params.push(batch[j].a, batch[j].b);
+    }
+    await pool.query(
+      `INSERT INTO "${table}" ("A","B") VALUES ${values.join(",")} ON CONFLICT DO NOTHING`,
+      params,
     );
   }
 }

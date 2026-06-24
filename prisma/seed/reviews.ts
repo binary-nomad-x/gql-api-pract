@@ -1,6 +1,6 @@
 import { faker } from "@faker-js/faker";
 import type { SeedContext, SeedCounts } from "./types.js";
-import { generateIds } from "./utils.js";
+import { generateIds, bulkInsert } from "./utils.js";
 
 export async function seedReviews(
   ctx: SeedContext,
@@ -35,7 +35,8 @@ export async function seedReviews(
     }
   }
 
-  await ctx.prisma.review.createMany({ data });
+  const reviewIds = generateIds(data.length);
+  await bulkInsert(ctx.pool, "reviews", data.map((d, i) => ({ id: reviewIds[i], ...d, updatedAt: new Date() })));
   counts.reviews = data.length;
   console.log(`Created ${data.length} reviews`);
 }

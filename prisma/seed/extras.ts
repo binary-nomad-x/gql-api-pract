@@ -1,7 +1,7 @@
 import { faker } from "@faker-js/faker";
 import type { SeedContext, SeedCounts } from "./types.js";
 import type { Order } from "@prisma/client";
-import { generateIds } from "./utils.js";
+import { generateIds, bulkInsert } from "./utils.js";
 
 const ALL_STATUSES = ["DRAFT", "SENT", "PAID", "OVERDUE", "CANCELLED"] as const;
 const RETURN_REASONS = ["DEFECTIVE", "NOT_AS_DESCRIBED", "WRONG_ITEM", "SIZE_ISSUE", "OTHER"] as const;
@@ -25,109 +25,73 @@ export async function seedExtras(
 
   // === Invoices ===
   console.log("Seeding invoices...");
-  const invoiceIds = generateIds(orders.length);
-  const invoiceData = orders.map((order, i) => {
+  const invIds = generateIds(orders.length);
+  await bulkInsert(ctx.pool, "invoices", orders.map((order, i) => {
     const status = faker.helpers.arrayElement(ALL_STATUSES);
     const issued = faker.date.past({ years: 1 });
     const due = new Date(issued);
     due.setDate(due.getDate() + faker.number.int({ min: 14, max: 45 }));
     return {
-      id: invoiceIds[i],
-      orderId: order.id,
+      id: invIds[i], orderId: order.id,
       invoiceNumber: `INV-${order.id.slice(0, 8).toUpperCase()}-${i}`,
-      amount: order.totalAmount,
-      status,
+      amount: order.totalAmount, status,
       issuedAt: issued,
       paidAt: status === "PAID" ? faker.date.between({ from: issued, to: new Date() }) : undefined,
       dueDate: due,
+      updatedAt: new Date(),
     };
-  });
-
-  for (let i = 0; i < invoiceData.length; i += 500) {
-    await ctx.prisma.invoice.createMany({ data: invoiceData.slice(i, i + 500) });
-  }
-  counts.invoices = invoiceData.length;
+  }), 500);
+  counts.invoices = invIds.length;
 
   // === Return Requests ===
   console.log("Seeding return requests...");
   const orderItems = await ctx.prisma.orderItem.findMany({ include: { order: true } });
-  const returnCandidates = orderItems.filter((oi) => oi.order.status !== "CANCELLED");
-  const sampleReturns = faker.helpers.arrayElements(
-    returnCandidates,
-    Math.min(500, returnCandidates.length),
-  );
-
-  const returnIds = generateIds(sampleReturns.length);
-  const returnData = sampleReturns.map((oi, i) => {
+  const candidates = orderItems.filter((oi) => oi.order.status !== "CANCELLED");
+  const sample = faker.helpers.arrayElements(candidates, Math.min(500, candidates.length));
+  const retIds = generateIds(sample.length);
+  await bulkInsert(ctx.pool, "return_requests", sample.map((oi, i) => {
     const status = faker.helpers.arrayElement(RETURN_STATUSES);
     const requested = faker.date.past({ years: 1 });
     return {
-      id: returnIds[i],
-      orderItemId: oi.id,
-      userId: oi.order.userId,
-      reason: faker.helpers.arrayElement(RETURN_REASONS),
-      status,
+      id: retIds[i], orderItemId: oi.id, userId: oi.order.userId,
+      reason: faker.helpers.arrayElement(RETURN_REASONS), status,
       quantity: faker.number.int({ min: 1, max: oi.quantity }),
       requestedAt: requested,
-      resolvedAt: status !== "PENDING"
-        ? faker.date.between({ from: requested, to: new Date() })
-        : undefined,
+      resolvedAt: status !== "PENDING" ? faker.date.between({ from: requested, to: new Date() }) : undefined,
     };
-  });
-
-  for (let i = 0; i < returnData.length; i += 500) {
-    await ctx.prisma.returnRequest.createMany({ data: returnData.slice(i, i + 500) });
-  }
-  counts.returns = returnData.length;
+  }), 500);
+  counts.returns = sample.length;
 
   // === Support Tickets ===
   console.log("Seeding support tickets...");
   const ticketIds = generateIds(300);
-  const ticketData = ticketIds.map((id) => {
-    const user = faker.helpers.arrayElement(userIds);
-    return {
-      id,
-      userId: user,
-      subject: faker.helpers.arrayElement(TICKET_SUBJECTS),
-      description: faker.lorem.paragraphs({ min: 1, max: 3 }),
-      status: faker.helpers.arrayElement(TICKET_STATUSES),
-      priority: faker.helpers.arrayElement(PRIORITIES),
-      category: faker.helpers.arrayElement(CATEGORIES),
-      assignedTo: faker.datatype.boolean(0.4)
-        ? faker.helpers.arrayElement(userIds)
-        : undefined,
-    };
-  });
-
-  for (let i = 0; i < ticketData.length; i += 100) {
-    await ctx.prisma.supportTicket.createMany({ data: ticketData.slice(i, i + 100) });
-  }
-  counts.tickets = ticketData.length;
+  await bulkInsert(ctx.pool, "support_tickets", ticketIds.map((id) => ({
+    id, userId: faker.helpers.arrayElement(userIds),
+    subject: faker.helpers.arrayElement(TICKET_SUBJECTS),
+    description: faker.lorem.paragraphs({ min: 1, max: 3 }),
+    status: faker.helpers.arrayElement(TICKET_STATUSES),
+    priority: faker.helpers.arrayElement(PRIORITIES),
+    category: faker.helpers.arrayElement(CATEGORIES),
+    assignedTo: faker.datatype.boolean(0.4) ? faker.helpers.arrayElement(userIds) : undefined,
+    updatedAt: new Date(),
+  })), 100);
+  counts.tickets = ticketIds.length;
 
   // === Ticket Replies ===
   console.log("Seeding ticket replies...");
-  const replyData: Array<{
-    ticketId: string;
-    userId: string;
-    content: string;
-    isStaff: boolean;
-  }> = [];
-
-  for (const ticket of ticketData) {
-    const numReplies = faker.number.int({ min: 1, max: 4 });
-    for (let j = 0; j < numReplies; j++) {
-      const isStaff = j % 2 === 1;
-      replyData.push({
-        ticketId: ticket.id,
-        userId: ticket.userId,
+  const replyRows: Array<{ id: string; ticketId: string; userId: string; content: string; isStaff: boolean }> = [];
+  for (const ticketId of ticketIds) {
+    const n = faker.number.int({ min: 1, max: 4 });
+    const ids = generateIds(n);
+    for (let j = 0; j < n; j++) {
+      replyRows.push({
+        id: ids[j], ticketId, userId: faker.helpers.arrayElement(userIds),
         content: faker.lorem.paragraphs({ min: 1, max: 2 }),
-        isStaff,
+        isStaff: j % 2 === 1,
+        updatedAt: new Date(),
       });
     }
   }
-
-  for (let i = 0; i < replyData.length; i += 500) {
-    await ctx.prisma.ticketReply.createMany({ data: replyData.slice(i, i + 500) });
-  }
-  counts.ticketReplies = replyData.length;
+  await bulkInsert(ctx.pool, "ticket_replies", replyRows, 500);
+  counts.ticketReplies = replyRows.length;
 }

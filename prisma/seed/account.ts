@@ -1,6 +1,6 @@
 import { faker } from "@faker-js/faker";
 import type { SeedContext, SeedCounts } from "./types.js";
-import { generateIds } from "./utils.js";
+import { generateIds, bulkInsert } from "./utils.js";
 
 const WL_NAMES = ["Default", "Wishlist", "Favorites", "Gifts", "Dream Shopping"];
 
@@ -10,21 +10,19 @@ export async function seedAccountRelated(
   userIds: string[],
   productIds: string[],
 ): Promise<void> {
-  // Addresses
-  const addrData: Array<{
-    userId: string;
-    label: string;
-    street: string;
-    city: string;
-    state: string;
-    zip: string;
-    country: string;
-    isDefault: boolean;
+  // Addresses — pre-generate all IDs
+  const addrCount = userIds.reduce((sum, uid) => sum + faker.number.int({ min: 1, max: 3 }), 0);
+  const addrIds = generateIds(addrCount);
+  const addrRows: Array<{
+    id: string; userId: string; label: string; street: string; city: string;
+    state: string; zip: string; country: string; isDefault: boolean;
   }> = [];
+  let addrIdx = 0;
   for (const uid of userIds) {
     const n = faker.number.int({ min: 1, max: 3 });
     for (let i = 0; i < n; i++) {
-      addrData.push({
+      addrRows.push({
+        id: addrIds[addrIdx++],
         userId: uid,
         label: i === 0 ? "Home" : i === 1 ? "Work" : "Other",
         street: faker.location.streetAddress(),
@@ -33,62 +31,65 @@ export async function seedAccountRelated(
         zip: faker.location.zipCode(),
         country: "US",
         isDefault: i === 0,
+        updatedAt: new Date(),
       });
     }
   }
+  await bulkInsert(ctx.pool, "addresses", addrRows, 500);
+  counts.addresses = addrRows.length;
 
-  await ctx.prisma.address.createMany({ data: addrData });
-  counts.addresses = addrData.length;
-
-  // Wishlists — pre-generate IDs
+  // Wishlists
   const wlUsers = userIds.slice(0, 100);
   const wlIds = generateIds(wlUsers.length);
-  const wlData = wlUsers.map((uid, i) => ({
-    id: wlIds[i],
-    userId: uid,
-    name: faker.helpers.arrayElement(WL_NAMES),
-  }));
-  await ctx.prisma.wishlist.createMany({ data: wlData });
-  counts.wishlists = wlData.length;
+  await bulkInsert(ctx.pool, "wishlists", wlUsers.map((uid, i) => ({
+    id: wlIds[i], userId: uid, name: faker.helpers.arrayElement(WL_NAMES),
+    updatedAt: new Date(),
+  })));
+  counts.wishlists = wlIds.length;
 
   // Wishlist items
   const wlItemSet = new Set<string>();
-  const wlItemData: Array<{ wishlistId: string; productId: string; note?: string }> = [];
-  for (const wl of wlData) {
+  const wlItemRows: Array<{ wishlistId: string; productId: string; note?: string }> = [];
+  for (const wlId of wlIds) {
     const items = faker.helpers.arrayElements(productIds, faker.number.int({ min: 1, max: 5 }));
     for (const pid of items) {
-      const key = `${wl.id}_${pid}`;
+      const key = `${wlId}_${pid}`;
       if (wlItemSet.has(key)) continue;
       wlItemSet.add(key);
-      wlItemData.push({
-        wishlistId: wl.id,
+      wlItemRows.push({
+        wishlistId: wlId,
         productId: pid,
         note: faker.helpers.maybe(() => faker.lorem.sentence()) ?? undefined,
       });
     }
   }
-  await ctx.prisma.wishlistItem.createMany({ data: wlItemData });
-  counts.wishlistItems = wlItemData.length;
+  const wlItemIds = generateIds(wlItemRows.length);
+  await bulkInsert(ctx.pool, "wishlist_items", wlItemRows.map((d, i) => ({ id: wlItemIds[i], ...d })));
 
-  // Carts — pre-generate IDs
+  counts.wishlistItems = wlItemRows.length;
+
+  // Carts
   const cartUsers = userIds.slice(0, 150);
   const cartIds = generateIds(cartUsers.length);
-  const cartData = cartUsers.map((uid, i) => ({ id: cartIds[i], userId: uid }));
-  await ctx.prisma.cart.createMany({ data: cartData });
-  counts.carts = cartData.length;
+  await bulkInsert(ctx.pool, "carts", cartUsers.map((uid, i) => ({
+    id: cartIds[i], userId: uid,
+    updatedAt: new Date(),
+  })));
+  counts.carts = cartIds.length;
 
   // Cart items
   const ciSet = new Set<string>();
-  const ciData: Array<{ cartId: string; productId: string; quantity: number }> = [];
-  for (const cart of cartData) {
+  const ciRows: Array<{ cartId: string; productId: string; quantity: number }> = [];
+  for (const cartId of cartIds) {
     const items = faker.helpers.arrayElements(productIds, faker.number.int({ min: 1, max: 4 }));
     for (const pid of items) {
-      const key = `${cart.id}_${pid}`;
+      const key = `${cartId}_${pid}`;
       if (ciSet.has(key)) continue;
       ciSet.add(key);
-      ciData.push({ cartId: cart.id, productId: pid, quantity: faker.number.int({ min: 1, max: 3 }) });
+      ciRows.push({ cartId, productId: pid, quantity: faker.number.int({ min: 1, max: 3 }) });
     }
   }
-  await ctx.prisma.cartItem.createMany({ data: ciData });
-  counts.cartItems = ciData.length;
+  const ciIds = generateIds(ciRows.length);
+  await bulkInsert(ctx.pool, "cart_items", ciRows.map((d, i) => ({ id: ciIds[i], ...d })));
+  counts.cartItems = ciRows.length;
 }

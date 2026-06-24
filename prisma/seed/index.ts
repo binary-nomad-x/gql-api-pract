@@ -1,4 +1,5 @@
 import "dotenv/config";
+import pg from "pg";
 import { PrismaClient } from "@prisma/client";
 import { PrismaPg } from "@prisma/adapter-pg";
 import { createEmptyCounts, type SeedCounts } from "./types.js";
@@ -15,11 +16,13 @@ import { seedDiscounts } from "./discounts.js";
 import { seedConversations } from "./conversations.js";
 import { seedExtras } from "./extras.js";
 
-const adapter = new PrismaPg({ connectionString: process.env.DATABASE_URL });
+const pool = new pg.Pool({ connectionString: process.env.DATABASE_URL });
+const adapter = new PrismaPg(pool);
 const prisma = new PrismaClient({ adapter });
 
 async function main(): Promise<void> {
   const flag = process.argv[2] ?? "";
+  const ctx = { prisma, pool };
 
   if (flag === "--reset" || flag === "-r") {
     await resetDatabase(prisma);
@@ -39,46 +42,46 @@ async function main(): Promise<void> {
   // Phase 1 — independent
   console.log("[Phase 1] Users, Categories, Tags...");
   const [userIds, { categories: catIds, tags: tagIds }] = await Promise.all([
-    seedUsers({ prisma }, counts),
-    seedCategoriesAndTags({ prisma }, counts),
+    seedUsers(ctx, counts),
+    seedCategoriesAndTags(ctx, counts),
   ]);
 
   // Phase 2 — posts, products (depend on users+categories+tags)
   console.log("[Phase 2] Posts, Products...");
   const [postIds, { productIds }] = await Promise.all([
-    seedPostsCommentsLikes({ prisma }, counts, userIds, catIds, tagIds),
-    seedCommerce({ prisma }, counts, userIds, catIds),
+    seedPostsCommentsLikes(ctx, counts, userIds, catIds, tagIds),
+    seedCommerce(ctx, counts, userIds, catIds),
   ]);
 
   // Phase 3 — reviews, address/account (from products+users)
   console.log("[Phase 3] Reviews, Addresses, Account-related...");
   await Promise.all([
-    seedReviews({ prisma }, counts, userIds, productIds),
-    seedAccountRelated({ prisma }, counts, userIds, productIds),
+    seedReviews(ctx, counts, userIds, productIds),
+    seedAccountRelated(ctx, counts, userIds, productIds),
   ]);
 
   // Phase 4 — promotions (from orders)
   console.log("[Phase 4] Coupons, Shipments...");
   const orders = await prisma.order.findMany();
-  await seedPromotions({ prisma }, counts, orders);
+  await seedPromotions(ctx, counts, orders);
 
   // Phase 5 — everything else
   console.log(
     "[Phase 5] Notifications, Follows, SavedPosts, PostViews, ProductImages, Subscriptions, Discounts...",
   );
   await Promise.all([
-    seedRemaining({ prisma }, counts, userIds, postIds, productIds),
-    seedSubscriptions({ prisma }, counts, userIds),
-    seedDiscounts({ prisma }, counts, productIds),
+    seedRemaining(ctx, counts, userIds, postIds, productIds),
+    seedSubscriptions(ctx, counts, userIds),
+    seedDiscounts(ctx, counts, productIds),
   ]);
 
   // Phase 6 — conversations + messages
   console.log("[Phase 6] Conversations, Messages...");
-  await seedConversations({ prisma }, counts, userIds);
+  await seedConversations(ctx, counts, userIds);
 
   // Phase 7 — extras: invoices, returns, support tickets, ticket replies
   console.log("[Phase 7] Invoices, Return Requests, Support Tickets...");
-  await seedExtras({ prisma }, counts, userIds);
+  await seedExtras(ctx, counts, userIds);
 
   // Summary
   printElapsed(start);
@@ -101,4 +104,5 @@ main()
   })
   .finally(async () => {
     await prisma.$disconnect();
+    await pool.end();
   });

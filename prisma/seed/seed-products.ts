@@ -31,8 +31,8 @@ export async function seedProducts(
     return Array.from({ length: n }, () => ({
       productId,
       url: faker.image.url(),
-      alt: faker.lorem.words(3),
-      sortOrder: 0,
+      alt: faker.lorem.words({ min: 3, max: 30 }),
+      sortOrder: faker.number.int({ min: 0, max: 10 }),
     }));
   });
 

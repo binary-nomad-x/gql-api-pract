@@ -8,7 +8,6 @@ export async function seedWishlists(
   userIds: string[],
   productIds: string[],
 ): Promise<void> {
-
   for (const userId of userIds) {
     const wishlistCount = faker.number.int({ min: 1, max: 2 });
     for (let w = 0; w < wishlistCount; w++) {
@@ -22,9 +21,11 @@ export async function seedWishlists(
 
       const itemCount = faker.number.int({ min: 1, max: 5 });
       const itemIds = Array.from({ length: itemCount }, () => randomUUID());
+
       const items = itemIds.map(() => ({
         wishlistId: wishlist.id,
         productId: faker.helpers.arrayElement(productIds),
+        note: faker.lorem.paragraph(),
       }));
 
       await ctx.prisma.wishlistItem.createMany({

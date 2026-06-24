@@ -5,14 +5,16 @@ export async function seedPostViews(
   ctx: SeedContext,
   counts: SeedCounts,
   postIds: string[],
+  userIds: string[],
 ): Promise<void> {
-  const data: Array<{ postId: string; ip: string }> = [];
+  const data: Array<{ postId: string; userId: string; ip: string }> = [];
 
   for (const postId of postIds) {
     const n = faker.number.int({ min: 5, max: 30 });
     for (let i = 0; i < n; i++) {
       data.push({
         postId,
+        userId: faker.helpers.arrayElement(userIds),
         ip: faker.internet.ip(),
       });
     }

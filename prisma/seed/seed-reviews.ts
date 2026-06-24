@@ -8,9 +8,10 @@ export async function seedReviews(
   productIds: string[],
 ): Promise<void> {
   const seen = new Set<string>();
+
   const data: Array<{
     rating: number;
-    title: string;
+    title: string | null;
     content: string;
     productId: string;
     userId: string;
@@ -25,9 +26,10 @@ export async function seedReviews(
       seen.add(key);
 
       const rating = faker.number.int({ min: 1, max: 5 });
+
       data.push({
         rating,
-        title: rating >= 4 ? faker.lorem.sentence({ min: 3, max: 6 }) : "",
+        title: rating >= 4 ? faker.lorem.sentence({ min: 3, max: 6 }) : null,
         content: faker.lorem.sentences({ min: 1, max: 4 }),
         productId,
         userId,

@@ -13,7 +13,14 @@ export async function seedTickets(
 
   for (let i = 0; i < ticketCount; i++) {
     const userId = faker.helpers.arrayElement(userIds);
-    const status = faker.helpers.arrayElement(["OPEN", "IN_PROGRESS", "RESOLVED", "CLOSED"]);
+    const assignedToId = faker.helpers.arrayElement(userIds);
+
+    const status = faker.helpers.arrayElement([
+      "OPEN",
+      "IN_PROGRESS",
+      "RESOLVED",
+      "CLOSED",
+    ]);
 
     const ticket = await ctx.prisma.supportTicket.create({
       data: {
@@ -23,11 +30,14 @@ export async function seedTickets(
         status,
         priority: faker.helpers.arrayElement(PRIORITIES),
         category: faker.helpers.arrayElement(CATEGORIES),
+        assignedToId,
       },
     });
+
     counts.tickets++;
 
     const replyCount = faker.number.int({ min: 1, max: 4 });
+
     const replies: Array<{
       ticketId: string;
       userId: string;

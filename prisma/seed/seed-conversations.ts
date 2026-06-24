@@ -32,10 +32,19 @@ export async function seedConversations(
 
     await ctx.prisma.conversationParticipant.createMany({
       data: [
-        { conversationId: conversation.id, userId: userA },
-        { conversationId: conversation.id, userId: userB },
+        {
+          conversationId: conversation.id,
+          userId: userA,
+          lastReadAt: faker.date.past(),
+        },
+        {
+          conversationId: conversation.id,
+          userId: userB,
+          lastReadAt: faker.date.past(),
+        },
       ],
     });
+
     counts.participants += 2;
 
     const messageCount = faker.number.int({ min: 3, max: 10 });

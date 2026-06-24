@@ -93,7 +93,13 @@ async function main(): Promise<void> {
   // Phase 5 — Commerce (coupons, orders, payments, shipments, refunds)
   console.log("[5/8] Coupons, Orders, Payments, Shipments, Refunds...");
   const couponIds = await seedCoupons(ctx, counts);
-  const orderIds = await seedOrders(ctx, counts, userIds, productIds, couponIds);
+  const orderIds = await seedOrders(
+    ctx,
+    counts,
+    userIds,
+    productIds,
+    couponIds,
+  );
   await Promise.all([
     seedPayments(ctx, counts, orderIds),
     seedShipments(ctx, counts, orderIds),
@@ -112,7 +118,7 @@ async function main(): Promise<void> {
   console.log("[7/8] Saved Posts, Post Views, Conversations...");
   await Promise.all([
     seedSavedPosts(ctx, counts, userIds, postIds),
-    seedPostViews(ctx, counts, postIds),
+    seedPostViews(ctx, counts, postIds, userIds),
     seedConversations(ctx, counts, userIds),
   ]);
 
@@ -128,9 +134,9 @@ async function main(): Promise<void> {
   printElapsed(start);
   console.log(
     `Summary: ${counts.users} users, ${counts.products} products, ` +
-    `${counts.orders} orders, ${counts.messages} messages, ` +
-    `${counts.posts} posts, ${counts.comments} comments, ` +
-    `${counts.reviews} reviews, ${counts.tickets} tickets`,
+      `${counts.orders} orders, ${counts.messages} messages, ` +
+      `${counts.posts} posts, ${counts.comments} comments, ` +
+      `${counts.reviews} reviews, ${counts.tickets} tickets`,
   );
 }
 

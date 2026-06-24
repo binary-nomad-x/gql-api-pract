@@ -32,7 +32,7 @@ export async function seedOrders(
     id: string;
     userId: string;
     status: string;
-    shippingAddress: string;
+    shippingAddress: string | null;
     couponId: string | null;
   }> = [];
 
@@ -46,11 +46,9 @@ export async function seedOrders(
   for (const orderId of orderIds) {
     const status = faker.helpers.arrayElement(ORDER_STATUSES);
     const userId = faker.helpers.arrayElement(userIds);
-    const useCoupon = Math.random() > 0.7;
+    const useCoupon = couponIds.length > 0 && Math.random() > 0.7;
 
-    const shippingAddress = faker.location.streetAddress({
-      useFullAddress: true,
-    });
+    const shippingAddress = faker.location.streetAddress();
 
     const couponId = useCoupon ? faker.helpers.arrayElement(couponIds) : null;
 

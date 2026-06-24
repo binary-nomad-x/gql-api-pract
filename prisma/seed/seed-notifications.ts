@@ -12,8 +12,10 @@ export async function seedNotifications(
     userId: string;
     type: string;
     title: string;
-    message: string;
+    message: string | null;
     isRead: boolean;
+    link: string | null;
+    readAt: Date | null;
   }> = [];
 
   for (const userId of userIds) {
@@ -23,8 +25,10 @@ export async function seedNotifications(
         userId,
         type: faker.helpers.arrayElement(TYPES),
         title: faker.lorem.sentence({ min: 3, max: 6 }),
-        message: Math.random() > 0.5 ? faker.lorem.sentence() : "",
+        message: Math.random() > 0.5 ? faker.lorem.sentence() : null,
         isRead: Math.random() > 0.4,
+        link: faker.internet.url(),
+        readAt: faker.date.past(),
       });
     }
   }

@@ -10,19 +10,18 @@ export async function seedAccountRelated(
   userIds: string[],
   productIds: string[],
 ): Promise<void> {
-  // Addresses — pre-generate all IDs
-  const addrCount = userIds.reduce((sum, uid) => sum + faker.number.int({ min: 1, max: 3 }), 0);
-  const addrIds = generateIds(addrCount);
+  // Addresses — generate IDs per-iteration
   const addrRows: Array<{
     id: string; userId: string; label: string; street: string; city: string;
     state: string; zip: string; country: string; isDefault: boolean;
+    updatedAt: Date;
   }> = [];
-  let addrIdx = 0;
   for (const uid of userIds) {
     const n = faker.number.int({ min: 1, max: 3 });
+    const ids = generateIds(n);
     for (let i = 0; i < n; i++) {
       addrRows.push({
-        id: addrIds[addrIdx++],
+        id: ids[i],
         userId: uid,
         label: i === 0 ? "Home" : i === 1 ? "Work" : "Other",
         street: faker.location.streetAddress(),

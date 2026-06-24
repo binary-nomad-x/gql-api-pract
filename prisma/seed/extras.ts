@@ -79,7 +79,7 @@ export async function seedExtras(
 
   // === Ticket Replies ===
   console.log("Seeding ticket replies...");
-  const replyRows: Array<{ id: string; ticketId: string; userId: string; content: string; isStaff: boolean }> = [];
+  const replyRows: Array<{ id: string; ticketId: string; userId: string; content: string; isStaff: boolean; updatedAt: Date }> = [];
   for (const ticketId of ticketIds) {
     const n = faker.number.int({ min: 1, max: 4 });
     const ids = generateIds(n);

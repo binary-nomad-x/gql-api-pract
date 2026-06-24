@@ -18,25 +18,39 @@ export async function seedUsers(
   );
   const ids = generateIds(SEED_USERS);
 
-  await bulkInsert(ctx.pool, "users", ids.map((id, i) => ({
-    id,
-    email: faker.internet.email().toLowerCase() + `.${i}`,
-    name: faker.person.fullName(),
-    password: hashedPassword,
-    role: faker.helpers.arrayElement(USER_ROLES),
-    updatedAt: new Date(),
-  })));
+  await bulkInsert(
+    ctx.pool,
+    "users",
+    ids.map((id, i) => {
+      const email = faker.internet.email().toLowerCase();
+      const [local, domain] = email.split("@");
+
+      return {
+        id,
+        email: `${local}.${i}@${domain}`,
+        name: faker.person.fullName(),
+        age: faker.number.int({ min: 15, max: 30 }),
+        password: hashedPassword,
+        role: faker.helpers.arrayElement(USER_ROLES),
+        updatedAt: new Date(),
+      };
+    }),
+  );
 
   const profileIds = generateIds(ids.length);
-  await bulkInsert(ctx.pool, "profiles", ids.map((uid, i) => ({
-    id: profileIds[i],
-    userId: uid,
-    bio: faker.lorem.sentences(2),
-    avatar: faker.image.avatar(),
-    phone: faker.phone.number(),
-    address: faker.location.streetAddress(true),
-    updatedAt: new Date(),
-  })));
+  await bulkInsert(
+    ctx.pool,
+    "profiles",
+    ids.map((uid, i) => ({
+      id: profileIds[i],
+      userId: uid,
+      bio: faker.lorem.sentences(2),
+      avatar: faker.image.avatar(),
+      phone: faker.phone.number(),
+      address: faker.location.streetAddress(true),
+      updatedAt: new Date(),
+    })),
+  );
 
   counts.users = ids.length;
   counts.profiles = ids.length;

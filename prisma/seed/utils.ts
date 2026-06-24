@@ -40,50 +40,6 @@ export async function resetDatabase(prisma: PrismaClient): Promise<void> {
   ]);
 }
 
-/** Group a flat post-tag array by postId and connect via Prisma */
-export async function attachPostTags(
-  prisma: PrismaClient,
-  data: Array<{ postId: string; tagId: string }>,
-): Promise<void> {
-  const grouped = new Map<string, string[]>();
-
-  for (const { postId, tagId } of data) {
-    if (!grouped.has(postId)) grouped.set(postId, []);
-    grouped.get(postId)!.push(tagId);
-  }
-
-  await Promise.all(
-    Array.from(grouped.entries()).map(([postId, tagIds]) =>
-      prisma.post.update({
-        where: { id: postId },
-        data: { tags: { connect: tagIds.map((id) => ({ id })) } },
-      }),
-    ),
-  );
-}
-
-/** Group a flat post-category array by postId and connect via Prisma */
-export async function attachPostCategories(
-  prisma: PrismaClient,
-  data: Array<{ postId: string; categoryId: string }>,
-): Promise<void> {
-  const grouped = new Map<string, string[]>();
-
-  for (const { postId, categoryId } of data) {
-    if (!grouped.has(postId)) grouped.set(postId, []);
-    grouped.get(postId)!.push(categoryId);
-  }
-
-  await Promise.all(
-    Array.from(grouped.entries()).map(([postId, categoryIds]) =>
-      prisma.post.update({
-        where: { id: postId },
-        data: { categories: { connect: categoryIds.map((id) => ({ id })) } },
-      }),
-    ),
-  );
-}
-
 export function printElapsed(start: number): void {
   const elapsed = ((Date.now() - start) / 1000).toFixed(1);
   console.log(`Seeding complete in ${elapsed}s`);

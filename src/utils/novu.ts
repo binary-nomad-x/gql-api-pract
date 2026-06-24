@@ -1,31 +1,31 @@
-import { Novu } from '@novu/node';
+import { Novu } from "@novu/node";
 
 const novuApiKey = process.env.NOVU_API_SECRET_KEY;
 
 export const novu = novuApiKey ? new Novu(novuApiKey) : null;
 
 export type NovuEventName =
-  | 'comment-on-post'
-  | 'post-published'
-  | 'order-placed'
-  | 'order-cancelled'
-  | 'payment-processed'
-  | 'refund-processed'
-  | 'shipment-updated'
-  | 'new-follower'
-  | 'review-received'
-  | 'welcome'
-  | 'invoice-created'
-  | 'invoice-paid'
-  | 'invoice-overdue'
-  | 'return-requested'
-  | 'return-approved'
-  | 'return-rejected'
-  | 'return-refunded'
-  | 'ticket-created'
-  | 'ticket-updated'
-  | 'ticket-resolved'
-  | 'trial-ending';
+  | "comment-on-post"
+  | "post-published"
+  | "order-placed"
+  | "order-cancelled"
+  | "payment-processed"
+  | "refund-processed"
+  | "shipment-updated"
+  | "new-follower"
+  | "review-received"
+  | "welcome"
+  | "invoice-created"
+  | "invoice-paid"
+  | "invoice-overdue"
+  | "return-requested"
+  | "return-approved"
+  | "return-rejected"
+  | "return-refunded"
+  | "ticket-created"
+  | "ticket-updated"
+  | "ticket-resolved"
+  | "trial-ending";
 
 export async function triggerNovuWorkflow(
   userId: string,
@@ -70,7 +70,11 @@ export async function triggerTrialEndingNotification(
   userId: string,
   payload: TrialEndingPayload,
 ): Promise<void> {
-  return triggerNovuWorkflow(userId, "trial-ending", payload as unknown as Record<string, unknown>);
+  return triggerNovuWorkflow(
+    userId,
+    "trial-ending",
+    payload as unknown as Record<string, unknown>,
+  );
 }
 
 export async function createNovuSubscriber(

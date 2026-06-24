@@ -688,6 +688,7 @@ extend type Query {
   comment(id: ID!): Comment
   likes(postId: ID!): [Like!]!
   mySavedPosts(limit: Int, offset: Int): [SavedPost!]! @auth
+  getPostsByAuthorId(authorId: ID!) [Post!]! @auth
 }
 
 extend type Mutation {
@@ -1041,6 +1042,7 @@ type User {
   id: ID!
   email: String!
   name: String
+  age: Int
   role: Role!
   profile: Profile
   posts: [Post!]!
@@ -1082,6 +1084,7 @@ fragment UserBasic on User {
   id
   email
   name
+  age
   role
 }
 

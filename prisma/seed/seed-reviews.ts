@@ -16,13 +16,10 @@ export async function seedReviews(
     userId: string;
   }> = [];
 
-  const pickRandom = <T>(arr: T[]): T =>
-    arr[Math.floor(Math.random() * arr.length)];
-
   for (const productId of productIds) {
     const n = Math.floor(Math.random() * 8) + 1;
     for (let i = 0; i < n; i++) {
-      const userId = pickRandom(userIds);
+      const userId = faker.helpers.arrayElement(userIds);
       const key = `${userId}:${productId}`;
       if (seen.has(key)) continue;
       seen.add(key);

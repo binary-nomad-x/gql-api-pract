@@ -16,9 +16,6 @@ export async function seedShipments(
     select: { id: true, status: true },
   });
 
-  const pickRandom = <T>(arr: T[]): T =>
-    arr[Math.floor(Math.random() * arr.length)];
-
   const data: Array<{
     orderId: string;
     carrier: string;
@@ -31,7 +28,7 @@ export async function seedShipments(
   for (const order of orders) {
     data.push({
       orderId: order.id,
-      carrier: pickRandom(CARRIERS),
+      carrier: faker.helpers.arrayElement(CARRIERS),
       trackingNumber: faker.string.alphanumeric({ length: 14 }).toUpperCase(),
       status: order.status === "DELIVERED" ? "DELIVERED" : "IN_TRANSIT",
       estimatedDelivery: faker.date.future(),

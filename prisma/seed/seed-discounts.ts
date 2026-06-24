@@ -8,9 +8,6 @@ export async function seedDiscounts(
   counts: SeedCounts,
   productIds: string[],
 ): Promise<void> {
-  const pickRandom = <T>(arr: T[]): T =>
-    arr[Math.floor(Math.random() * arr.length)];
-
   const data: Array<{
     productId: string;
     name: string;
@@ -26,13 +23,13 @@ export async function seedDiscounts(
     const hasDiscount = Math.random() > 0.6;
     if (!hasDiscount) continue;
 
-    const type = pickRandom(DISCOUNT_TYPES);
+    const type = faker.helpers.arrayElement(DISCOUNT_TYPES);
     data.push({
       productId,
       name: faker.lorem.words(3),
       type,
       value: type === "PERCENTAGE"
-        ? pickRandom([10, 15, 20, 25, 30, 40, 50])
+        ? faker.helpers.arrayElement([10, 15, 20, 25, 30, 40, 50])
         : parseFloat(faker.commerce.price({ min: 5, max: 50 })),
       startDate: faker.date.past(),
       endDate: faker.date.future(),

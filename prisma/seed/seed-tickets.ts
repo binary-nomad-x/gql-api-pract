@@ -9,14 +9,11 @@ export async function seedTickets(
   counts: SeedCounts,
   userIds: string[],
 ): Promise<void> {
-  const pickRandom = <T>(arr: T[]): T =>
-    arr[Math.floor(Math.random() * arr.length)];
-
   const ticketCount = Math.floor(userIds.length * 0.6);
 
   for (let i = 0; i < ticketCount; i++) {
-    const userId = pickRandom(userIds);
-    const status = pickRandom(["OPEN", "IN_PROGRESS", "RESOLVED", "CLOSED"]);
+    const userId = faker.helpers.arrayElement(userIds);
+    const status = faker.helpers.arrayElement(["OPEN", "IN_PROGRESS", "RESOLVED", "CLOSED"]);
 
     const ticket = await ctx.prisma.supportTicket.create({
       data: {
@@ -24,8 +21,8 @@ export async function seedTickets(
         subject: faker.lorem.sentence({ min: 4, max: 8 }),
         description: faker.lorem.paragraphs(2),
         status,
-        priority: pickRandom(PRIORITIES),
-        category: pickRandom(CATEGORIES),
+        priority: faker.helpers.arrayElement(PRIORITIES),
+        category: faker.helpers.arrayElement(CATEGORIES),
       },
     });
     counts.tickets++;
@@ -41,7 +38,7 @@ export async function seedTickets(
     for (let r = 0; r < replyCount; r++) {
       replies.push({
         ticketId: ticket.id,
-        userId: r === 0 ? userId : pickRandom(userIds),
+        userId: r === 0 ? userId : faker.helpers.arrayElement(userIds),
         content: faker.lorem.paragraph(),
         isStaff: r > 0 && Math.random() > 0.5,
       });

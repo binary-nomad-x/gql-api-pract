@@ -8,7 +8,7 @@ export async function seedWishlists(
   userIds: string[],
   productIds: string[],
 ): Promise<void> {
-  const pickRandom = <T>(arr: T[]): T =>
+  
     arr[Math.floor(Math.random() * arr.length)];
 
   for (const userId of userIds) {
@@ -26,7 +26,7 @@ export async function seedWishlists(
       const itemIds = Array.from({ length: itemCount }, () => randomUUID());
       const items = itemIds.map(() => ({
         wishlistId: wishlist.id,
-        productId: pickRandom(productIds),
+        productId: faker.helpers.arrayElement(productIds),
       }));
 
       await ctx.prisma.wishlistItem.createMany({

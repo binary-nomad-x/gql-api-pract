@@ -13,9 +13,6 @@ export async function seedPayments(
     select: { id: true, totalAmount: true, discountAmount: true, status: true },
   });
 
-  const pickRandom = <T>(arr: T[]): T =>
-    arr[Math.floor(Math.random() * arr.length)];
-
   const data: Array<{
     orderId: string;
     amount: number;
@@ -32,7 +29,7 @@ export async function seedPayments(
     data.push({
       orderId: order.id,
       amount,
-      method: pickRandom(PAYMENT_METHODS),
+      method: faker.helpers.arrayElement(PAYMENT_METHODS),
       status: isCompleted ? "COMPLETED" : "REFUNDED",
       transactionId: faker.string.alphanumeric({ length: 16 }).toUpperCase(),
     });

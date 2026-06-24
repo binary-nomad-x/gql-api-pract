@@ -15,10 +15,12 @@ export async function seedCategories(
   ctx: SeedContext,
   counts: SeedCounts,
 ): Promise<string[]> {
+
   const categories = await Promise.all(
     CATEGORY_DATA.map((data) => ctx.prisma.category.create({ data })),
   );
 
   counts.categories += categories.length;
   return categories.map((c) => c.id);
+
 }

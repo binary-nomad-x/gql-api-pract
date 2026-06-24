@@ -12,19 +12,9 @@ export async function seedPosts(
 ): Promise<string[]> {
   const postIds = Array.from({ length: count }, () => randomUUID());
 
-  const pickRandom = <T>(arr: T[]): T =>
-    arr[Math.floor(Math.random() * arr.length)];
-
-  const pickRandomN = <T>(arr: T[], n: number): T[] => {
-    const shuffled = [...arr].sort(() => Math.random() - 0.5);
-    return shuffled.slice(0, Math.min(n, shuffled.length));
-  };
-
   for (let i = 0; i < count; i++) {
     const id = postIds[i];
     const published = Math.random() > 0.3;
-    const selectedTags = pickRandomN(tagIds, faker.number.int({ min: 1, max: 4 }));
-    const selectedCategories = pickRandomN(categoryIds, faker.number.int({ min: 1, max: 2 }));
 
     await ctx.prisma.post.create({
       data: {
@@ -32,9 +22,17 @@ export async function seedPosts(
         title: faker.lorem.sentence({ min: 4, max: 10 }),
         content: faker.lorem.paragraphs({ min: 2, max: 6 }),
         published,
-        authorId: pickRandom(userIds),
-        tags: { connect: selectedTags.map((id) => ({ id })) },
-        categories: { connect: selectedCategories.map((id) => ({ id })) },
+        authorId: faker.helpers.arrayElement(userIds),
+        tags: {
+          connect: faker.helpers
+            .arrayElements(tagIds, { min: 1, max: 4 })
+            .map((id) => ({ id })),
+        },
+        categories: {
+          connect: faker.helpers
+            .arrayElements(categoryIds, { min: 1, max: 2 })
+            .map((id) => ({ id })),
+        },
       },
     });
   }

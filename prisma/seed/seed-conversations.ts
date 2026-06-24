@@ -6,9 +6,6 @@ export async function seedConversations(
   counts: SeedCounts,
   userIds: string[],
 ): Promise<void> {
-  const pickRandom = <T>(arr: T[]): T =>
-    arr[Math.floor(Math.random() * arr.length)];
-
   const conversationCount = Math.floor(userIds.length * 0.5);
   const usedPairs = new Set<string>();
 
@@ -18,8 +15,8 @@ export async function seedConversations(
     let pairKey: string;
 
     do {
-      userA = pickRandom(userIds);
-      userB = pickRandom(userIds);
+      userA = faker.helpers.arrayElement(userIds);
+      userB = faker.helpers.arrayElement(userIds);
       pairKey = [userA, userB].sort().join(":");
     } while (userA === userB || usedPairs.has(pairKey));
 
@@ -30,6 +27,7 @@ export async function seedConversations(
         title: faker.lorem.words(3),
       },
     });
+
     counts.conversations++;
 
     await ctx.prisma.conversationParticipant.createMany({

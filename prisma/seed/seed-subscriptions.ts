@@ -8,9 +8,6 @@ export async function seedSubscriptions(
   counts: SeedCounts,
   userIds: string[],
 ): Promise<void> {
-  const pickRandom = <T>(arr: T[]): T =>
-    arr[Math.floor(Math.random() * arr.length)];
-
   const data: Array<{
     userId: string;
     plan: string;
@@ -21,7 +18,7 @@ export async function seedSubscriptions(
   }> = [];
 
   for (const userId of userIds) {
-    const plan = pickRandom(PLANS);
+    const plan = faker.helpers.arrayElement(PLANS);
     const startDate = faker.date.past();
     const isActive = Math.random() > 0.2;
 

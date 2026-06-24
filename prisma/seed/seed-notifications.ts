@@ -16,15 +16,12 @@ export async function seedNotifications(
     isRead: boolean;
   }> = [];
 
-  const pickRandom = <T>(arr: T[]): T =>
-    arr[Math.floor(Math.random() * arr.length)];
-
   for (const userId of userIds) {
     const n = faker.number.int({ min: 3, max: 8 });
     for (let i = 0; i < n; i++) {
       data.push({
         userId,
-        type: pickRandom(TYPES),
+        type: faker.helpers.arrayElement(TYPES),
         title: faker.lorem.sentence({ min: 3, max: 6 }),
         message: Math.random() > 0.5 ? faker.lorem.sentence() : "",
         isRead: Math.random() > 0.4,

@@ -9,9 +9,6 @@ export async function seedProducts(
   categoryIds: string[],
   count: number,
 ): Promise<string[]> {
-  const pickRandom = <T>(arr: T[]): T =>
-    arr[Math.floor(Math.random() * arr.length)];
-
   const productIds = Array.from({ length: count }, () => randomUUID());
 
   const productData = productIds.map((id) => ({
@@ -23,8 +20,8 @@ export async function seedProducts(
     sku: faker.string.alphanumeric({ length: 10 }).toUpperCase(),
     imageUrl: faker.image.url(),
     isActive: true,
-    sellerId: pickRandom(userIds),
-    categoryId: pickRandom(categoryIds),
+    sellerId: faker.helpers.arrayElement(userIds),
+    categoryId: faker.helpers.arrayElement(categoryIds),
   }));
 
   await ctx.prisma.product.createMany({ data: productData });

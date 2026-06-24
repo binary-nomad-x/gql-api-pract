@@ -22,9 +22,6 @@ export async function seedReturns(
 
   // Only return ~15% of delivered order items
   const returnItems = orderItems.filter(() => Math.random() > 0.85);
-  const pickRandom = <T>(arr: T[]): T =>
-    arr[Math.floor(Math.random() * arr.length)];
-
   const data: Array<{
     orderItemId: string;
     userId: string;
@@ -36,9 +33,9 @@ export async function seedReturns(
   for (const item of returnItems) {
     data.push({
       orderItemId: item.id,
-      userId: pickRandom(userIds),
+      userId: faker.helpers.arrayElement(userIds),
       reason: faker.lorem.sentence(),
-      status: pickRandom(["PENDING", "APPROVED", "REJECTED", "REFUNDED"]),
+      status: faker.helpers.arrayElement(["PENDING", "APPROVED", "REJECTED", "REFUNDED"]),
       quantity: faker.number.int({ min: 1, max: Math.min(item.quantity, 2) }),
     });
   }

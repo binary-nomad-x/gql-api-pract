@@ -9,13 +9,10 @@ export async function seedSavedPosts(
   const seen = new Set<string>();
   const data: Array<{ userId: string; postId: string }> = [];
 
-  const pickRandom = <T>(arr: T[]): T =>
-    arr[Math.floor(Math.random() * arr.length)];
-
   for (const userId of userIds) {
     const n = Math.floor(Math.random() * 5) + 1;
     for (let i = 0; i < n; i++) {
-      const postId = pickRandom(postIds);
+      const postId = faker.helpers.arrayElement(postIds);
       const key = `${userId}:${postId}`;
       if (!seen.has(key)) {
         seen.add(key);

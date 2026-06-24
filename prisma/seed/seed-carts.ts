@@ -7,9 +7,6 @@ export async function seedCarts(
   userIds: string[],
   productIds: string[],
 ): Promise<void> {
-  const pickRandom = <T>(arr: T[]): T =>
-    arr[Math.floor(Math.random() * arr.length)];
-
   for (const userId of userIds) {
     const cart = await ctx.prisma.cart.create({
       data: { userId },
@@ -25,7 +22,7 @@ export async function seedCarts(
 
     const used = new Set<string>();
     for (let i = 0; i < itemCount; i++) {
-      const productId = pickRandom(productIds);
+      const productId = faker.helpers.arrayElement(productIds);
       if (used.has(productId)) continue;
       used.add(productId);
       items.push({

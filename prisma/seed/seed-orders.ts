@@ -11,8 +11,6 @@ export async function seedOrders(
   productIds: string[],
   couponIds: string[],
 ): Promise<string[]> {
-  const pickRandom = <T>(arr: T[]): T =>
-    arr[Math.floor(Math.random() * arr.length)];
 
   const products = await ctx.prisma.product.findMany({
     where: { id: { in: productIds } },
@@ -35,16 +33,17 @@ export async function seedOrders(
   }> = [];
 
   for (const orderId of orderIds) {
-    const status = pickRandom(ORDER_STATUSES);
-    const userId = pickRandom(userIds);
+    const status = faker.helpers.arrayElement(ORDER_STATUSES);
+    const userId = faker.helpers.arrayElement(userIds);
     const useCoupon = Math.random() > 0.7;
-    const couponId = useCoupon ? pickRandom(couponIds) : null;
+    const couponId = useCoupon ? faker.helpers.arrayElement(couponIds) : null;
 
     orderData.push({ id: orderId, userId, status, couponId });
 
     const itemCount = faker.number.int({ min: 1, max: 5 });
+
     for (let j = 0; j < itemCount; j++) {
-      const productId = pickRandom(productIds);
+      const productId = faker.helpers.arrayElement(productIds);
       const product = productMap.get(productId);
       if (!product) continue;
       const quantity = faker.number.int({ min: 1, max: 3 });
@@ -76,6 +75,7 @@ export async function seedOrders(
   const coupons = await ctx.prisma.coupon.findMany({
     where: { id: { in: couponIds } },
   });
+
   const couponMap = new Map(coupons.map((c) => [c.id, c]));
 
   for (const order of orderData) {

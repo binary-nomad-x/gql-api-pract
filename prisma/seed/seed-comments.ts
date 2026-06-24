@@ -13,15 +13,12 @@ export async function seedComments(
     postId: string;
   }> = [];
 
-  const pickRandom = <T>(arr: T[]): T =>
-    arr[Math.floor(Math.random() * arr.length)];
-
   for (const postId of postIds) {
     const commentCount = faker.number.int({ min: 1, max: 5 });
     for (let j = 0; j < commentCount; j++) {
       data.push({
         content: faker.lorem.sentences({ min: 1, max: 3 }),
-        authorId: pickRandom(userIds),
+        authorId: faker.helpers.arrayElement(userIds),
         postId,
       });
     }

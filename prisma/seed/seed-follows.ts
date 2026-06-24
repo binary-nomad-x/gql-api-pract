@@ -8,13 +8,10 @@ export async function seedFollows(
   const seen = new Set<string>();
   const data: Array<{ followerId: string; followingId: string }> = [];
 
-  const pickRandom = <T>(arr: T[]): T =>
-    arr[Math.floor(Math.random() * arr.length)];
-
   for (const userId of userIds) {
     const followCount = Math.floor(Math.random() * 10) + 1;
     for (let j = 0; j < followCount; j++) {
-      const targetId = pickRandom(userIds);
+      const targetId = faker.helpers.arrayElement(userIds);
       if (targetId === userId) continue;
       const key = `${userId}:${targetId}`;
       if (!seen.has(key)) {

@@ -1,0 +1,15 @@
+type AuthPayload {
+  token: String!
+  user: User!
+}
+
+input CreateUserInput {
+  email: String!
+  name: String
+  password: String!
+}
+
+extend type Mutation {
+  signup(input: CreateUserInput!): AuthPayload!
+  login(email: String!, password: String!): AuthPayload!
+}

@@ -1,0 +1,1162 @@
+scalar DateTime
+
+directive @auth on FIELD_DEFINITION
+
+type Query
+
+type Mutation
+
+enum Role {
+  USER
+  ADMIN
+  MODERATOR
+}
+
+enum OrderStatus {
+  PENDING
+  CONFIRMED
+  PROCESSING
+  SHIPPED
+  DELIVERED
+  CANCELLED
+}
+
+enum PaymentMethod {
+  CREDIT_CARD
+  DEBIT_CARD
+  PAYPAL
+  BANK_TRANSFER
+  CASH_ON_DELIVERY
+}
+
+enum PaymentStatus {
+  PENDING
+  COMPLETED
+  FAILED
+  REFUNDED
+}
+
+enum RefundStatus {
+  PENDING
+  APPROVED
+  REJECTED
+  COMPLETED
+}
+
+enum ShipmentStatus {
+  PENDING
+  PICKED_UP
+  IN_TRANSIT
+  OUT_FOR_DELIVERY
+  DELIVERED
+  FAILED
+}
+
+enum NotificationType {
+  SYSTEM
+  ORDER_UPDATE
+  PAYMENT_RECEIVED
+  SHIPMENT_UPDATE
+  NEW_FOLLOWER
+  NEW_COMMENT
+  NEW_LIKE
+  REVIEW_REPLY
+  PROMOTION
+  NEW_MESSAGE
+  SUBSCRIPTION_EXPIRING
+  DISCOUNT_AVAILABLE
+  INVOICE_CREATED
+  INVOICE_PAID
+  INVOICE_OVERDUE
+  RETURN_REQUESTED
+  RETURN_APPROVED
+  RETURN_REJECTED
+  RETURN_REFUNDED
+  TICKET_CREATED
+  TICKET_UPDATED
+  TICKET_RESOLVED
+}
+
+enum SubscriptionPlan {
+  FREE
+  BASIC
+  PREMIUM
+  ENTERPRISE
+}
+
+enum SubscriptionStatus {
+  ACTIVE
+  CANCELLED
+  PAST_DUE
+  EXPIRED
+}
+
+enum DiscountType {
+  PERCENTAGE
+  FIXED_AMOUNT
+}
+
+enum InvoiceStatus {
+  DRAFT
+  SENT
+  PAID
+  OVERDUE
+  CANCELLED
+}
+
+enum ReturnReason {
+  DEFECTIVE
+  NOT_AS_DESCRIBED
+  WRONG_ITEM
+  SIZE_ISSUE
+  OTHER
+}
+
+enum ReturnStatus {
+  PENDING
+  APPROVED
+  REJECTED
+  RECEIVED
+  REFUNDED
+}
+
+enum TicketStatus {
+  OPEN
+  IN_PROGRESS
+  WAITING_ON_CUSTOMER
+  RESOLVED
+  CLOSED
+}
+
+enum TicketPriority {
+  LOW
+  MEDIUM
+  HIGH
+  URGENT
+}
+
+input PaginationInput {
+  limit: Int
+  offset: Int
+}
+
+type MutationResponse {
+  success: Boolean!
+  message: String
+}
+
+type PageInfo {
+  total: Int!
+  limit: Int!
+  offset: Int!
+  hasMore: Boolean!
+}
+
+type Address {
+  id: ID!
+  user: User!
+  label: String!
+  street: String!
+  city: String!
+  state: String
+  zip: String!
+  country: String!
+  isDefault: Boolean!
+  createdAt: DateTime!
+  updatedAt: DateTime!
+}
+
+input CreateAddressInput {
+  label: String
+  street: String!
+  city: String!
+  state: String
+  zip: String!
+  country: String
+  isDefault: Boolean
+}
+
+input UpdateAddressInput {
+  label: String
+  street: String
+  city: String
+  state: String
+  zip: String
+  country: String
+  isDefault: Boolean
+}
+
+fragment AddressBasic on Address {
+  id
+  label
+  street
+  city
+  state
+  zip
+  country
+  isDefault
+}
+
+extend type Query {
+  myAddresses: [Address!]! @auth
+  address(id: ID!): Address @auth
+}
+
+extend type Mutation {
+  createAddress(input: CreateAddressInput!): Address! @auth
+  updateAddress(id: ID!, input: UpdateAddressInput!): Address! @auth
+  deleteAddress(id: ID!): Boolean! @auth
+  setDefaultAddress(id: ID!): Address! @auth
+}
+
+type AuthPayload {
+  token: String!
+  user: User!
+}
+
+input CreateUserInput {
+  email: String!
+  name: String
+  password: String!
+}
+
+extend type Mutation {
+  signup(input: CreateUserInput!): AuthPayload!
+  login(email: String!, password: String!): AuthPayload!
+}
+
+type Cart {
+  id: ID!
+  user: User!
+  items: [CartItem!]!
+  totalAmount: Float!
+  itemCount: Int!
+  createdAt: DateTime!
+  updatedAt: DateTime!
+}
+
+type CartItem {
+  id: ID!
+  cart: Cart!
+  product: Product!
+  quantity: Int!
+  createdAt: DateTime!
+}
+
+input AddToCartInput {
+  productId: ID!
+  quantity: Int
+}
+
+input UpdateCartItemInput {
+  productId: ID!
+  quantity: Int!
+}
+
+fragment CartFull on Cart {
+  id
+  itemCount
+  totalAmount
+  items {
+    id
+    quantity
+    product {
+      ...ProductBasic
+    }
+  }
+}
+
+extend type Query {
+  myCart: Cart @auth
+}
+
+extend type Mutation {
+  addToCart(input: AddToCartInput!): Cart! @auth
+  updateCartItem(input: UpdateCartItemInput!): Cart! @auth
+  removeFromCart(productId: ID!): Cart! @auth
+  clearCart: Cart! @auth
+}
+
+type Conversation {
+  id: ID!
+  title: String
+  participants: [ConversationParticipant!]!
+  messages(limit: Int, offset: Int): [Message!]!
+  lastMessage: Message
+  messageCount: Int!
+  createdAt: DateTime!
+  updatedAt: DateTime!
+}
+
+type ConversationParticipant {
+  id: ID!
+  conversation: Conversation!
+  user: User!
+  lastReadAt: DateTime
+  joinedAt: DateTime!
+}
+
+type Message {
+  id: ID!
+  conversation: Conversation!
+  sender: User!
+  content: String!
+  createdAt: DateTime!
+  updatedAt: DateTime!
+}
+
+extend type Query {
+  myConversations: [Conversation!]! @auth
+  conversation(id: ID!): Conversation @auth
+  messages(conversationId: ID!, limit: Int, offset: Int): [Message!]! @auth
+}
+
+extend type Mutation {
+  startConversation(userId: ID!, title: String): Conversation! @auth
+  sendMessage(conversationId: ID!, content: String!): Message! @auth
+  markConversationRead(conversationId: ID!): Boolean! @auth
+}
+
+type Follow {
+  id: ID!
+  follower: User!
+  following: User!
+  createdAt: DateTime!
+}
+
+extend type Query {
+  followers(userId: ID!): [Follow!]!
+  following(userId: ID!): [Follow!]!
+}
+
+extend type Mutation {
+  toggleFollow(userId: ID!): Follow!
+}
+
+type Invoice {
+  id: ID!
+  order: Order!
+  invoiceNumber: String!
+  amount: Float!
+  status: InvoiceStatus!
+  issuedAt: DateTime!
+  paidAt: DateTime
+  dueDate: DateTime!
+  createdAt: DateTime!
+  updatedAt: DateTime!
+}
+
+input CreateInvoiceInput {
+  orderId: ID!
+  dueDate: DateTime!
+}
+
+extend type Query {
+  myInvoices(status: InvoiceStatus, limit: Int, offset: Int): [Invoice!]! @auth
+  invoice(id: ID!): Invoice @auth
+}
+
+extend type Mutation {
+  createInvoice(input: CreateInvoiceInput!): Invoice! @auth
+  markInvoicePaid(id: ID!): Invoice! @auth
+  cancelInvoice(id: ID!): Invoice! @auth
+}
+
+type Notification {
+  id: ID!
+  user: User!
+  type: NotificationType!
+  title: String!
+  message: String
+  link: String
+  isRead: Boolean!
+  readAt: DateTime
+  createdAt: DateTime!
+}
+
+fragment NotificationBasic on Notification {
+  id
+  type
+  title
+  message
+  link
+  isRead
+  createdAt
+}
+
+extend type Query {
+  myNotifications(limit: Int, offset: Int): [Notification!]! @auth
+  unreadNotificationCount: Int! @auth
+}
+
+extend type Mutation {
+  markNotificationRead(id: ID!): Notification! @auth
+  markAllNotificationsRead: Boolean! @auth
+}
+
+type Order {
+  id: ID!
+  user: User!
+  status: OrderStatus!
+  totalAmount: Float!
+  discountAmount: Float!
+  shippingAddress: String
+  items: [OrderItem!]!
+  payment: Payment
+  refunds: [Refund!]!
+  shipments: [Shipment!]!
+  coupon: Coupon
+  itemCount: Int!
+  createdAt: DateTime!
+  updatedAt: DateTime!
+}
+
+type OrderItem {
+  id: ID!
+  order: Order!
+  product: Product!
+  quantity: Int!
+  unitPrice: Float!
+  createdAt: DateTime!
+}
+
+type Payment {
+  id: ID!
+  order: Order!
+  amount: Float!
+  method: PaymentMethod!
+  status: PaymentStatus!
+  transactionId: String!
+  refunds: [Refund!]!
+  createdAt: DateTime!
+  updatedAt: DateTime!
+}
+
+type Refund {
+  id: ID!
+  payment: Payment!
+  order: Order!
+  amount: Float!
+  reason: String
+  status: RefundStatus!
+  createdAt: DateTime!
+  updatedAt: DateTime!
+}
+
+type Shipment {
+  id: ID!
+  order: Order!
+  carrier: String!
+  trackingNumber: String!
+  status: ShipmentStatus!
+  estimatedDelivery: DateTime
+  deliveredAt: DateTime
+  createdAt: DateTime!
+  updatedAt: DateTime!
+}
+
+input PlaceOrderInput {
+  items: [OrderItemInput!]!
+  shippingAddress: String
+  couponCode: String
+}
+
+input OrderItemInput {
+  productId: ID!
+  quantity: Int!
+}
+
+input ProcessPaymentInput {
+  orderId: ID!
+  method: PaymentMethod!
+}
+
+input CreateRefundInput {
+  paymentId: ID!
+  orderId: ID!
+  amount: Float!
+  reason: String
+}
+
+input CreateShipmentInput {
+  orderId: ID!
+  carrier: String!
+  trackingNumber: String!
+  estimatedDelivery: DateTime
+}
+
+fragment OrderBasic on Order {
+  id
+  status
+  totalAmount
+  discountAmount
+  itemCount
+  createdAt
+}
+
+fragment OrderFull on Order {
+  ...OrderBasic
+  user {
+    ...UserBasic
+  }
+  items {
+    id
+    quantity
+    unitPrice
+    product {
+      ...ProductBasic
+    }
+  }
+  payment {
+    id
+    amount
+    method
+    status
+  }
+  shipments {
+    id
+    carrier
+    trackingNumber
+    status
+  }
+  coupon {
+    id
+    code
+    discountPercent
+  }
+  shippingAddress
+  updatedAt
+}
+
+extend type Query {
+  myOrders(status: OrderStatus, limit: Int, offset: Int): [Order!]! @auth
+  order(id: ID!): Order @auth
+  myPayments(status: PaymentStatus, limit: Int, offset: Int): [Payment!]! @auth
+  payment(id: ID!): Payment @auth
+  myRefunds(status: RefundStatus, limit: Int, offset: Int): [Refund!]! @auth
+  refund(id: ID!): Refund @auth
+  orderShipments(orderId: ID!): [Shipment!]! @auth
+}
+
+extend type Mutation {
+  placeOrder(input: PlaceOrderInput!): Order! @auth
+  cancelOrder(id: ID!): Order! @auth
+  updateOrderStatus(id: ID!, status: OrderStatus!): Order! @auth
+  processPayment(input: ProcessPaymentInput!): Payment! @auth
+  createRefund(input: CreateRefundInput!): Refund! @auth
+  updateRefundStatus(id: ID!, status: RefundStatus!): Refund! @auth
+  createShipment(input: CreateShipmentInput!): Shipment! @auth
+  updateShipmentStatus(id: ID!, status: ShipmentStatus!): Shipment! @auth
+}
+
+type Post {
+  id: ID!
+  title: String!
+  content: String
+  published: Boolean!
+  author: User!
+  tags: [Tag!]!
+  categories: [Category!]!
+  comments: [Comment!]!
+  likes: [Like!]!
+  savedBy: [SavedPost!]!
+  views: [PostView!]!
+  likeCount: Int!
+  commentCount: Int!
+  viewCount: Int!
+  saveCount: Int!
+  createdAt: DateTime!
+  updatedAt: DateTime!
+}
+
+type Tag {
+  id: ID!
+  name: String!
+  posts: [Post!]!
+  postCount: Int!
+  createdAt: DateTime!
+}
+
+type Category {
+  id: ID!
+  name: String!
+  slug: String!
+  description: String
+  posts: [Post!]!
+  products: [Product!]!
+  postCount: Int!
+  productCount: Int!
+  createdAt: DateTime!
+  updatedAt: DateTime!
+}
+
+type Comment {
+  id: ID!
+  content: String!
+  author: User!
+  post: Post!
+  createdAt: DateTime!
+  updatedAt: DateTime!
+}
+
+type Like {
+  id: ID!
+  user: User!
+  post: Post!
+  createdAt: DateTime!
+}
+
+type SavedPost {
+  id: ID!
+  user: User!
+  post: Post!
+  createdAt: DateTime!
+}
+
+type PostView {
+  id: ID!
+  post: Post!
+  user: User
+  ip: String
+  viewedAt: DateTime!
+}
+
+input CreatePostInput {
+  title: String!
+  content: String
+  published: Boolean
+  tags: [String!]
+  categories: [String!]
+}
+
+input UpdatePostInput {
+  title: String
+  content: String
+  published: Boolean
+}
+
+input CreateCommentInput {
+  content: String!
+  postId: ID!
+}
+
+input CreateCategoryInput {
+  name: String!
+  slug: String!
+  description: String
+}
+
+fragment PostBasic on Post {
+  id
+  title
+  published
+  likeCount
+  commentCount
+  createdAt
+}
+
+fragment PostFull on Post {
+  ...PostBasic
+  content
+  author {
+    ...UserBasic
+  }
+  tags {
+    id
+    name
+  }
+  categories {
+    id
+    name
+    slug
+  }
+  viewCount
+  saveCount
+  updatedAt
+}
+
+extend type Query {
+  posts(published: Boolean, search: String, limit: Int, offset: Int): [Post!]!
+  post(id: ID!): Post
+  tags: [Tag!]!
+  tag(id: ID!): Tag
+  tagByName(name: String!): Tag
+  categories: [Category!]!
+  category(id: ID!): Category
+  categoryBySlug(slug: String!): Category
+  comments(postId: ID!): [Comment!]!
+  comment(id: ID!): Comment
+  likes(postId: ID!): [Like!]!
+  mySavedPosts(limit: Int, offset: Int): [SavedPost!]! @auth
+  getPostsByAuthorId(authorId: ID!) [Post!]! @auth
+}
+
+extend type Mutation {
+  createPost(input: CreatePostInput!): Post! @auth
+  updatePost(id: ID!, input: UpdatePostInput!): Post! @auth
+  deletePost(id: ID!): Boolean! @auth
+  publishPost(id: ID!): Post! @auth
+  unpublishPost(id: ID!): Post! @auth
+  createTag(name: String!): Tag! @auth
+  createCategory(input: CreateCategoryInput!): Category! @auth
+  createComment(input: CreateCommentInput!): Comment! @auth
+  deleteComment(id: ID!): Boolean! @auth
+  toggleLike(postId: ID!): Like!
+  toggleSavePost(postId: ID!): SavedPost! @auth
+  recordPostView(postId: ID!): PostView!
+}
+
+type Product {
+  id: ID!
+  name: String!
+  description: String
+  price: Float!
+  stock: Int!
+  sku: String!
+  imageUrl: String
+  images: [ProductImage!]!
+  isActive: Boolean!
+  seller: User!
+  category: Category
+  orderItems: [OrderItem!]!
+  reviews: [Review!]!
+  wishlistItems: [WishlistItem!]!
+  reviewCount: Int!
+  averageRating: Float
+  createdAt: DateTime!
+  updatedAt: DateTime!
+}
+
+type ProductImage {
+  id: ID!
+  product: Product!
+  url: String!
+  alt: String
+  sortOrder: Int!
+  createdAt: DateTime!
+}
+
+type Review {
+  id: ID!
+  rating: Int!
+  title: String
+  content: String
+  product: Product!
+  user: User!
+  createdAt: DateTime!
+  updatedAt: DateTime!
+}
+
+input CreateProductInput {
+  name: String!
+  description: String
+  price: Float!
+  stock: Int!
+  sku: String!
+  imageUrl: String
+  categorySlug: String
+}
+
+input UpdateProductInput {
+  name: String
+  description: String
+  price: Float
+  stock: Int
+  imageUrl: String
+  isActive: Boolean
+  categorySlug: String
+}
+
+input CreateReviewInput {
+  rating: Int!
+  title: String
+  content: String
+  productId: ID!
+}
+
+fragment ProductBasic on Product {
+  id
+  name
+  price
+  stock
+  sku
+  imageUrl
+  isActive
+  reviewCount
+  averageRating
+}
+
+fragment ProductFull on Product {
+  ...ProductBasic
+  description
+  seller {
+    ...UserBasic
+  }
+  category {
+    id
+    name
+    slug
+  }
+  images {
+    id
+    url
+    alt
+    sortOrder
+  }
+  createdAt
+  updatedAt
+}
+
+extend type Query {
+  products(categorySlug: String, search: String, minPrice: Float, maxPrice: Float, limit: Int, offset: Int): [Product!]!
+  product(id: ID!): Product
+  productBySku(sku: String!): Product
+  reviews(productId: ID!, limit: Int, offset: Int): [Review!]!
+  review(id: ID!): Review
+}
+
+extend type Mutation {
+  createProduct(input: CreateProductInput!): Product! @auth
+  updateProduct(id: ID!, input: UpdateProductInput!): Product! @auth
+  deleteProduct(id: ID!): Boolean! @auth
+  createReview(input: CreateReviewInput!): Review! @auth
+  deleteReview(id: ID!): Boolean! @auth
+}
+
+type Coupon {
+  id: ID!
+  code: String!
+  description: String
+  discountPercent: Float!
+  discountAmount: Float!
+  minPurchase: Float!
+  maxUses: Int!
+  usedCount: Int!
+  isActive: Boolean!
+  orders: [Order!]!
+  expiresAt: DateTime
+  createdAt: DateTime!
+  updatedAt: DateTime!
+}
+
+type Discount {
+  id: ID!
+  product: Product!
+  name: String!
+  type: DiscountType!
+  value: Float!
+  startDate: DateTime!
+  endDate: DateTime!
+  isActive: Boolean!
+  maxUsage: Int!
+  usedCount: Int!
+  createdAt: DateTime!
+  updatedAt: DateTime!
+}
+
+input CreateCouponInput {
+  code: String!
+  description: String
+  discountPercent: Float
+  discountAmount: Float
+  minPurchase: Float
+  maxUses: Int
+  isActive: Boolean
+  expiresAt: DateTime
+}
+
+input CreateDiscountInput {
+  productId: ID!
+  name: String!
+  type: DiscountType!
+  value: Float!
+  startDate: DateTime!
+  endDate: DateTime!
+  maxUsage: Int
+}
+
+input UpdateDiscountInput {
+  name: String
+  value: Float
+  startDate: DateTime
+  endDate: DateTime
+  isActive: Boolean
+  maxUsage: Int
+}
+
+extend type Query {
+  couponByCode(code: String!): Coupon
+  activeDiscounts: [Discount!]!
+  productDiscounts(productId: ID!): [Discount!]!
+}
+
+extend type Mutation {
+  createCoupon(input: CreateCouponInput!): Coupon! @auth
+  createDiscount(input: CreateDiscountInput!): Discount! @auth
+  updateDiscount(id: ID!, input: UpdateDiscountInput!): Discount! @auth
+  deleteDiscount(id: ID!): Boolean! @auth
+}
+
+type ReturnRequest {
+  id: ID!
+  orderItem: OrderItem!
+  user: User!
+  reason: ReturnReason!
+  status: ReturnStatus!
+  quantity: Int!
+  requestedAt: DateTime!
+  resolvedAt: DateTime
+}
+
+input CreateReturnInput {
+  orderItemId: ID!
+  reason: ReturnReason!
+  quantity: Int!
+}
+
+extend type Query {
+  myReturns(status: ReturnStatus, limit: Int, offset: Int): [ReturnRequest!]! @auth
+  returnRequest(id: ID!): ReturnRequest @auth
+}
+
+extend type Mutation {
+  createReturn(input: CreateReturnInput!): ReturnRequest! @auth
+  approveReturn(id: ID!): ReturnRequest! @auth
+  rejectReturn(id: ID!): ReturnRequest! @auth
+}
+
+type Stats {
+  totalUsers: Int!
+  totalPosts: Int!
+  totalPublishedPosts: Int!
+  totalTags: Int!
+  totalCategories: Int!
+  totalComments: Int!
+  totalLikes: Int!
+  totalProducts: Int!
+  totalOrders: Int!
+  totalPayments: Int!
+  totalRefunds: Int!
+  totalReviews: Int!
+  totalAddresses: Int!
+  totalWishlists: Int!
+  totalCarts: Int!
+  totalCoupons: Int!
+  totalShipments: Int!
+  totalNotifications: Int!
+  totalFollows: Int!
+  totalSavedPosts: Int!
+  totalPostViews: Int!
+}
+
+extend type Query {
+  stats: Stats!
+}
+
+type Subscription {
+  id: ID!
+  user: User!
+  plan: SubscriptionPlan!
+  status: SubscriptionStatus!
+  startDate: DateTime!
+  endDate: DateTime
+  autoRenew: Boolean!
+  cancelledAt: DateTime
+  createdAt: DateTime!
+  updatedAt: DateTime!
+}
+
+extend type Query {
+  mySubscription: Subscription @auth
+  subscriptions: [Subscription!]! @auth
+}
+
+input TrialEndingNotificationInput {
+  planName: String!
+  trialEnd: String!
+  nextBillingDate: String!
+  daysUntilAction: String!
+  nextChargeDisplayAmount: String!
+  paymentMethodType: String!
+  notifyPatient: Boolean!
+  notifyDoctor: Boolean!
+  notifyAdmin: Boolean!
+}
+
+extend type Mutation {
+  createSubscription(plan: SubscriptionPlan!): Subscription! @auth
+  cancelSubscription: Subscription! @auth
+  triggerTrialEndingNotification(input: TrialEndingNotificationInput!): Boolean! @auth
+}
+
+type SupportTicket {
+  id: ID!
+  user: User!
+  subject: String!
+  description: String!
+  status: TicketStatus!
+  priority: TicketPriority!
+  category: String!
+  assignedTo: String
+  replies: [TicketReply!]!
+  createdAt: DateTime!
+  updatedAt: DateTime!
+}
+
+type TicketReply {
+  id: ID!
+  ticket: SupportTicket!
+  user: User!
+  content: String!
+  isStaff: Boolean!
+  createdAt: DateTime!
+  updatedAt: DateTime!
+}
+
+input CreateTicketInput {
+  subject: String!
+  description: String!
+  priority: TicketPriority
+  category: String
+}
+
+input AddTicketReplyInput {
+  ticketId: ID!
+  content: String!
+}
+
+extend type Query {
+  myTickets(status: TicketStatus, limit: Int, offset: Int): [SupportTicket!]! @auth
+  ticket(id: ID!): SupportTicket @auth
+  ticketReplies(ticketId: ID!): [TicketReply!]! @auth
+}
+
+extend type Mutation {
+  createTicket(input: CreateTicketInput!): SupportTicket! @auth
+  addTicketReply(input: AddTicketReplyInput!): TicketReply! @auth
+  resolveTicket(id: ID!): SupportTicket! @auth
+  closeTicket(id: ID!): SupportTicket! @auth
+}
+
+type User {
+  id: ID!
+  email: String!
+  name: String
+  age: Int
+  role: Role!
+  profile: Profile
+  posts: [Post!]!
+  comments: [Comment!]!
+  likes: [Like!]!
+  products: [Product!]!
+  orders: [Order!]!
+  reviews: [Review!]!
+  addresses: [Address!]!
+  wishlists: [Wishlist!]!
+  cart: Cart
+  notifications: [Notification!]!
+  followers: [Follow!]!
+  following: [Follow!]!
+  savedPosts: [SavedPost!]!
+  postViews: [PostView!]!
+  createdAt: DateTime!
+  updatedAt: DateTime!
+}
+
+type Profile {
+  id: ID!
+  bio: String
+  avatar: String
+  phone: String
+  address: String
+  user: User!
+  createdAt: DateTime!
+  updatedAt: DateTime!
+}
+
+input UpdateUserInput {
+  name: String
+  email: String
+  password: String
+}
+
+fragment UserBasic on User {
+  id
+  email
+  name
+  age
+  role
+}
+
+fragment UserFull on User {
+  ...UserBasic
+  profile {
+    ...ProfileBasic
+  }
+  posts {
+    id
+    title
+    published
+  }
+  createdAt
+  updatedAt
+}
+
+fragment ProfileBasic on Profile {
+  id
+  bio
+  avatar
+  phone
+}
+
+extend type Query {
+  users: [User!]! @auth
+  user(id: ID!): User @auth
+  me: User @auth
+}
+
+extend type Mutation {
+  updateUser(id: ID!, input: UpdateUserInput!): User! @auth
+  deleteUser(id: ID!): Boolean! @auth
+  updateProfile(bio: String, avatar: String, phone: String, address: String): Profile! @auth
+}
+
+type Wishlist {
+  id: ID!
+  user: User!
+  name: String!
+  items: [WishlistItem!]!
+  itemCount: Int!
+  createdAt: DateTime!
+  updatedAt: DateTime!
+}
+
+type WishlistItem {
+  id: ID!
+  wishlist: Wishlist!
+  product: Product!
+  note: String
+  createdAt: DateTime!
+}
+
+input CreateWishlistInput {
+  name: String
+}
+
+input AddToWishlistInput {
+  wishlistId: ID!
+  productId: ID!
+  note: String
+}
+
+extend type Query {
+  myWishlists: [Wishlist!]! @auth
+  wishlist(id: ID!): Wishlist @auth
+}
+
+extend type Mutation {
+  createWishlist(input: CreateWishlistInput!): Wishlist! @auth
+  addToWishlist(input: AddToWishlistInput!): Wishlist! @auth
+  removeFromWishlist(wishlistId: ID!, productId: ID!): Wishlist! @auth
+  deleteWishlist(id: ID!): Boolean! @auth
+}

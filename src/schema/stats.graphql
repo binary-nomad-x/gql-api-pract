@@ -1,0 +1,27 @@
+type Stats {
+  totalUsers: Int!
+  totalPosts: Int!
+  totalPublishedPosts: Int!
+  totalTags: Int!
+  totalCategories: Int!
+  totalComments: Int!
+  totalLikes: Int!
+  totalProducts: Int!
+  totalOrders: Int!
+  totalPayments: Int!
+  totalRefunds: Int!
+  totalReviews: Int!
+  totalAddresses: Int!
+  totalWishlists: Int!
+  totalCarts: Int!
+  totalCoupons: Int!
+  totalShipments: Int!
+  totalNotifications: Int!
+  totalFollows: Int!
+  totalSavedPosts: Int!
+  totalPostViews: Int!
+}
+
+extend type Query {
+  stats: Stats!
+}

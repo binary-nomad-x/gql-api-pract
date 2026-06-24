@@ -1,0 +1,39 @@
+type Wishlist {
+  id: ID!
+  user: User!
+  name: String!
+  items: [WishlistItem!]!
+  itemCount: Int!
+  createdAt: DateTime!
+  updatedAt: DateTime!
+}
+
+type WishlistItem {
+  id: ID!
+  wishlist: Wishlist!
+  product: Product!
+  note: String
+  createdAt: DateTime!
+}
+
+input CreateWishlistInput {
+  name: String
+}
+
+input AddToWishlistInput {
+  wishlistId: ID!
+  productId: ID!
+  note: String
+}
+
+extend type Query {
+  myWishlists: [Wishlist!]! @auth
+  wishlist(id: ID!): Wishlist @auth
+}
+
+extend type Mutation {
+  createWishlist(input: CreateWishlistInput!): Wishlist! @auth
+  addToWishlist(input: AddToWishlistInput!): Wishlist! @auth
+  removeFromWishlist(wishlistId: ID!, productId: ID!): Wishlist! @auth
+  deleteWishlist(id: ID!): Boolean! @auth
+}

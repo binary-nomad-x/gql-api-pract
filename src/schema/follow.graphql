@@ -1,0 +1,15 @@
+type Follow {
+  id: ID!
+  follower: User!
+  following: User!
+  createdAt: DateTime!
+}
+
+extend type Query {
+  followers(userId: ID!): [Follow!]!
+  following(userId: ID!): [Follow!]!
+}
+
+extend type Mutation {
+  toggleFollow(userId: ID!): Follow!
+}

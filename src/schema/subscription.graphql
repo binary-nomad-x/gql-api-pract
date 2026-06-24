@@ -1,0 +1,35 @@
+type Subscription {
+  id: ID!
+  user: User!
+  plan: SubscriptionPlan!
+  status: SubscriptionStatus!
+  startDate: DateTime!
+  endDate: DateTime
+  autoRenew: Boolean!
+  cancelledAt: DateTime
+  createdAt: DateTime!
+  updatedAt: DateTime!
+}
+
+extend type Query {
+  mySubscription: Subscription @auth
+  subscriptions: [Subscription!]! @auth
+}
+
+input TrialEndingNotificationInput {
+  planName: String!
+  trialEnd: String!
+  nextBillingDate: String!
+  daysUntilAction: String!
+  nextChargeDisplayAmount: String!
+  paymentMethodType: String!
+  notifyPatient: Boolean!
+  notifyDoctor: Boolean!
+  notifyAdmin: Boolean!
+}
+
+extend type Mutation {
+  createSubscription(plan: SubscriptionPlan!): Subscription! @auth
+  cancelSubscription: Subscription! @auth
+  triggerTrialEndingNotification(input: TrialEndingNotificationInput!): Boolean! @auth
+}

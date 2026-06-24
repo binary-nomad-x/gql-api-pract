@@ -1,0 +1,610 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// ==================== User Model ====================
+model User {
+  id       String  @id @default(cuid())
+  email    String  @unique
+  name     String?
+  age      Int?
+  password String
+  role     String  @default("USER")
+
+  profile        Profile?
+  posts          Post[]
+  comments       Comment[]
+  likes          Like[]
+  products       Product[]
+  orders         Order[]
+  reviews        Review[]
+  postViews      PostView[]
+  addresses      Address[]
+  wishlists      Wishlist[]
+  cart           Cart?
+  notifications  Notification[]
+  followers      Follow[]                  @relation("FollowingRelation")
+  following      Follow[]                  @relation("FollowerRelation")
+  savedPosts     SavedPost[]
+  subscriptions  Subscription[]
+  conversations  ConversationParticipant[]
+  sentMessages   Message[]
+  returnRequests ReturnRequest[]
+  ticketReplies  TicketReply[]
+
+  createdTickets  SupportTicket[] @relation("CreatedTickets")
+  assignedTickets SupportTicket[] @relation("AssignedTickets")
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([email])
+  @@map("users")
+}
+
+// ==================== Profile Model ====================
+model Profile {
+  id        String   @id @default(cuid())
+  bio       String?
+  avatar    String?
+  phone     String?
+  address   String?
+  userId    String   @unique
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("profiles")
+}
+
+// ==================== Address Model ====================
+model Address {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  label     String   @default("Home")
+  street    String
+  city      String
+  state     String?
+  zip       String
+  country   String   @default("US")
+  isDefault Boolean  @default(false)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([userId])
+  @@map("addresses")
+}
+
+// ==================== Post Model ====================
+model Post {
+  id         String      @id @default(cuid())
+  title      String
+  content    String?
+  published  Boolean     @default(false)
+  authorId   String
+  author     User        @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  tags       Tag[]       @relation("PostToTag")
+  categories Category[]  @relation("PostToCategory")
+  comments   Comment[]
+  likes      Like[]
+  savedBy    SavedPost[]
+  views      PostView[]
+  createdAt  DateTime    @default(now())
+  updatedAt  DateTime    @updatedAt
+
+  @@index([authorId])
+  @@index([published])
+  @@map("posts")
+}
+
+// ==================== SavedPost Model ====================
+model SavedPost {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  postId    String
+  post      Post     @relation(fields: [postId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+
+  @@unique([userId, postId])
+  @@map("saved_posts")
+}
+
+// ==================== PostView Model ====================
+model PostView {
+  id       String   @id @default(cuid())
+  postId   String
+  post     Post     @relation(fields: [postId], references: [id], onDelete: Cascade)
+  userId   String?
+  user     User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+  ip       String?
+  viewedAt DateTime @default(now())
+
+  @@index([postId])
+  @@map("post_views")
+}
+
+// ==================== Tag Model ====================
+model Tag {
+  id        String   @id @default(cuid())
+  name      String   @unique
+  posts     Post[]   @relation("PostToTag")
+  createdAt DateTime @default(now())
+
+  @@map("tags")
+}
+
+// ==================== Category Model ====================
+model Category {
+  id          String    @id @default(cuid())
+  name        String    @unique
+  slug        String    @unique
+  description String?
+  posts       Post[]    @relation("PostToCategory")
+  products    Product[]
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  @@map("categories")
+}
+
+// ==================== Comment Model ====================
+model Comment {
+  id        String   @id @default(cuid())
+  content   String
+  authorId  String
+  author    User     @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  postId    String
+  post      Post     @relation(fields: [postId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([authorId])
+  @@index([postId])
+  @@map("comments")
+}
+
+// ==================== Like Model ====================
+model Like {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  postId    String
+  post      Post     @relation(fields: [postId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+
+  @@unique([userId, postId])
+  @@map("likes")
+}
+
+// ==================== Follow Model ====================
+model Follow {
+  id          String   @id @default(cuid())
+  followerId  String
+  follower    User     @relation("FollowerRelation", fields: [followerId], references: [id], onDelete: Cascade)
+  followingId String
+  following   User     @relation("FollowingRelation", fields: [followingId], references: [id], onDelete: Cascade)
+  createdAt   DateTime @default(now())
+
+  @@unique([followerId, followingId])
+  @@index([followerId])
+  @@index([followingId])
+  @@map("follows")
+}
+
+// ==================== Product Model ====================
+model Product {
+  id            String         @id @default(cuid())
+  name          String
+  description   String?
+  price         Float
+  stock         Int            @default(0)
+  sku           String         @unique
+  imageUrl      String?
+  images        ProductImage[]
+  isActive      Boolean        @default(true)
+  sellerId      String
+  seller        User           @relation(fields: [sellerId], references: [id], onDelete: Cascade)
+  categoryId    String?
+  category      Category?      @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+  orderItems    OrderItem[]
+  reviews       Review[]
+  wishlistItems WishlistItem[]
+  cartItems     CartItem[]
+  discounts     Discount[]
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+
+  @@index([sellerId])
+  @@index([categoryId])
+  @@index([sku])
+  @@map("products")
+}
+
+// ==================== ProductImage Model ====================
+model ProductImage {
+  id        String   @id @default(cuid())
+  productId String
+  product   Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  url       String
+  alt       String?
+  sortOrder Int      @default(0)
+  createdAt DateTime @default(now())
+
+  @@index([productId])
+  @@map("product_images")
+}
+
+// ==================== Order Model ====================
+model Order {
+  id              String      @id @default(cuid())
+  userId          String
+  user            User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  status          String      @default("PENDING")
+  totalAmount     Float       @default(0)
+  discountAmount  Float       @default(0)
+  shippingAddress String?
+  couponId        String?
+  coupon          Coupon?     @relation(fields: [couponId], references: [id], onDelete: SetNull)
+  items           OrderItem[]
+  payment         Payment?
+  refunds         Refund[]
+  shipments       Shipment[]
+  invoice         Invoice?
+  createdAt       DateTime    @default(now())
+  updatedAt       DateTime    @updatedAt
+
+  @@index([userId])
+  @@index([status])
+  @@map("orders")
+}
+
+// ==================== OrderItem Model ====================
+model OrderItem {
+  id             String          @id @default(cuid())
+  orderId        String
+  order          Order           @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  productId      String
+  product        Product         @relation(fields: [productId], references: [id], onDelete: Restrict)
+  quantity       Int             @default(1)
+  unitPrice      Float
+  returnRequests ReturnRequest[]
+
+  @@index([orderId])
+  @@index([productId])
+  @@map("order_items")
+}
+
+// ==================== Payment Model ====================
+model Payment {
+  id            String   @id @default(cuid())
+  orderId       String   @unique
+  order         Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  amount        Float
+  method        String
+  status        String   @default("PENDING")
+  transactionId String   @unique
+  refunds       Refund[]
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@map("payments")
+}
+
+// ==================== Refund Model ====================
+model Refund {
+  id        String   @id @default(cuid())
+  paymentId String
+  payment   Payment  @relation(fields: [paymentId], references: [id], onDelete: Cascade)
+  orderId   String
+  order     Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  amount    Float
+  reason    String?
+  status    String   @default("PENDING")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([paymentId])
+  @@index([orderId])
+  @@map("refunds")
+}
+
+// ==================== Review Model ====================
+model Review {
+  id        String   @id @default(cuid())
+  rating    Int
+  title     String?
+  content   String?
+  productId String
+  product   Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([productId, userId])
+  @@index([productId])
+  @@index([userId])
+  @@map("reviews")
+}
+
+// ==================== Wishlist Model ====================
+model Wishlist {
+  id        String         @id @default(cuid())
+  userId    String
+  user      User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  name      String         @default("Default")
+  items     WishlistItem[]
+  createdAt DateTime       @default(now())
+  updatedAt DateTime       @updatedAt
+
+  @@index([userId])
+  @@map("wishlists")
+}
+
+// ==================== WishlistItem Model ====================
+model WishlistItem {
+  id         String   @id @default(cuid())
+  wishlistId String
+  wishlist   Wishlist @relation(fields: [wishlistId], references: [id], onDelete: Cascade)
+  productId  String
+  product    Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  note       String?
+  createdAt  DateTime @default(now())
+
+  @@unique([wishlistId, productId])
+  @@map("wishlist_items")
+}
+
+// ==================== Cart Model ====================
+model Cart {
+  id        String     @id @default(cuid())
+  userId    String     @unique
+  user      User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  items     CartItem[]
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
+
+  @@map("carts")
+}
+
+// ==================== CartItem Model ====================
+model CartItem {
+  id        String   @id @default(cuid())
+  cartId    String
+  cart      Cart     @relation(fields: [cartId], references: [id], onDelete: Cascade)
+  productId String
+  product   Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  quantity  Int      @default(1)
+  createdAt DateTime @default(now())
+
+  @@unique([cartId, productId])
+  @@map("cart_items")
+}
+
+// ==================== Coupon Model ====================
+model Coupon {
+  id              String    @id @default(cuid())
+  code            String    @unique
+  description     String?
+  discountPercent Float     @default(0)
+  discountAmount  Float     @default(0)
+  minPurchase     Float     @default(0)
+  maxUses         Int       @default(0)
+  usedCount       Int       @default(0)
+  isActive        Boolean   @default(true)
+  orders          Order[]
+  expiresAt       DateTime?
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  @@index([code])
+  @@map("coupons")
+}
+
+// ==================== Shipment Model ====================
+model Shipment {
+  id                String    @id @default(cuid())
+  orderId           String
+  order             Order     @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  carrier           String
+  trackingNumber    String
+  status            String    @default("PENDING")
+  estimatedDelivery DateTime?
+  deliveredAt       DateTime?
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+
+  @@index([orderId])
+  @@index([trackingNumber])
+  @@map("shipments")
+}
+
+// ==================== Notification Model ====================
+model Notification {
+  id        String    @id @default(cuid())
+  userId    String
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  type      String
+  title     String
+  message   String?
+  link      String?
+  isRead    Boolean   @default(false)
+  readAt    DateTime?
+  createdAt DateTime  @default(now())
+
+  @@index([userId])
+  @@index([userId, isRead])
+  @@map("notifications")
+}
+
+// ==================== Subscription Model ====================
+model Subscription {
+  id          String    @id @default(cuid())
+  userId      String
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  plan        String
+  status      String    @default("ACTIVE")
+  startDate   DateTime
+  endDate     DateTime?
+  autoRenew   Boolean   @default(true)
+  cancelledAt DateTime?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  @@index([userId])
+  @@index([status])
+  @@map("subscriptions")
+}
+
+// ==================== Discount Model ====================
+model Discount {
+  id        String   @id @default(cuid())
+  productId String
+  product   Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  name      String
+  type      String
+  value     Float
+  startDate DateTime
+  endDate   DateTime
+  isActive  Boolean  @default(true)
+  maxUsage  Int      @default(0)
+  usedCount Int      @default(0)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([productId])
+  @@index([startDate, endDate])
+  @@map("discounts")
+}
+
+// ==================== Conversation Model ====================
+model Conversation {
+  id           String                    @id @default(cuid())
+  title        String?
+  participants ConversationParticipant[]
+  messages     Message[]
+  createdAt    DateTime                  @default(now())
+  updatedAt    DateTime                  @updatedAt
+
+  @@map("conversations")
+}
+
+// ==================== ConversationParticipant Model ====================
+model ConversationParticipant {
+  id             String       @id @default(cuid())
+  conversationId String
+  conversation   Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  userId         String
+  user           User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  lastReadAt     DateTime?
+  joinedAt       DateTime     @default(now())
+
+  @@unique([conversationId, userId])
+  @@map("conversation_participants")
+}
+
+// ==================== Message Model ====================
+model Message {
+  id             String       @id @default(cuid())
+  conversationId String
+  conversation   Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  senderId       String
+  sender         User         @relation(fields: [senderId], references: [id], onDelete: Cascade)
+  content        String
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+
+  @@index([conversationId])
+  @@index([senderId])
+  @@map("messages")
+}
+
+// ==================== Invoice Model ====================
+model Invoice {
+  id            String    @id @default(cuid())
+  orderId       String    @unique
+  order         Order     @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  invoiceNumber String    @unique
+  amount        Float
+  status        String    @default("DRAFT")
+  issuedAt      DateTime  @default(now())
+  paidAt        DateTime?
+  dueDate       DateTime
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  @@index([orderId])
+  @@index([status])
+  @@map("invoices")
+}
+
+// ==================== ReturnRequest Model ====================
+model ReturnRequest {
+  id          String    @id @default(cuid())
+  orderItemId String
+  orderItem   OrderItem @relation(fields: [orderItemId], references: [id], onDelete: Cascade)
+  userId      String
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  reason      String
+  status      String    @default("PENDING")
+  quantity    Int       @default(1)
+  requestedAt DateTime  @default(now())
+  resolvedAt  DateTime?
+
+  @@index([orderItemId])
+  @@index([userId])
+  @@index([status])
+  @@map("return_requests")
+}
+
+// ==================== SupportTicket Model ====================
+model SupportTicket {
+  id String @id @default(cuid())
+
+  userId String
+  user   User   @relation("CreatedTickets", fields: [userId], references: [id])
+
+  assignedToId String?
+  assignedTo   User?   @relation("AssignedTickets", fields: [assignedToId], references: [id])
+
+  subject     String
+  description String
+
+  status   String @default("OPEN")
+  priority String @default("MEDIUM")
+  category String @default("general")
+
+  replies TicketReply[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([userId])
+  @@index([assignedToId])
+  @@index([status])
+  @@index([priority])
+  @@map("support_tickets")
+}
+
+// ==================== TicketReply Model ====================
+model TicketReply {
+  id        String        @id @default(cuid())
+  ticketId  String
+  ticket    SupportTicket @relation(fields: [ticketId], references: [id], onDelete: Cascade)
+  userId    String
+  user      User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  content   String
+  isStaff   Boolean       @default(false)
+  createdAt DateTime      @default(now())
+  updatedAt DateTime      @updatedAt
+
+  @@index([ticketId])
+  @@index([userId])
+  @@map("ticket_replies")
+}

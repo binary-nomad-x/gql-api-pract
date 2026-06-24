@@ -1,0 +1,154 @@
+type Order {
+  id: ID!
+  user: User!
+  status: OrderStatus!
+  totalAmount: Float!
+  discountAmount: Float!
+  shippingAddress: String
+  items: [OrderItem!]!
+  payment: Payment
+  refunds: [Refund!]!
+  shipments: [Shipment!]!
+  coupon: Coupon
+  itemCount: Int!
+  createdAt: DateTime!
+  updatedAt: DateTime!
+}
+
+type OrderItem {
+  id: ID!
+  order: Order!
+  product: Product!
+  quantity: Int!
+  unitPrice: Float!
+  createdAt: DateTime!
+}
+
+type Payment {
+  id: ID!
+  order: Order!
+  amount: Float!
+  method: PaymentMethod!
+  status: PaymentStatus!
+  transactionId: String!
+  refunds: [Refund!]!
+  createdAt: DateTime!
+  updatedAt: DateTime!
+}
+
+type Refund {
+  id: ID!
+  payment: Payment!
+  order: Order!
+  amount: Float!
+  reason: String
+  status: RefundStatus!
+  createdAt: DateTime!
+  updatedAt: DateTime!
+}
+
+type Shipment {
+  id: ID!
+  order: Order!
+  carrier: String!
+  trackingNumber: String!
+  status: ShipmentStatus!
+  estimatedDelivery: DateTime
+  deliveredAt: DateTime
+  createdAt: DateTime!
+  updatedAt: DateTime!
+}
+
+input PlaceOrderInput {
+  items: [OrderItemInput!]!
+  shippingAddress: String
+  couponCode: String
+}
+
+input OrderItemInput {
+  productId: ID!
+  quantity: Int!
+}
+
+input ProcessPaymentInput {
+  orderId: ID!
+  method: PaymentMethod!
+}
+
+input CreateRefundInput {
+  paymentId: ID!
+  orderId: ID!
+  amount: Float!
+  reason: String
+}
+
+input CreateShipmentInput {
+  orderId: ID!
+  carrier: String!
+  trackingNumber: String!
+  estimatedDelivery: DateTime
+}
+
+fragment OrderBasic on Order {
+  id
+  status
+  totalAmount
+  discountAmount
+  itemCount
+  createdAt
+}
+
+fragment OrderFull on Order {
+  ...OrderBasic
+  user {
+    ...UserBasic
+  }
+  items {
+    id
+    quantity
+    unitPrice
+    product {
+      ...ProductBasic
+    }
+  }
+  payment {
+    id
+    amount
+    method
+    status
+  }
+  shipments {
+    id
+    carrier
+    trackingNumber
+    status
+  }
+  coupon {
+    id
+    code
+    discountPercent
+  }
+  shippingAddress
+  updatedAt
+}
+
+extend type Query {
+  myOrders(status: OrderStatus, limit: Int, offset: Int): [Order!]! @auth
+  order(id: ID!): Order @auth
+  myPayments(status: PaymentStatus, limit: Int, offset: Int): [Payment!]! @auth
+  payment(id: ID!): Payment @auth
+  myRefunds(status: RefundStatus, limit: Int, offset: Int): [Refund!]! @auth
+  refund(id: ID!): Refund @auth
+  orderShipments(orderId: ID!): [Shipment!]! @auth
+}
+
+extend type Mutation {
+  placeOrder(input: PlaceOrderInput!): Order! @auth
+  cancelOrder(id: ID!): Order! @auth
+  updateOrderStatus(id: ID!, status: OrderStatus!): Order! @auth
+  processPayment(input: ProcessPaymentInput!): Payment! @auth
+  createRefund(input: CreateRefundInput!): Refund! @auth
+  updateRefundStatus(id: ID!, status: RefundStatus!): Refund! @auth
+  createShipment(input: CreateShipmentInput!): Shipment! @auth
+  updateShipmentStatus(id: ID!, status: ShipmentStatus!): Shipment! @auth
+}

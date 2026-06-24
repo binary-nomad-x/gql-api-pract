@@ -22,12 +22,24 @@ export async function seedTags(
   ctx: SeedContext,
   counts: SeedCounts,
 ): Promise<string[]> {
-  const tags = await Promise.all(
-    TAG_NAMES.map((name) =>
-      ctx.prisma.tag.create({ data: { name } }),
-    ),
-  );
+
+  await ctx.prisma.tag.createMany({
+    data: TAG_NAMES.map((name) => ({ name })),
+    skipDuplicates: true,
+  });
+
+  const tags = await ctx.prisma.tag.findMany({
+    where: {
+      name: {
+        in: TAG_NAMES,
+      },
+    },
+    select: {
+      id: true,
+    },
+  });
 
   counts.tags += tags.length;
-  return tags.map((t) => t.id);
+
+  return tags.map((tag) => tag.id);
 }

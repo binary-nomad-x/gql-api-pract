@@ -28,6 +28,7 @@ export async function seedReturns(
     reason: string;
     status: string;
     quantity: number;
+    resolvedAt: Date;
   }> = [];
 
   for (const item of returnItems) {
@@ -37,6 +38,7 @@ export async function seedReturns(
       reason: faker.lorem.sentence(),
       status: faker.helpers.arrayElement(["PENDING", "APPROVED", "REJECTED", "REFUNDED"]),
       quantity: faker.number.int({ min: 1, max: Math.min(item.quantity, 2) }),
+      resolvedAt: faker.date.past()
     });
   }
 

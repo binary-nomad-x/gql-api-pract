@@ -15,6 +15,7 @@ export async function seedSubscriptions(
     startDate: Date;
     endDate: Date | null;
     autoRenew: boolean;
+    cancelledAt: Date | null;
   }> = [];
 
   for (const userId of userIds) {
@@ -29,6 +30,7 @@ export async function seedSubscriptions(
       startDate,
       endDate: isActive ? faker.date.future() : faker.date.past(),
       autoRenew: Math.random() > 0.3,
+      cancelledAt: isActive ? null : faker.date.past(),
     });
   }
 

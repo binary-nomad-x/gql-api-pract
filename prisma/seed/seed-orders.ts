@@ -2,7 +2,14 @@ import { faker } from "@faker-js/faker";
 import type { SeedContext, SeedCounts } from "./types.js";
 import { randomUUID } from "node:crypto";
 
-const ORDER_STATUSES = ["PENDING", "CONFIRMED", "PROCESSING", "SHIPPED", "DELIVERED", "CANCELLED"];
+const ORDER_STATUSES = [
+  "PENDING",
+  "CONFIRMED",
+  "PROCESSING",
+  "SHIPPED",
+  "DELIVERED",
+  "CANCELLED",
+];
 
 export async function seedOrders(
   ctx: SeedContext,
@@ -11,20 +18,24 @@ export async function seedOrders(
   productIds: string[],
   couponIds: string[],
 ): Promise<string[]> {
-
   const products = await ctx.prisma.product.findMany({
     where: { id: { in: productIds } },
     select: { id: true, price: true, stock: true },
   });
 
   const productMap = new Map(products.map((p) => [p.id, p]));
-  const orderIds = Array.from({ length: Math.floor(userIds.length * 3) }, () => randomUUID());
+  const orderIds = Array.from({ length: Math.floor(userIds.length * 3) }, () =>
+    randomUUID(),
+  );
+
   const orderData: Array<{
     id: string;
     userId: string;
     status: string;
+    shippingAddress: string;
     couponId: string | null;
   }> = [];
+
   const itemData: Array<{
     orderId: string;
     productId: string;
@@ -36,9 +47,14 @@ export async function seedOrders(
     const status = faker.helpers.arrayElement(ORDER_STATUSES);
     const userId = faker.helpers.arrayElement(userIds);
     const useCoupon = Math.random() > 0.7;
+
+    const shippingAddress = faker.location.streetAddress({
+      useFullAddress: true,
+    });
+
     const couponId = useCoupon ? faker.helpers.arrayElement(couponIds) : null;
 
-    orderData.push({ id: orderId, userId, status, couponId });
+    orderData.push({ id: orderId, userId, status, couponId, shippingAddress });
 
     const itemCount = faker.number.int({ min: 1, max: 5 });
 
@@ -87,7 +103,9 @@ export async function seedOrders(
       const coupon = couponMap.get(order.couponId);
       if (coupon) {
         if (coupon.discountPercent > 0) {
-          discount = Math.round(totals.total * (coupon.discountPercent / 100) * 100) / 100;
+          discount =
+            Math.round(totals.total * (coupon.discountPercent / 100) * 100) /
+            100;
         } else if (coupon.discountAmount > 0) {
           discount = coupon.discountAmount;
         }

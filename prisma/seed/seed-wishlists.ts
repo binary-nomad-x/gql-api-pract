@@ -8,8 +8,6 @@ export async function seedWishlists(
   userIds: string[],
   productIds: string[],
 ): Promise<void> {
-  
-    arr[Math.floor(Math.random() * arr.length)];
 
   for (const userId of userIds) {
     const wishlistCount = faker.number.int({ min: 1, max: 2 });

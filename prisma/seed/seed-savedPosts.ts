@@ -1,3 +1,4 @@
+import { faker } from "@faker-js/faker";
 import type { SeedContext, SeedCounts } from "./types.js";
 
 export async function seedSavedPosts(

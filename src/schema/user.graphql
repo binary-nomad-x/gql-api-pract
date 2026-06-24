@@ -2,6 +2,7 @@ type User {
   id: ID!
   email: String!
   name: String
+  age: Int
   role: Role!
   profile: Profile
   posts: [Post!]!
@@ -43,6 +44,7 @@ fragment UserBasic on User {
   id
   email
   name
+  age
   role
 }
 

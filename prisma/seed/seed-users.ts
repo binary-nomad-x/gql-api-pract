@@ -13,30 +13,35 @@ export async function seedUsers(
     {
       email: "alice@test.com",
       name: "Alice Johnson",
+      age: 34,
       role: "ADMIN",
       password: passwordHash,
     },
     {
       email: "bob@test.com",
       name: "Bob Smith",
+      age: 29,
       role: "USER",
       password: passwordHash,
     },
     {
       email: "charlie@test.com",
       name: "Charlie Brown",
+      age: 13,
       role: "USER",
       password: passwordHash,
     },
     {
       email: "diana@test.com",
       name: "Diana Prince",
+      age: 37,
       role: "MODERATOR",
       password: passwordHash,
     },
     {
       email: "eve@test.com",
       name: "Eve Adams",
+      age: 20,
       role: "USER",
       password: passwordHash,
     },
@@ -46,6 +51,7 @@ export async function seedUsers(
     userData.push({
       email: faker.internet.email().toLowerCase(),
       name: faker.person.fullName(),
+      age: faker.number.int({ min: 20, max: 45 }),
       role: "USER",
       password: passwordHash,
     });
@@ -72,9 +78,7 @@ export async function seedUsers(
 
   const userIds = users.map((u) => u.id);
   const testAccountEmails = userData.slice(0, 5).map((u) => u.email);
-  console.log(
-    `  Test accounts (password123): ${testAccountEmails.join(", ")}`,
-  );
+  console.log(`  Test accounts (password123): ${testAccountEmails.join(", ")}`);
 
   return userIds;
 }

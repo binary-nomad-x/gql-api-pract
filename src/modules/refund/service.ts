@@ -1,17 +1,16 @@
-import type { Prisma } from "@prisma/client";
+import type { Prisma, PrismaClient } from "@prisma/client";
 import type { CreateRefundInput, RefundFilterInput } from "./inputs.js";
-import { BaseService } from "@gql-prisma-api/lib/BaseService.js";
 import { requireAuth, requireOwner } from "@gql-prisma-api/utils/errors.js";
 import { triggerNovuWorkflow } from "@gql-prisma-api/utils/novu.js";
 
 export class RefundService {
-  constructor(private readonly base: BaseService) {}
+  constructor(private readonly core: PrismaClient) {}
   resolveRefundPayment(paymentId: string) {
-    return this.base.core.payment.findUnique({ where: { id: paymentId } });
+    return this.core.payment.findUnique({ where: { id: paymentId } });
   }
 
   resolveRefundOrder(orderId: string) {
-    return this.base.core.order.findUnique({ where: { id: orderId } });
+    return this.core.order.findUnique({ where: { id: orderId } });
   }
 
   async createRefund(
@@ -19,10 +18,10 @@ export class RefundService {
     input: CreateRefundInput,
   ) {
     requireAuth(userId);
-    const order = await this.base.core.order.findUnique({ where: { id: input.orderId } });
+    const order = await this.core.order.findUnique({ where: { id: input.orderId } });
     if (!order) throw new Error("Order not found");
     requireOwner(order.userId, userId);
-    return this.base.core.refund.create({
+    return this.core.refund.create({
       data: {
         paymentId: input.paymentId,
         orderId: input.orderId,
@@ -38,25 +37,25 @@ export class RefundService {
     status: string,
   ) {
     requireAuth(userId);
-    const refund = await this.base.core.refund.findUnique({
+    const refund = await this.core.refund.findUnique({
       where: { id },
       include: { payment: true, order: true },
     });
     if (!refund) throw new Error("Refund not found");
     requireOwner(refund.order.userId, userId);
 
-    const updated = await this.base.core.refund.update({
+    const updated = await this.core.refund.update({
       where: { id },
       data: { status },
     });
 
     if (status === "COMPLETED") {
-      const completedRefunds = await this.base.core.refund.findMany({
+      const completedRefunds = await this.core.refund.findMany({
         where: { paymentId: refund.paymentId, status: "COMPLETED" },
       });
       const totalRefunded = completedRefunds.reduce((s, r) => s + r.amount, 0);
       if (totalRefunded >= refund.payment.amount) {
-        await this.base.core.payment.update({
+        await this.core.payment.update({
           where: { id: refund.paymentId },
           data: { status: "REFUNDED" },
         });
@@ -85,7 +84,7 @@ export class RefundService {
 
     const where: Prisma.RefundWhereInput = { AND: conditions };
 
-    return this.base.core.refund.findMany({
+    return this.core.refund.findMany({
       where,
       take: args.limit ?? 20,
       skip: args.offset ?? 0,
@@ -98,6 +97,6 @@ export class RefundService {
     id: string,
   ) {
     requireAuth(userId);
-    return this.base.core.refund.findFirst({ where: { id, order: { userId: userId! } } });
+    return this.core.refund.findFirst({ where: { id, order: { userId: userId! } } });
   }
 }

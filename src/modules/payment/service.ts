@@ -1,17 +1,16 @@
-import type { Prisma } from "@prisma/client";
+import type { Prisma, PrismaClient } from "@prisma/client";
 import type { ProcessPaymentInput, PaymentFilterInput } from "./inputs.js";
-import { BaseService } from "@gql-prisma-api/lib/BaseService.js";
 import { requireAuth, requireOwner } from "@gql-prisma-api/utils/errors.js";
 import { triggerNovuWorkflow } from "@gql-prisma-api/utils/novu.js";
 
 export class PaymentService {
-  constructor(private readonly base: BaseService) {}
+  constructor(private readonly core: PrismaClient) {}
   resolvePaymentOrder(orderId: string) {
-    return this.base.core.order.findUnique({ where: { id: orderId } });
+    return this.core.order.findUnique({ where: { id: orderId } });
   }
 
   resolvePaymentRefunds(paymentId: string) {
-    return this.base.core.refund.findMany({ where: { paymentId } });
+    return this.core.refund.findMany({ where: { paymentId } });
   }
 
   async processPayment(
@@ -19,17 +18,17 @@ export class PaymentService {
     input: ProcessPaymentInput,
   ) {
     requireAuth(userId);
-    const order = await this.base.core.order.findUnique({ where: { id: input.orderId } });
+    const order = await this.core.order.findUnique({ where: { id: input.orderId } });
     if (!order) throw new Error("Order not found");
     requireOwner(order.userId, userId);
 
-    const existing = await this.base.core.payment.findUnique({
+    const existing = await this.core.payment.findUnique({
       where: { orderId: input.orderId },
     });
     if (existing) throw new Error("Payment already exists");
 
     const transactionId = `TXN-${Date.now()}-${Math.random().toString(36).slice(2, 8).toUpperCase()}`;
-    const payment = await this.base.core.payment.create({
+    const payment = await this.core.payment.create({
       data: {
         orderId: input.orderId,
         amount: order.totalAmount,
@@ -61,7 +60,7 @@ export class PaymentService {
 
     const where: Prisma.PaymentWhereInput = { AND: conditions };
 
-    return this.base.core.payment.findMany({
+    return this.core.payment.findMany({
       where,
       take: args.limit ?? 20,
       skip: args.offset ?? 0,
@@ -74,7 +73,7 @@ export class PaymentService {
     id: string,
   ) {
     requireAuth(userId);
-    return this.base.core.payment.findFirst({
+    return this.core.payment.findFirst({
       where: { id, order: { userId: userId! } },
     });
   }

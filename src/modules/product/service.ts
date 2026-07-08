@@ -1,43 +1,42 @@
-import type { Prisma } from "@prisma/client";
-import { BaseService } from "@gql-prisma-api/lib/BaseService.js";
+import type { Prisma, PrismaClient } from "@prisma/client";
 import type { CreateProductInput, UpdateProductInput, ProductFilterInput } from "./inputs.js";
 import { requireAuth, requireOwner } from "@gql-prisma-api/utils/errors.js";
 
 export class ProductService {
-  constructor(private readonly base: BaseService) {}
+  constructor(private readonly core: PrismaClient) {}
   resolveProductSeller(productId: string) {
-    return this.base.core.user.findUnique({ where: { id: productId } });
+    return this.core.user.findUnique({ where: { id: productId } });
   }
 
   resolveProductCategory(productId: string) {
-    return this.base.core.category.findUnique({ where: { id: productId } });
+    return this.core.category.findUnique({ where: { id: productId } });
   }
 
   resolveProductOrderItems(productId: string) {
-    return this.base.core.orderItem.findMany({ where: { productId } });
+    return this.core.orderItem.findMany({ where: { productId } });
   }
 
   resolveProductReviews(productId: string) {
-    return this.base.core.review.findMany({ where: { productId } });
+    return this.core.review.findMany({ where: { productId } });
   }
 
   resolveProductImages(productId: string) {
-    return this.base.core.productImage.findMany({
+    return this.core.productImage.findMany({
       where: { productId },
       orderBy: { sortOrder: "asc" },
     });
   }
 
   resolveProductWishlistItems(productId: string) {
-    return this.base.core.wishlistItem.findMany({ where: { productId } });
+    return this.core.wishlistItem.findMany({ where: { productId } });
   }
 
   resolveProductReviewCount(productId: string) {
-    return this.base.core.review.count({ where: { productId } });
+    return this.core.review.count({ where: { productId } });
   }
 
   async resolveProductAverageRating(productId: string) {
-    const agg = await this.base.core.review.aggregate({
+    const agg = await this.core.review.aggregate({
       where: { productId },
       _avg: { rating: true },
     });
@@ -57,7 +56,7 @@ export class ProductService {
       sellerId: userId!,
       category: categorySlug ? { connect: { slug: categorySlug } } : undefined,
     }) as unknown as Prisma.ProductCreateInput;
-    return this.base.core.product.create({ data: createData });
+    return this.core.product.create({ data: createData });
   }
 
   async updateProduct(
@@ -65,7 +64,7 @@ export class ProductService {
     id: string,
     input: UpdateProductInput,
   ) {
-    const product = await this.base.core.product.findUnique({ where: { id } });
+    const product = await this.core.product.findUnique({ where: { id } });
     if (!product) throw new Error("Product not found");
     requireOwner(product.sellerId, userId);
     const { categorySlug, ...data } = input;
@@ -80,17 +79,17 @@ export class ProductService {
           }
         : {}),
     }) as unknown as Prisma.ProductUpdateInput;
-    return this.base.core.product.update({ where: { id }, data: updateData });
+    return this.core.product.update({ where: { id }, data: updateData });
   }
 
   async deleteProduct(
     userId: string | undefined,
     id: string,
   ) {
-    const product = await this.base.core.product.findUnique({ where: { id } });
+    const product = await this.core.product.findUnique({ where: { id } });
     if (!product) throw new Error("Product not found");
     requireOwner(product.sellerId, userId);
-    await this.base.core.product.delete({ where: { id } });
+    await this.core.product.delete({ where: { id } });
     return true;
   }
 
@@ -119,7 +118,7 @@ export class ProductService {
 
     const where: Prisma.ProductWhereInput = conditions.length > 0 ? { AND: conditions } : {};
 
-    return this.base.core.product.findMany({
+    return this.core.product.findMany({
       where,
       take: args.limit ?? 20,
       skip: args.offset ?? 0,
@@ -128,10 +127,10 @@ export class ProductService {
   }
 
   getProduct(id: string) {
-    return this.base.core.product.findUnique({ where: { id } });
+    return this.core.product.findUnique({ where: { id } });
   }
 
   getProductBySku(sku: string) {
-    return this.base.core.product.findUnique({ where: { sku } });
+    return this.core.product.findUnique({ where: { sku } });
   }
 }

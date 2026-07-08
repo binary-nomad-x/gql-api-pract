@@ -1,8 +1,7 @@
 import type { PrismaClient } from "@prisma/client";
-import { BaseService } from "@gql-prisma-api/lib/BaseService.js";
 
 export class StatsService {
-  constructor(private readonly base: BaseService) {}
+  constructor(private readonly core: PrismaClient) {}
   async getStats() {
     const [
       totalUsers,
@@ -27,27 +26,27 @@ export class StatsService {
       totalSavedPosts,
       totalPostViews,
     ] = await Promise.all([
-      this.base.core.user.count(),
-      this.base.core.post.count(),
-      this.base.core.post.count({ where: { published: true } }),
-      this.base.core.tag.count(),
-      this.base.core.category.count(),
-      this.base.core.comment.count(),
-      this.base.core.like.count(),
-      this.base.core.product.count(),
-      this.base.core.order.count(),
-      this.base.core.payment.count(),
-      this.base.core.refund.count(),
-      this.base.core.review.count(),
-      this.base.core.address.count(),
-      this.base.core.wishlist.count(),
-      this.base.core.cart.count(),
-      this.base.core.coupon.count(),
-      this.base.core.shipment.count(),
-      this.base.core.notification.count(),
-      this.base.core.follow.count(),
-      this.base.core.savedPost.count(),
-      this.base.core.postView.count(),
+      this.core.user.count(),
+      this.core.post.count(),
+      this.core.post.count({ where: { published: true } }),
+      this.core.tag.count(),
+      this.core.category.count(),
+      this.core.comment.count(),
+      this.core.like.count(),
+      this.core.product.count(),
+      this.core.order.count(),
+      this.core.payment.count(),
+      this.core.refund.count(),
+      this.core.review.count(),
+      this.core.address.count(),
+      this.core.wishlist.count(),
+      this.core.cart.count(),
+      this.core.coupon.count(),
+      this.core.shipment.count(),
+      this.core.notification.count(),
+      this.core.follow.count(),
+      this.core.savedPost.count(),
+      this.core.postView.count(),
     ]);
     return {
       totalUsers,

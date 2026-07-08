@@ -1,32 +1,32 @@
+import type { PrismaClient } from "@prisma/client";
 import type { CreateWishlistInput, AddToWishlistInput } from "./inputs.js";
 import { requireAuth } from "@gql-prisma-api/utils/errors.js";
-import { BaseService } from "@gql-prisma-api/lib/BaseService.js";
 
 export class WishlistService {
-  constructor(private readonly base: BaseService) {}
+  constructor(private readonly core: PrismaClient) {}
 
   // --- Type-field resolver functions ---
   resolveWishlistUser(userId: string) {
-    return this.base.core.user.findUnique({ where: { id: userId } });
+    return this.core.user.findUnique({ where: { id: userId } });
   }
 
   resolveWishlistItems(wishlistId: string) {
-    return this.base.core.wishlistItem.findMany({
+    return this.core.wishlistItem.findMany({
       where: { wishlistId },
       include: { product: true },
     });
   }
 
   resolveWishlistItemCount(wishlistId: string) {
-    return this.base.core.wishlistItem.count({ where: { wishlistId } });
+    return this.core.wishlistItem.count({ where: { wishlistId } });
   }
 
   resolveWishlistItemWishlist(wishlistId: string) {
-    return this.base.core.wishlist.findUnique({ where: { id: wishlistId } });
+    return this.core.wishlist.findUnique({ where: { id: wishlistId } });
   }
 
   resolveWishlistItemProduct(productId: string) {
-    return this.base.core.product.findUnique({ where: { id: productId } });
+    return this.core.product.findUnique({ where: { id: productId } });
   }
 
   // --- Existing business logic functions ---
@@ -35,7 +35,7 @@ export class WishlistService {
     input: CreateWishlistInput,
   ) {
     requireAuth(userId);
-    return this.base.core.wishlist.create({
+    return this.core.wishlist.create({
       data: { name: input.name ?? "Default", userId: userId! },
     });
   }
@@ -45,18 +45,18 @@ export class WishlistService {
     input: AddToWishlistInput,
   ) {
     requireAuth(userId);
-    const wishlist = await this.base.core.wishlist.findFirst({
+    const wishlist = await this.core.wishlist.findFirst({
       where: { id: input.wishlistId, userId: userId! },
     });
     if (!wishlist) throw new Error("Wishlist not found");
 
-    await this.base.core.wishlistItem.upsert({
+    await this.core.wishlistItem.upsert({
       where: { wishlistId_productId: { wishlistId: input.wishlistId, productId: input.productId } },
       update: { note: input.note ?? null },
       create: { wishlistId: input.wishlistId, productId: input.productId, note: input.note ?? null },
     });
 
-    return this.base.core.wishlist.findUnique({ where: { id: input.wishlistId } });
+    return this.core.wishlist.findUnique({ where: { id: input.wishlistId } });
   }
 
   async removeFromWishlist(
@@ -65,11 +65,11 @@ export class WishlistService {
     productId: string,
   ) {
     requireAuth(userId);
-    const item = await this.base.core.wishlistItem.findUnique({
+    const item = await this.core.wishlistItem.findUnique({
       where: { wishlistId_productId: { wishlistId, productId } },
     });
-    if (item) await this.base.core.wishlistItem.delete({ where: { id: item.id } });
-    return this.base.core.wishlist.findUnique({ where: { id: wishlistId } });
+    if (item) await this.core.wishlistItem.delete({ where: { id: item.id } });
+    return this.core.wishlist.findUnique({ where: { id: wishlistId } });
   }
 
   async deleteWishlist(
@@ -77,17 +77,17 @@ export class WishlistService {
     id: string,
   ) {
     requireAuth(userId);
-    await this.base.core.wishlist.deleteMany({ where: { id, userId: userId! } });
+    await this.core.wishlist.deleteMany({ where: { id, userId: userId! } });
     return true;
   }
 
   getMyWishlists(userId: string | undefined) {
     requireAuth(userId);
-    return this.base.core.wishlist.findMany({ where: { userId: userId! } });
+    return this.core.wishlist.findMany({ where: { userId: userId! } });
   }
 
   async getWishlist(userId: string | undefined, id: string) {
     requireAuth(userId);
-    return this.base.core.wishlist.findFirst({ where: { id, userId: userId! } });
+    return this.core.wishlist.findFirst({ where: { id, userId: userId! } });
   }
 }

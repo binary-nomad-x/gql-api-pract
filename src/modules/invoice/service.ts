@@ -1,14 +1,13 @@
-import type { Prisma } from "@prisma/client";
-import { BaseService } from "@gql-prisma-api/lib/BaseService.js";
+import type { Prisma, PrismaClient } from "@prisma/client";
 import type { CreateInvoiceInput, InvoiceFilterInput } from "./inputs.js";
 import { requireAuth } from "@gql-prisma-api/utils/errors.js";
 import { triggerNovuWorkflow } from "@gql-prisma-api/utils/novu.js";
 import { logger } from "@gql-prisma-api/utils/logger.js";
 
 export class InvoiceService {
-  constructor(private readonly base: BaseService) {}
+  constructor(private readonly core: PrismaClient) {}
   resolveInvoiceOrder(orderId: string) {
-    return this.base.core.order.findUnique({ where: { id: orderId } });
+    return this.core.order.findUnique({ where: { id: orderId } });
   }
 
   async findMyInvoices(
@@ -24,7 +23,7 @@ export class InvoiceService {
 
     const where: Prisma.InvoiceWhereInput = { AND: conditions };
 
-    return this.base.core.invoice.findMany({
+    return this.core.invoice.findMany({
       where,
       orderBy: { issuedAt: "desc" },
       take: filter?.limit ?? 20,
@@ -38,7 +37,7 @@ export class InvoiceService {
     id: string,
   ) {
     requireAuth(userId);
-    const invoice = await this.base.core.invoice.findUnique({
+    const invoice = await this.core.invoice.findUnique({
       where: { id },
       include: { order: true },
     });
@@ -51,7 +50,7 @@ export class InvoiceService {
     input: CreateInvoiceInput,
   ) {
     requireAuth(userId);
-    const order = await this.base.core.order.findUnique({
+    const order = await this.core.order.findUnique({
       where: { id: input.orderId },
       include: { user: true },
     });
@@ -60,7 +59,7 @@ export class InvoiceService {
 
     const invoiceNumber = `INV-${Date.now()}-${Math.random().toString(36).slice(2, 8).toUpperCase()}`;
 
-    const invoice = await this.base.core.invoice.create({
+    const invoice = await this.core.invoice.create({
       data: {
         orderId: input.orderId,
         invoiceNumber,
@@ -70,7 +69,7 @@ export class InvoiceService {
       include: { order: true },
     });
 
-    await this.base.core.notification.create({
+    await this.core.notification.create({
       data: {
         userId: order.userId,
         type: "INVOICE_CREATED",
@@ -89,19 +88,19 @@ export class InvoiceService {
     id: string,
   ) {
     requireAuth(userId);
-    const invoice = await this.base.core.invoice.findUnique({
+    const invoice = await this.core.invoice.findUnique({
       where: { id },
       include: { order: { include: { user: true } } },
     });
     if (!invoice) throw new Error("Invoice not found");
 
-    const updated = await this.base.core.invoice.update({
+    const updated = await this.core.invoice.update({
       where: { id },
       data: { status: "PAID", paidAt: new Date() },
       include: { order: true },
     });
 
-    await this.base.core.notification.create({
+    await this.core.notification.create({
       data: {
         userId: invoice.order.userId,
         type: "INVOICE_PAID",
@@ -120,11 +119,11 @@ export class InvoiceService {
     id: string,
   ) {
     requireAuth(userId);
-    const invoice = await this.base.core.invoice.findUnique({ where: { id } });
+    const invoice = await this.core.invoice.findUnique({ where: { id } });
     if (!invoice) throw new Error("Invoice not found");
     if (invoice.status === "PAID") throw new Error("Cannot cancel a paid invoice");
 
-    const updated = await this.base.core.invoice.update({
+    const updated = await this.core.invoice.update({
       where: { id },
       data: { status: "CANCELLED" },
       include: { order: true },

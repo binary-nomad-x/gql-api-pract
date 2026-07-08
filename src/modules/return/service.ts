@@ -1,18 +1,17 @@
-import type { Prisma } from "@prisma/client";
-import { BaseService } from "@gql-prisma-api/lib/BaseService.js";
+import type { Prisma, PrismaClient } from "@prisma/client";
 import type { CreateReturnInput, ReturnFilterInput } from "./inputs.js";
 import { requireAuth } from "@gql-prisma-api/utils/errors.js";
 import { triggerNovuWorkflow } from "@gql-prisma-api/utils/novu.js";
 import { logger } from "@gql-prisma-api/utils/logger.js";
 
 export class ReturnService {
-  constructor(private readonly base: BaseService) {}
+  constructor(private readonly core: PrismaClient) {}
   resolveReturnRequestOrderItem(orderItemId: string) {
-    return this.base.core.orderItem.findUnique({ where: { id: orderItemId } });
+    return this.core.orderItem.findUnique({ where: { id: orderItemId } });
   }
 
   resolveReturnRequestUser(userId: string) {
-    return this.base.core.user.findUnique({ where: { id: userId } });
+    return this.core.user.findUnique({ where: { id: userId } });
   }
 
   async findMyReturns(
@@ -28,7 +27,7 @@ export class ReturnService {
 
     const where: Prisma.ReturnRequestWhereInput = { AND: conditions };
 
-    return this.base.core.returnRequest.findMany({
+    return this.core.returnRequest.findMany({
       where,
       orderBy: { requestedAt: "desc" },
       take: filter?.limit ?? 20,
@@ -42,7 +41,7 @@ export class ReturnService {
     id: string,
   ) {
     requireAuth(userId);
-    const record = await this.base.core.returnRequest.findUnique({
+    const record = await this.core.returnRequest.findUnique({
       where: { id },
       include: { orderItem: { include: { product: true, order: true } } },
     });
@@ -55,7 +54,7 @@ export class ReturnService {
     input: CreateReturnInput,
   ) {
     requireAuth(userId);
-    const orderItem = await this.base.core.orderItem.findUnique({
+    const orderItem = await this.core.orderItem.findUnique({
       where: { id: input.orderItemId },
       include: { order: { include: { user: true } }, product: true },
     });
@@ -63,7 +62,7 @@ export class ReturnService {
     if (orderItem.order.userId !== userId) throw new Error("Unauthorized");
     if (input.quantity > orderItem.quantity) throw new Error("Return quantity exceeds ordered quantity");
 
-    const record = await this.base.core.returnRequest.create({
+    const record = await this.core.returnRequest.create({
       data: {
         orderItemId: input.orderItemId,
         userId,
@@ -73,7 +72,7 @@ export class ReturnService {
       include: { orderItem: true, user: true },
     });
 
-    await this.base.core.notification.create({
+    await this.core.notification.create({
       data: {
         userId: orderItem.order.userId,
         type: "RETURN_REQUESTED",
@@ -92,19 +91,19 @@ export class ReturnService {
     id: string,
   ) {
     requireAuth(userId);
-    const record = await this.base.core.returnRequest.findUnique({
+    const record = await this.core.returnRequest.findUnique({
       where: { id },
       include: { orderItem: { include: { order: { include: { user: true } } } } },
     });
     if (!record) throw new Error("Return request not found");
 
-    const updated = await this.base.core.returnRequest.update({
+    const updated = await this.core.returnRequest.update({
       where: { id },
       data: { status: "APPROVED", resolvedAt: new Date() },
       include: { orderItem: true, user: true },
     });
 
-    await this.base.core.notification.create({
+    await this.core.notification.create({
       data: {
         userId: record.userId,
         type: "RETURN_APPROVED",
@@ -123,19 +122,19 @@ export class ReturnService {
     id: string,
   ) {
     requireAuth(userId);
-    const record = await this.base.core.returnRequest.findUnique({
+    const record = await this.core.returnRequest.findUnique({
       where: { id },
       include: { orderItem: { include: { order: { include: { user: true } } } } },
     });
     if (!record) throw new Error("Return request not found");
 
-    const updated = await this.base.core.returnRequest.update({
+    const updated = await this.core.returnRequest.update({
       where: { id },
       data: { status: "REJECTED", resolvedAt: new Date() },
       include: { orderItem: true, user: true },
     });
 
-    await this.base.core.notification.create({
+    await this.core.notification.create({
       data: {
         userId: record.userId,
         type: "RETURN_REJECTED",

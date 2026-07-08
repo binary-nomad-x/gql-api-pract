@@ -1,18 +1,18 @@
-import { BaseService } from "@gql-prisma-api/lib/BaseService.js";
+import type { PrismaClient } from "@prisma/client";
 import { requireAuth } from "@gql-prisma-api/utils/errors.js";
 import { logger } from "@gql-prisma-api/utils/logger.js";
 
 export class ConversationService {
-  constructor(private readonly base: BaseService) {}
+  constructor(private readonly core: PrismaClient) {}
   resolveConversationParticipants(conversationId: string) {
-    return this.base.core.conversationParticipant.findMany({
+    return this.core.conversationParticipant.findMany({
       where: { conversationId },
       include: { user: true },
     });
   }
 
   resolveConversationMessages(conversationId: string, limit?: number, offset?: number) {
-    return this.base.core.message.findMany({
+    return this.core.message.findMany({
       where: { conversationId },
       orderBy: { createdAt: "asc" },
       take: limit ?? 50,
@@ -21,30 +21,30 @@ export class ConversationService {
   }
 
   resolveConversationLastMessage(conversationId: string) {
-    return this.base.core.message.findFirst({
+    return this.core.message.findFirst({
       where: { conversationId },
       orderBy: { createdAt: "desc" },
     });
   }
 
   resolveConversationMessageCount(conversationId: string) {
-    return this.base.core.message.count({ where: { conversationId } });
+    return this.core.message.count({ where: { conversationId } });
   }
 
   resolveConversationParticipantConversation(conversationId: string) {
-    return this.base.core.conversation.findUnique({ where: { id: conversationId } });
+    return this.core.conversation.findUnique({ where: { id: conversationId } });
   }
 
   resolveConversationParticipantUser(userId: string) {
-    return this.base.core.user.findUnique({ where: { id: userId } });
+    return this.core.user.findUnique({ where: { id: userId } });
   }
 
   resolveMessageConversation(conversationId: string) {
-    return this.base.core.conversation.findUnique({ where: { id: conversationId } });
+    return this.core.conversation.findUnique({ where: { id: conversationId } });
   }
 
   resolveMessageSender(senderId: string) {
-    return this.base.core.user.findUnique({ where: { id: senderId } });
+    return this.core.user.findUnique({ where: { id: senderId } });
   }
 
   async startConversation(
@@ -55,10 +55,10 @@ export class ConversationService {
     requireAuth(userId);
     if (targetUserId === userId)
       throw new Error("Cannot start conversation with yourself");
-    const target = await this.base.core.user.findUnique({ where: { id: targetUserId } });
+    const target = await this.core.user.findUnique({ where: { id: targetUserId } });
     if (!target) throw new Error("User not found");
 
-    const conv = await this.base.core.conversation.create({
+    const conv = await this.core.conversation.create({
       data: {
         title,
         participants: {
@@ -87,17 +87,17 @@ export class ConversationService {
     content: string,
   ) {
     requireAuth(userId);
-    const participant = await this.base.core.conversationParticipant.findUnique({
+    const participant = await this.core.conversationParticipant.findUnique({
       where: { conversationId_userId: { conversationId, userId: userId! } },
     });
 
     if (!participant) throw new Error("Not a participant of this conversation");
-    const message = await this.base.core.message.create({
+    const message = await this.core.message.create({
       data: { conversationId, senderId: userId!, content },
       include: { sender: true },
     });
 
-    await this.base.core.conversationParticipant.updateMany({
+    await this.core.conversationParticipant.updateMany({
       where: { conversationId, userId: userId! },
       data: { lastReadAt: new Date() },
     });
@@ -116,7 +116,7 @@ export class ConversationService {
     conversationId: string,
   ) {
     requireAuth(userId);
-    await this.base.core.conversationParticipant.updateMany({
+    await this.core.conversationParticipant.updateMany({
       where: { conversationId, userId: userId! },
       data: { lastReadAt: new Date() },
     });
@@ -125,7 +125,7 @@ export class ConversationService {
 
   getMyConversations(userId: string | undefined) {
     requireAuth(userId);
-    return this.base.core.conversation.findMany({
+    return this.core.conversation.findMany({
       where: { participants: { some: { userId: userId! } } },
       include: { participants: { include: { user: true } } },
       orderBy: { updatedAt: "desc" },
@@ -134,7 +134,7 @@ export class ConversationService {
 
   async getConversation(userId: string | undefined, id: string) {
     requireAuth(userId);
-    return this.base.core.conversation.findFirst({
+    return this.core.conversation.findFirst({
       where: { id, participants: { some: { userId: userId! } } },
       include: { participants: { include: { user: true } } },
     });
@@ -147,7 +147,7 @@ export class ConversationService {
     offset?: number,
   ) {
     requireAuth(userId);
-    return this.base.core.message.findMany({
+    return this.core.message.findMany({
       where: {
         conversationId,
         conversation: { participants: { some: { userId: userId! } } },

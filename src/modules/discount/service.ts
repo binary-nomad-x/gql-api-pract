@@ -1,7 +1,6 @@
-import type { Prisma } from "@prisma/client";
+import type { Prisma, PrismaClient } from "@prisma/client";
 import type { CreateDiscountInput, UpdateDiscountInput } from "./inputs.js";
 import { requireAuth } from "@gql-prisma-api/utils/errors.js";
-import { BaseService } from "@gql-prisma-api/lib/BaseService.js";
 
 // --- Helper functions ---
 function toDiscountCreate(input: CreateDiscountInput): Prisma.DiscountUncheckedCreateInput {
@@ -28,11 +27,11 @@ function toDiscountUpdate(input: UpdateDiscountInput): Prisma.DiscountUpdateInpu
 }
 
 export class DiscountService {
-  constructor(private readonly base: BaseService) {}
+  constructor(private readonly core: PrismaClient) {}
 
   // --- Type-field resolver functions ---
   resolveDiscountProduct(productId: string) {
-    return this.base.core.product.findUnique({ where: { id: productId } });
+    return this.core.product.findUnique({ where: { id: productId } });
   }
 
   // --- Existing business logic functions ---
@@ -41,9 +40,9 @@ export class DiscountService {
     input: CreateDiscountInput,
   ) {
     requireAuth(userId);
-    const product = await this.base.core.product.findUnique({ where: { id: input.productId } });
+    const product = await this.core.product.findUnique({ where: { id: input.productId } });
     if (!product) throw new Error("Product not found");
-    return this.base.core.discount.create({ data: toDiscountCreate(input) });
+    return this.core.discount.create({ data: toDiscountCreate(input) });
   }
 
   async updateDiscount(
@@ -52,7 +51,7 @@ export class DiscountService {
     input: UpdateDiscountInput,
   ) {
     requireAuth(userId);
-    return this.base.core.discount.update({ where: { id }, data: toDiscountUpdate(input) });
+    return this.core.discount.update({ where: { id }, data: toDiscountUpdate(input) });
   }
 
   async deleteDiscount(
@@ -60,13 +59,13 @@ export class DiscountService {
     id: string,
   ) {
     requireAuth(userId);
-    await this.base.core.discount.delete({ where: { id } });
+    await this.core.discount.delete({ where: { id } });
     return true;
   }
 
   getActiveDiscounts() {
     const now = new Date();
-    return this.base.core.discount.findMany({
+    return this.core.discount.findMany({
       where: { isActive: true, startDate: { lte: now }, endDate: { gte: now } },
       orderBy: { createdAt: "desc" },
     });
@@ -74,7 +73,7 @@ export class DiscountService {
 
   getProductDiscounts(productId: string) {
     const now = new Date();
-    return this.base.core.discount.findMany({
+    return this.core.discount.findMany({
       where: { productId, isActive: true, startDate: { lte: now }, endDate: { gte: now } },
     });
   }

@@ -1,5 +1,4 @@
-import type { Prisma } from "@prisma/client";
-import { BaseService } from "@gql-prisma-api/lib/BaseService.js";
+import type { Prisma, PrismaClient } from "@prisma/client";
 import type {
   CreateTicketInput,
   TicketFilterInput,
@@ -24,7 +23,7 @@ export function resolveTicketReplyUser(parent: Record<string, unknown>) {
 }
 
 export class SupportService {
-  constructor(private readonly base: BaseService) {}
+  constructor(private readonly core: PrismaClient) {}
   async findMyTickets(
     userId: string | undefined,
     filter?: TicketFilterInput,
@@ -38,7 +37,7 @@ export class SupportService {
 
     const where: Prisma.SupportTicketWhereInput = { AND: conditions };
 
-    return this.base.core.supportTicket.findMany({
+    return this.core.supportTicket.findMany({
       where,
       orderBy: { updatedAt: "desc" },
       take: filter?.limit ?? 20,
@@ -54,7 +53,7 @@ export class SupportService {
     id: string,
   ) {
     requireAuth(userId);
-    const ticket = await this.base.core.supportTicket.findUnique({
+    const ticket = await this.core.supportTicket.findUnique({
       where: { id },
       include: {
         replies: { include: { user: true }, orderBy: { createdAt: "asc" } },
@@ -69,7 +68,7 @@ export class SupportService {
     input: CreateTicketInput,
   ) {
     requireAuth(userId);
-    const ticket = await this.base.core.supportTicket.create({
+    const ticket = await this.core.supportTicket.create({
       data: {
         userId,
         subject: input.subject,
@@ -80,7 +79,7 @@ export class SupportService {
       include: { replies: true },
     });
 
-    await this.base.core.notification.create({
+    await this.core.notification.create({
       data: {
         userId,
         type: "TICKET_CREATED",
@@ -102,15 +101,15 @@ export class SupportService {
     input: AddTicketReplyInput,
   ) {
     requireAuth(userId);
-    const ticket = await this.base.core.supportTicket.findUnique({
+    const ticket = await this.core.supportTicket.findUnique({
       where: { id: input.ticketId },
     });
     if (!ticket) throw new Error("Ticket not found");
 
-    const user = await this.base.core.user.findUnique({ where: { id: userId } });
+    const user = await this.core.user.findUnique({ where: { id: userId } });
     const isStaff = user?.role === "ADMIN" || user?.role === "MODERATOR";
 
-    const reply = await this.base.core.ticketReply.create({
+    const reply = await this.core.ticketReply.create({
       data: {
         ticketId: input.ticketId,
         userId,
@@ -120,7 +119,7 @@ export class SupportService {
       include: { ticket: true, user: true },
     });
 
-    await this.base.core.supportTicket.update({
+    await this.core.supportTicket.update({
       where: { id: input.ticketId },
       data: { status: "IN_PROGRESS" },
     });
@@ -138,10 +137,10 @@ export class SupportService {
     id: string,
   ) {
     requireAuth(userId);
-    const ticket = await this.base.core.supportTicket.findUnique({ where: { id } });
+    const ticket = await this.core.supportTicket.findUnique({ where: { id } });
     if (!ticket) throw new Error("Ticket not found");
 
-    const updated = await this.base.core.supportTicket.update({
+    const updated = await this.core.supportTicket.update({
       where: { id },
       data: { status: "RESOLVED" },
       include: { replies: { include: { user: true } } },
@@ -157,10 +156,10 @@ export class SupportService {
     id: string,
   ) {
     requireAuth(userId);
-    const ticket = await this.base.core.supportTicket.findUnique({ where: { id } });
+    const ticket = await this.core.supportTicket.findUnique({ where: { id } });
     if (!ticket) throw new Error("Ticket not found");
 
-    const updated = await this.base.core.supportTicket.update({
+    const updated = await this.core.supportTicket.update({
       where: { id },
       data: { status: "CLOSED" },
       include: { replies: { include: { user: true } } },

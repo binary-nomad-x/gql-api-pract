@@ -3,6 +3,7 @@ import type { CreatePostInput, UpdatePostInput, CreateCommentInput, CreateCatego
 import { requireAuth, requireOwner } from "@gql-prisma-api/utils/errors.js";
 import { triggerNovuWorkflow } from "@gql-prisma-api/utils/novu.js";
 import { logger } from "@gql-prisma-api/utils/logger.js";
+import { clean } from "@gql-prisma-api/lib/core.js";
 
 export class BlogService {
   constructor(private readonly core: PrismaClient) {}
@@ -107,7 +108,6 @@ export class BlogService {
     const post = await this.core.post.findUnique({ where: { id } });
     if (!post) throw new Error("Post not found");
     requireOwner(post.authorId, userId);
-    const { clean } = await import("@gql-prisma-api/utils/clean.js");
     const data: Prisma.PostUpdateInput = clean(input as unknown as Record<string, unknown>) as Prisma.PostUpdateInput;
     return this.core.post.update({ where: { id }, data });
   }

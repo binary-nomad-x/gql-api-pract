@@ -1,30 +1,7 @@
-import type { Prisma, PrismaClient } from "@prisma/client";
+import type { PrismaClient } from "@prisma/client";
 import type { CreateDiscountInput, UpdateDiscountInput } from "./inputs.js";
 import { requireAuth } from "@gql-prisma-api/utils/errors.js";
-
-// --- Helper functions ---
-function toDiscountCreate(input: CreateDiscountInput): Prisma.DiscountUncheckedCreateInput {
-  return {
-    productId: input.productId,
-    name: input.name,
-    type: input.type,
-    value: input.value,
-    startDate: new Date(input.startDate),
-    endDate: new Date(input.endDate),
-    maxUsage: input.maxUsage ?? 0,
-  };
-}
-
-function toDiscountUpdate(input: UpdateDiscountInput): Prisma.DiscountUpdateInput {
-  const data: Prisma.DiscountUpdateInput = {};
-  if (input.name !== undefined && input.name !== null) data.name = input.name;
-  if (input.value !== undefined && input.value !== null) data.value = input.value;
-  if (input.startDate !== undefined && input.startDate !== null) data.startDate = new Date(input.startDate);
-  if (input.endDate !== undefined && input.endDate !== null) data.endDate = new Date(input.endDate);
-  if (input.isActive !== undefined && input.isActive !== null) data.isActive = input.isActive;
-  if (input.maxUsage !== undefined && input.maxUsage !== null) data.maxUsage = input.maxUsage;
-  return data;
-}
+import { toDiscountCreate, toDiscountUpdate } from "@gql-prisma-api/lib/core.js";
 
 export class DiscountService {
   constructor(private readonly core: PrismaClient) {}

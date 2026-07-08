@@ -8,20 +8,6 @@ import { requireAuth } from "@gql-prisma-api/utils/errors.js";
 import { triggerNovuWorkflow } from "@gql-prisma-api/utils/novu.js";
 import { logger } from "@gql-prisma-api/utils/logger.js";
 
-// --- Type-field resolver functions (standalone) ---
-export function resolveSupportTicketUser(parent: Record<string, unknown>) {
-  return parent.user;
-}
-export function resolveSupportTicketReplies(parent: Record<string, unknown>) {
-  return parent.replies;
-}
-export function resolveTicketReplyTicket(parent: Record<string, unknown>) {
-  return parent.ticket;
-}
-export function resolveTicketReplyUser(parent: Record<string, unknown>) {
-  return parent.user;
-}
-
 export class SupportService {
   constructor(private readonly core: PrismaClient) {}
   async findMyTickets(

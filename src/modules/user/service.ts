@@ -2,6 +2,7 @@ import type { Prisma, PrismaClient } from "@prisma/client";
 import type { UpdateUserInput, UpdateProfileInput } from "./inputs.js";
 import { hashPassword } from "@gql-prisma-api/utils/auth.js";
 import { requireAuth, requireOwner } from "@gql-prisma-api/utils/errors.js";
+import { clean } from "@gql-prisma-api/lib/core.js";
 
 export class UserService {
   constructor(private readonly core: PrismaClient) {}
@@ -79,7 +80,6 @@ export class UserService {
     input: UpdateProfileInput,
   ) {
     requireAuth(userId);
-    const { clean } = await import("@gql-prisma-api/utils/clean.js");
     const data: Prisma.ProfileUpdateInput = clean(
       input as unknown as Record<string, unknown>,
     ) as Prisma.ProfileUpdateInput;

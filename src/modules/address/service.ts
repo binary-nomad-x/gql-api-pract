@@ -1,7 +1,7 @@
 import type { Prisma, PrismaClient } from "@prisma/client";
 import type { CreateAddressInput, UpdateAddressInput } from "./inputs.js";
 import { requireAuth } from "@gql-prisma-api/utils/errors.js";
-import { unescape } from "querystring";
+import { clean } from "@gql-prisma-api/lib/core.js";
 
 export class AddressService {
   constructor(private readonly core: PrismaClient) {}
@@ -13,9 +13,8 @@ export class AddressService {
 
   // --- Existing business logic functions ---
   async createAddress(userId: string | undefined, input: CreateAddressInput) {
-    requireAuth(userId);
-    const { clean } = await import("@gql-prisma-api/utils/clean.js");
-    const data: Prisma.AddressCreateInput = clean({
+  requireAuth(userId);
+  const data: Prisma.AddressCreateInput = clean({
       ...input,
       userId: userId!,
       country: input.country ?? "US",

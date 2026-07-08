@@ -1,6 +1,7 @@
 import type { Prisma, PrismaClient } from "@prisma/client";
 import type { CreateProductInput, UpdateProductInput, ProductFilterInput } from "./inputs.js";
 import { requireAuth, requireOwner } from "@gql-prisma-api/utils/errors.js";
+import { clean } from "@gql-prisma-api/lib/core.js";
 
 export class ProductService {
   constructor(private readonly core: PrismaClient) {}
@@ -49,7 +50,6 @@ export class ProductService {
   ) {
     requireAuth(userId);
     const { categorySlug, ...data } = input;
-    const { clean } = await import("@gql-prisma-api/utils/clean.js");
     const createData: Prisma.ProductCreateInput = clean({
       ...data,
       stock: input.stock ?? 0,
@@ -68,7 +68,6 @@ export class ProductService {
     if (!product) throw new Error("Product not found");
     requireOwner(product.sellerId, userId);
     const { categorySlug, ...data } = input;
-    const { clean } = await import("@gql-prisma-api/utils/clean.js");
     const updateData: Prisma.ProductUpdateInput = clean({
       ...data,
       ...(categorySlug !== undefined

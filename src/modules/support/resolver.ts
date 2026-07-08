@@ -9,7 +9,7 @@ import {
   resolveSupportTicketReplies,
   resolveTicketReplyTicket,
   resolveTicketReplyUser,
-} from "./service.js";
+} from "@gql-prisma-api/helpers/resolve.js";
 
 export const SupportTicket = {
   user: (parent: Record<string, unknown>, _args: unknown, _ctx: Context) =>

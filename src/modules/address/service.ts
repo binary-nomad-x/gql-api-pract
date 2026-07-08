@@ -4,10 +4,12 @@ import { requireAuth } from "@gql-prisma-api/utils/errors.js";
 import { unescape } from "querystring";
 import { BaseService } from "@gql-prisma-api/lib/BaseService.js";
 
-export class AddressService extends BaseService {
+export class AddressService {
+  constructor(private readonly base: BaseService) {}
+
   // --- Type-field resolver functions ---
   resolveAddressUser(userId: string) {
-    return this.core.user.findUnique({ where: { id: userId } });
+    return this.base.core.user.findUnique({ where: { id: userId } });
   }
 
   // --- Existing business logic functions ---
@@ -20,7 +22,7 @@ export class AddressService extends BaseService {
       country: input.country ?? "US",
       label: input.label ?? "Home",
     }) as unknown as Prisma.AddressCreateInput;
-    return this.core.address.create({ data });
+    return this.base.core.address.create({ data });
   }
 
   async updateAddress(
@@ -30,12 +32,12 @@ export class AddressService extends BaseService {
   ) {
     requireAuth(userId);
 
-    const addr = await this.core.address.findFirst({
+    const addr = await this.base.core.address.findFirst({
       where: { id, userId: userId! },
     });
 
     if (!addr) throw new Error("Address not found");
-    return this.core.address.update({
+    return this.base.core.address.update({
       where: { id },
       data: {
         label: input?.label || undefined,
@@ -50,21 +52,21 @@ export class AddressService extends BaseService {
 
   async deleteAddress(userId: string | undefined, id: string) {
     requireAuth(userId);
-    const addr = await this.core.address.findFirst({
+    const addr = await this.base.core.address.findFirst({
       where: { id, userId: userId! },
     });
     if (!addr) throw new Error("Address not found");
-    await this.core.address.delete({ where: { id } });
+    await this.base.core.address.delete({ where: { id } });
     return true;
   }
 
   async setDefaultAddress(userId: string | undefined, id: string) {
     requireAuth(userId);
-    await this.core.address.updateMany({
+    await this.base.core.address.updateMany({
       where: { userId: userId!, isDefault: true },
       data: { isDefault: false },
     });
-    return this.core.address.update({
+    return this.base.core.address.update({
       where: { id },
       data: { isDefault: true },
     });
@@ -72,11 +74,11 @@ export class AddressService extends BaseService {
 
   getMyAddresses(userId: string | undefined) {
     requireAuth(userId);
-    return this.core.address.findMany({ where: { userId: userId! } });
+    return this.base.core.address.findMany({ where: { userId: userId! } });
   }
 
   async getAddress(userId: string | undefined, id: string) {
     requireAuth(userId);
-    return this.core.address.findFirst({ where: { id, userId: userId! } });
+    return this.base.core.address.findFirst({ where: { id, userId: userId! } });
   }
 }

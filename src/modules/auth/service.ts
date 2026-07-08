@@ -5,15 +5,17 @@ import { triggerNovuWorkflow, createNovuSubscriber } from "@gql-prisma-api/utils
 import { logger } from "@gql-prisma-api/utils/logger.js";
 import { BaseService } from "@gql-prisma-api/lib/BaseService.js";
 
-export class AuthService extends BaseService {
+export class AuthService {
+  constructor(private readonly base: BaseService) {}
+
   async signupUser(input: CreateUserInput) {
-    const existing = await this.core.user.findUnique({ where: { email: input.email } });
+    const existing = await this.base.core.user.findUnique({ where: { email: input.email } });
     if (existing) {
       logger.warning("Signup failed — email already in use", { email: input.email });
       throw new AppError("Email already in use");
     }
 
-    const user = await this.core.user.create({
+    const user = await this.base.core.user.create({
       data: {
         email: input.email,
         name: input.name ?? null,
@@ -33,7 +35,7 @@ export class AuthService extends BaseService {
   }
 
   async loginUser(email: string, password: string) {
-    const user = await this.core.user.findUnique({ where: { email } });
+    const user = await this.base.core.user.findUnique({ where: { email } });
     if (!user || !(await comparePassword(password, user.password))) {
       logger.warning("Login failed — invalid credentials", { email });
       throw new AppError("Invalid email or password");

@@ -5,43 +5,44 @@ import { requireAuth, requireOwner } from "@gql-prisma-api/utils/errors.js";
 import { triggerNovuWorkflow } from "@gql-prisma-api/utils/novu.js";
 import { logger } from "@gql-prisma-api/utils/logger.js";
 
-export class OrderService extends BaseService {
+export class OrderService {
+  constructor(private readonly base: BaseService) {}
   resolveOrderUser(userId: string) {
-    return this.core.user.findUnique({ where: { id: userId } });
+    return this.base.core.user.findUnique({ where: { id: userId } });
   }
 
   resolveOrderItems(orderId: string) {
-    return this.core.orderItem.findMany({ where: { orderId } });
+    return this.base.core.orderItem.findMany({ where: { orderId } });
   }
 
   resolveOrderPayment(orderId: string) {
-    return this.core.payment.findUnique({ where: { orderId } });
+    return this.base.core.payment.findUnique({ where: { orderId } });
   }
 
   resolveOrderRefunds(orderId: string) {
-    return this.core.refund.findMany({ where: { orderId } });
+    return this.base.core.refund.findMany({ where: { orderId } });
   }
 
   resolveOrderShipments(orderId: string) {
-    return this.core.shipment.findMany({ where: { orderId } });
+    return this.base.core.shipment.findMany({ where: { orderId } });
   }
 
   resolveOrderCoupon(couponId: string | null) {
     return couponId
-      ? this.core.coupon.findUnique({ where: { id: couponId } })
+      ? this.base.core.coupon.findUnique({ where: { id: couponId } })
       : null;
   }
 
   resolveOrderItemCount(orderId: string) {
-    return this.core.orderItem.count({ where: { orderId } });
+    return this.base.core.orderItem.count({ where: { orderId } });
   }
 
   resolveOrderItemOrder(orderId: string) {
-    return this.core.order.findUnique({ where: { id: orderId } });
+    return this.base.core.order.findUnique({ where: { id: orderId } });
   }
 
   resolveOrderItemProduct(productId: string) {
-    return this.core.product.findUnique({ where: { id: productId } });
+    return this.base.core.product.findUnique({ where: { id: productId } });
   }
 
   async placeOrder(
@@ -50,7 +51,7 @@ export class OrderService extends BaseService {
   ) {
     requireAuth(userId);
 
-    const products = await this.core.product.findMany({
+    const products = await this.base.core.product.findMany({
       where: { id: { in: input.items.map((i) => i.productId) } },
     });
     const productMap = new Map(products.map((p) => [p.id, p]));
@@ -67,7 +68,7 @@ export class OrderService extends BaseService {
 
     let discountAmount = 0;
     if (input.couponCode) {
-      const coupon = await this.core.coupon.findUnique({
+      const coupon = await this.base.core.coupon.findUnique({
         where: { code: input.couponCode },
       });
       if (
@@ -82,7 +83,7 @@ export class OrderService extends BaseService {
       }
     }
 
-    const order = await this.core.$transaction(async (tx: Prisma.TransactionClient) => {
+    const order = await this.base.core.$transaction(async (tx: Prisma.TransactionClient) => {
       const orderData: Prisma.OrderCreateInput = {
         user: { connect: { id: userId! } },
         totalAmount,
@@ -136,7 +137,7 @@ export class OrderService extends BaseService {
     id: string,
   ) {
     requireAuth(userId);
-    const order = await this.core.order.findUnique({
+    const order = await this.base.core.order.findUnique({
       where: { id },
       include: { items: true },
     });
@@ -146,7 +147,7 @@ export class OrderService extends BaseService {
       throw new Error("Cannot cancel shipped or delivered order");
     }
 
-    const updated = await this.core.$transaction(async (tx: Prisma.TransactionClient) => {
+    const updated = await this.base.core.$transaction(async (tx: Prisma.TransactionClient) => {
       const o = await tx.order.update({
         where: { id },
         data: { status: "CANCELLED" },
@@ -172,10 +173,10 @@ export class OrderService extends BaseService {
     status: string,
   ) {
     requireAuth(userId);
-    const order = await this.core.order.findUnique({ where: { id } });
+    const order = await this.base.core.order.findUnique({ where: { id } });
     if (!order) throw new Error("Order not found");
     requireOwner(order.userId, userId);
-    return this.core.order.update({ where: { id }, data: { status } });
+    return this.base.core.order.update({ where: { id }, data: { status } });
   }
 
   async getMyOrders(
@@ -191,7 +192,7 @@ export class OrderService extends BaseService {
 
     const where: Prisma.OrderWhereInput = { AND: conditions };
 
-    return this.core.order.findMany({
+    return this.base.core.order.findMany({
       where,
       take: args.limit ?? 20,
       skip: args.offset ?? 0,
@@ -204,6 +205,6 @@ export class OrderService extends BaseService {
     id: string,
   ) {
     requireAuth(userId);
-    return this.core.order.findFirst({ where: { id, userId: userId! } });
+    return this.base.core.order.findFirst({ where: { id, userId: userId! } });
   }
 }

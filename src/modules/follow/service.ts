@@ -3,13 +3,14 @@ import { BaseService } from "@gql-prisma-api/lib/BaseService.js";
 import { requireAuth } from "@gql-prisma-api/utils/errors.js";
 import { triggerNovuWorkflow } from "@gql-prisma-api/utils/novu.js";
 
-export class FollowService extends BaseService {
+export class FollowService {
+  constructor(private readonly base: BaseService) {}
   resolveFollowFollower(followerId: string) {
-    return this.core.user.findUnique({ where: { id: followerId } });
+    return this.base.core.user.findUnique({ where: { id: followerId } });
   }
 
   resolveFollowFollowing(followingId: string) {
-    return this.core.user.findUnique({ where: { id: followingId } });
+    return this.base.core.user.findUnique({ where: { id: followingId } });
   }
 
   async toggleFollow(
@@ -19,16 +20,16 @@ export class FollowService extends BaseService {
     requireAuth(userId);
     if (targetUserId === userId) throw new Error("Cannot follow yourself");
 
-    const existing = await this.core.follow.findUnique({
+    const existing = await this.base.core.follow.findUnique({
       where: { followerId_followingId: { followerId: userId!, followingId: targetUserId } },
     });
 
     if (existing) {
-      await this.core.follow.delete({ where: { id: existing.id } });
+      await this.base.core.follow.delete({ where: { id: existing.id } });
       return existing;
     }
 
-    const follow = await this.core.follow.create({ data: { followerId: userId!, followingId: targetUserId } });
+    const follow = await this.base.core.follow.create({ data: { followerId: userId!, followingId: targetUserId } });
 
     await triggerNovuWorkflow(targetUserId, "new-follower", { followerId: userId! });
 
@@ -36,10 +37,10 @@ export class FollowService extends BaseService {
   }
 
   getFollowers(userId: string) {
-    return this.core.follow.findMany({ where: { followingId: userId }, include: { follower: true } });
+    return this.base.core.follow.findMany({ where: { followingId: userId }, include: { follower: true } });
   }
 
   getFollowing(userId: string) {
-    return this.core.follow.findMany({ where: { followerId: userId }, include: { following: true } });
+    return this.base.core.follow.findMany({ where: { followerId: userId }, include: { following: true } });
   }
 }

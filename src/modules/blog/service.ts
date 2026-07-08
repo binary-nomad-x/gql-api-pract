@@ -5,70 +5,72 @@ import { triggerNovuWorkflow } from "@gql-prisma-api/utils/novu.js";
 import { logger } from "@gql-prisma-api/utils/logger.js";
 import { BaseService } from "@gql-prisma-api/lib/BaseService.js";
 
-export class BlogService extends BaseService {
+export class BlogService {
+  constructor(private readonly base: BaseService) {}
+
   // --- Type-field resolver functions ---
   resolvePostAuthor(authorId: string) {
-    return this.core.user.findUnique({ where: { id: authorId } });
+    return this.base.core.user.findUnique({ where: { id: authorId } });
   }
 
   resolvePostTags(postId: string) {
-    return this.core.tag.findMany({ where: { posts: { some: { id: postId } } } });
+    return this.base.core.tag.findMany({ where: { posts: { some: { id: postId } } } });
   }
 
   resolvePostCategories(postId: string) {
-    return this.core.category.findMany({ where: { posts: { some: { id: postId } } } });
+    return this.base.core.category.findMany({ where: { posts: { some: { id: postId } } } });
   }
 
   resolvePostComments(postId: string) {
-    return this.core.comment.findMany({ where: { postId } });
+    return this.base.core.comment.findMany({ where: { postId } });
   }
 
   resolvePostLikes(postId: string) {
-    return this.core.like.findMany({ where: { postId } });
+    return this.base.core.like.findMany({ where: { postId } });
   }
 
   resolvePostSavedBy(postId: string) {
-    return this.core.savedPost.findMany({ where: { postId } });
+    return this.base.core.savedPost.findMany({ where: { postId } });
   }
 
   resolvePostViews(postId: string) {
-    return this.core.postView.findMany({ where: { postId } });
+    return this.base.core.postView.findMany({ where: { postId } });
   }
 
   resolvePostLikeCount(postId: string) {
-    return this.core.like.count({ where: { postId } });
+    return this.base.core.like.count({ where: { postId } });
   }
 
   resolvePostCommentCount(postId: string) {
-    return this.core.comment.count({ where: { postId } });
+    return this.base.core.comment.count({ where: { postId } });
   }
 
   resolvePostViewCount(postId: string) {
-    return this.core.postView.count({ where: { postId } });
+    return this.base.core.postView.count({ where: { postId } });
   }
 
   resolvePostSaveCount(postId: string) {
-    return this.core.savedPost.count({ where: { postId } });
+    return this.base.core.savedPost.count({ where: { postId } });
   }
 
   resolveTagPostCount(tagId: string) {
-    return this.core.post.count({ where: { tags: { some: { id: tagId } } } });
+    return this.base.core.post.count({ where: { tags: { some: { id: tagId } } } });
   }
 
   resolveCategoryPosts(categoryId: string) {
-    return this.core.post.findMany({ where: { categories: { some: { id: categoryId } } } });
+    return this.base.core.post.findMany({ where: { categories: { some: { id: categoryId } } } });
   }
 
   resolveCategoryProducts(categoryId: string) {
-    return this.core.product.findMany({ where: { categoryId } });
+    return this.base.core.product.findMany({ where: { categoryId } });
   }
 
   resolveCategoryPostCount(categoryId: string) {
-    return this.core.post.count({ where: { categories: { some: { id: categoryId } } } });
+    return this.base.core.post.count({ where: { categories: { some: { id: categoryId } } } });
   }
 
   resolveCategoryProductCount(categoryId: string) {
-    return this.core.product.count({ where: { categoryId } });
+    return this.base.core.product.count({ where: { categoryId } });
   }
 
   // --- Existing business logic functions ---
@@ -77,7 +79,7 @@ export class BlogService extends BaseService {
     input: CreatePostInput,
   ) {
     requireAuth(userId);
-    const post = await this.core.post.create({
+    const post = await this.base.core.post.create({
       data: {
         title: input.title,
         content: input.content ?? null,
@@ -103,22 +105,22 @@ export class BlogService extends BaseService {
     id: string,
     input: UpdatePostInput,
   ) {
-    const post = await this.core.post.findUnique({ where: { id } });
+    const post = await this.base.core.post.findUnique({ where: { id } });
     if (!post) throw new Error("Post not found");
     requireOwner(post.authorId, userId);
     const { clean } = await import("@gql-prisma-api/utils/clean.js");
     const data: Prisma.PostUpdateInput = clean(input as unknown as Record<string, unknown>) as Prisma.PostUpdateInput;
-    return this.core.post.update({ where: { id }, data });
+    return this.base.core.post.update({ where: { id }, data });
   }
 
   async deletePost(
     userId: string | undefined,
     id: string,
   ) {
-    const post = await this.core.post.findUnique({ where: { id } });
+    const post = await this.base.core.post.findUnique({ where: { id } });
     if (!post) throw new Error("Post not found");
     requireOwner(post.authorId, userId);
-    await this.core.post.delete({ where: { id } });
+    await this.base.core.post.delete({ where: { id } });
     logger.info("Post deleted", { postId: id });
     return true;
   }
@@ -127,10 +129,10 @@ export class BlogService extends BaseService {
     userId: string | undefined,
     id: string,
   ) {
-    const post = await this.core.post.findUnique({ where: { id } });
+    const post = await this.base.core.post.findUnique({ where: { id } });
     if (!post) throw new Error("Post not found");
     requireOwner(post.authorId, userId);
-    const updated = await this.core.post.update({ where: { id }, data: { published: true } });
+    const updated = await this.base.core.post.update({ where: { id }, data: { published: true } });
     await triggerNovuWorkflow(post.authorId, "post-published", { postId: id, postTitle: updated.title });
     return updated;
   }
@@ -139,18 +141,18 @@ export class BlogService extends BaseService {
     userId: string | undefined,
     id: string,
   ) {
-    const post = await this.core.post.findUnique({ where: { id } });
+    const post = await this.base.core.post.findUnique({ where: { id } });
     if (!post) throw new Error("Post not found");
     requireOwner(post.authorId, userId);
-    return this.core.post.update({ where: { id }, data: { published: false } });
+    return this.base.core.post.update({ where: { id }, data: { published: false } });
   }
 
   createTag(name: string) {
-    return this.core.tag.upsert({ where: { name }, update: {}, create: { name } });
+    return this.base.core.tag.upsert({ where: { name }, update: {}, create: { name } });
   }
 
   createCategory(input: CreateCategoryInput) {
-    return this.core.category.upsert({
+    return this.base.core.category.upsert({
       where: { slug: input.slug },
       update: { name: input.name, description: input.description ?? null },
       create: input,
@@ -162,9 +164,9 @@ export class BlogService extends BaseService {
     input: CreateCommentInput,
   ) {
     requireAuth(userId);
-    const post = await this.core.post.findUnique({ where: { id: input.postId } });
+    const post = await this.base.core.post.findUnique({ where: { id: input.postId } });
     if (!post) throw new Error("Post not found");
-    const comment = await this.core.comment.create({
+    const comment = await this.base.core.comment.create({
       data: { content: input.content, authorId: userId!, postId: input.postId },
     });
     if (post.authorId !== userId) {
@@ -179,10 +181,10 @@ export class BlogService extends BaseService {
     id: string,
   ) {
     requireAuth(userId);
-    const comment = await this.core.comment.findUnique({ where: { id } });
+    const comment = await this.base.core.comment.findUnique({ where: { id } });
     if (!comment) throw new Error("Comment not found");
     requireOwner(comment.authorId, userId);
-    await this.core.comment.delete({ where: { id } });
+    await this.base.core.comment.delete({ where: { id } });
     return true;
   }
 
@@ -191,14 +193,14 @@ export class BlogService extends BaseService {
     postId: string,
   ) {
     requireAuth(userId);
-    const existing = await this.core.like.findUnique({
+    const existing = await this.base.core.like.findUnique({
       where: { userId_postId: { userId: userId!, postId } },
     });
     if (existing) {
-      await this.core.like.delete({ where: { id: existing.id } });
+      await this.base.core.like.delete({ where: { id: existing.id } });
       return existing;
     }
-    return this.core.like.create({ data: { userId: userId!, postId } });
+    return this.base.core.like.create({ data: { userId: userId!, postId } });
   }
 
   getPosts(
@@ -221,7 +223,7 @@ export class BlogService extends BaseService {
 
     const where: Prisma.PostWhereInput = conditions.length > 0 ? { AND: conditions } : {};
 
-    return this.core.post.findMany({
+    return this.base.core.post.findMany({
       where,
       take: args.limit ?? 10,
       skip: args.offset ?? 0,
@@ -230,6 +232,6 @@ export class BlogService extends BaseService {
   }
 
   getPost(id: string) {
-    return this.core.post.findUnique({ where: { id } });
+    return this.base.core.post.findUnique({ where: { id } });
   }
 }

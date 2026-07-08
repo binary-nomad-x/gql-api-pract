@@ -4,13 +4,14 @@ import { BaseService } from "@gql-prisma-api/lib/BaseService.js";
 import { requireAuth, requireOwner } from "@gql-prisma-api/utils/errors.js";
 import { triggerNovuWorkflow } from "@gql-prisma-api/utils/novu.js";
 
-export class ReviewService extends BaseService {
+export class ReviewService {
+  constructor(private readonly base: BaseService) {}
   resolveReviewProduct(productId: string) {
-    return this.core.product.findUnique({ where: { id: productId } });
+    return this.base.core.product.findUnique({ where: { id: productId } });
   }
 
   resolveReviewUser(userId: string) {
-    return this.core.user.findUnique({ where: { id: userId } });
+    return this.base.core.user.findUnique({ where: { id: userId } });
   }
 
   async createReview(
@@ -21,16 +22,16 @@ export class ReviewService extends BaseService {
     if (input.rating < 1 || input.rating > 5)
       throw new Error("Rating must be between 1 and 5");
 
-    const product = await this.core.product.findUnique({ where: { id: input.productId } });
+    const product = await this.base.core.product.findUnique({ where: { id: input.productId } });
     if (!product) throw new Error("Product not found");
 
-    const existing = await this.core.review.findUnique({
+    const existing = await this.base.core.review.findUnique({
       where: { productId_userId: { productId: input.productId, userId: userId! } },
     });
 
     if (existing) throw new Error("Already reviewed this product");
 
-    const review = await this.core.review.create({
+    const review = await this.base.core.review.create({
       data: {
         rating: input.rating,
         title: input.title ?? null,
@@ -52,17 +53,17 @@ export class ReviewService extends BaseService {
     id: string,
   ) {
     requireAuth(userId);
-    const review = await this.core.review.findUnique({ where: { id } });
+    const review = await this.base.core.review.findUnique({ where: { id } });
     if (!review) throw new Error("Review not found");
     requireOwner(review.userId, userId);
-    await this.core.review.delete({ where: { id } });
+    await this.base.core.review.delete({ where: { id } });
     return true;
   }
 
   getReviews(
     args: { productId: string; limit?: number; offset?: number },
   ) {
-    return this.core.review.findMany({
+    return this.base.core.review.findMany({
       where: { productId: args.productId },
       take: args.limit ?? 20,
       skip: args.offset ?? 0,
@@ -71,6 +72,6 @@ export class ReviewService extends BaseService {
   }
 
   getReview(id: string) {
-    return this.core.review.findUnique({ where: { id } });
+    return this.base.core.review.findUnique({ where: { id } });
   }
 }

@@ -1,4 +1,5 @@
 import type { PrismaClient } from "@prisma/client";
+import { BaseService } from "./BaseService.js";
 import { AddressService } from "../modules/address/service.js";
 import { AuthService } from "../modules/auth/service.js";
 import { BlogService } from "../modules/blog/service.js";
@@ -53,30 +54,31 @@ export class Services {
   readonly wishlist: WishlistService;
 
   constructor(prisma: PrismaClient) {
-    this.address = new AddressService(prisma);
-    this.auth = new AuthService(prisma);
-    this.blog = new BlogService(prisma);
-    this.cart = new CartService(prisma);
-    this.conversation = new ConversationService(prisma);
-    this.coupon = new CouponService(prisma);
-    this.discount = new DiscountService(prisma);
-    this.follow = new FollowService(prisma);
-    this.invoice = new InvoiceService(prisma);
-    this.notification = new NotificationService(prisma);
-    this.order = new OrderService(prisma);
-    this.payment = new PaymentService(prisma);
-    this.postView = new PostViewService(prisma);
-    this.product = new ProductService(prisma);
-    this.productImage = new ProductImageService(prisma);
-    this.refund = new RefundService(prisma);
-    this.return = new ReturnService(prisma);
-    this.review = new ReviewService(prisma);
-    this.savedPost = new SavedPostService(prisma);
-    this.shipment = new ShipmentService(prisma);
-    this.stats = new StatsService(prisma);
-    this.subscription = new SubscriptionService(prisma);
-    this.support = new SupportService(prisma);
-    this.user = new UserService(prisma);
-    this.wishlist = new WishlistService(prisma);
+    const base = new BaseService(prisma);
+    this.address = new AddressService(base);
+    this.auth = new AuthService(base);
+    this.blog = new BlogService(base);
+    this.cart = new CartService(base);
+    this.conversation = new ConversationService(base);
+    this.coupon = new CouponService(base);
+    this.discount = new DiscountService(base);
+    this.follow = new FollowService(base);
+    this.invoice = new InvoiceService(base);
+    this.notification = new NotificationService(base);
+    this.order = new OrderService(base);
+    this.payment = new PaymentService(base);
+    this.postView = new PostViewService(base);
+    this.product = new ProductService(base);
+    this.productImage = new ProductImageService(base);
+    this.refund = new RefundService(base);
+    this.return = new ReturnService(base);
+    this.review = new ReviewService(base);
+    this.savedPost = new SavedPostService(base);
+    this.shipment = new ShipmentService(base);
+    this.stats = new StatsService(base);
+    this.subscription = new SubscriptionService(base);
+    this.support = new SupportService(base);
+    this.user = new UserService(base);
+    this.wishlist = new WishlistService(base);
   }
 }

@@ -16,9 +16,10 @@ export interface TrialEndingInput {
   notifyAdmin: boolean;
 }
 
-export class SubscriptionService extends BaseService {
+export class SubscriptionService {
+  constructor(private readonly base: BaseService) {}
   resolveSubscriptionUser(userId: string) {
-    return this.core.user.findUnique({ where: { id: userId } });
+    return this.base.core.user.findUnique({ where: { id: userId } });
   }
 
   async createSubscription(
@@ -26,11 +27,11 @@ export class SubscriptionService extends BaseService {
     plan: SubscriptionPlan,
   ) {
     requireAuth(userId);
-    const existing = await this.core.subscription.findFirst({
+    const existing = await this.base.core.subscription.findFirst({
       where: { userId: userId!, status: "ACTIVE" },
     });
     if (existing) throw new Error("Already have an active subscription");
-    const sub = await this.core.subscription.create({
+    const sub = await this.base.core.subscription.create({
       data: { userId: userId!, plan, startDate: new Date() },
     });
     logger.info("Subscription created", { userId: userId!, plan, subscriptionId: sub.id });
@@ -41,11 +42,11 @@ export class SubscriptionService extends BaseService {
     userId: string | undefined,
   ) {
     requireAuth(userId);
-    const sub = await this.core.subscription.findFirst({
+    const sub = await this.base.core.subscription.findFirst({
       where: { userId: userId!, status: "ACTIVE" },
     });
     if (!sub) throw new Error("No active subscription found");
-    const updated = await this.core.subscription.update({
+    const updated = await this.base.core.subscription.update({
       where: { id: sub.id },
       data: { status: "CANCELLED", cancelledAt: new Date(), autoRenew: false },
     });
@@ -89,13 +90,13 @@ export class SubscriptionService extends BaseService {
     userId: string | undefined,
   ) {
     requireAuth(userId);
-    return this.core.subscription.findFirst({ where: { userId: userId! }, orderBy: { createdAt: "desc" } });
+    return this.base.core.subscription.findFirst({ where: { userId: userId! }, orderBy: { createdAt: "desc" } });
   }
 
   getAllSubscriptions(
     userId: string | undefined,
   ) {
     requireAuth(userId);
-    return this.core.subscription.findMany({ where: { userId: userId! } });
+    return this.base.core.subscription.findMany({ where: { userId: userId! } });
   }
 }

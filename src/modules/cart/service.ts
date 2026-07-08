@@ -3,17 +3,19 @@ import type { AddToCartInput, UpdateCartItemInput } from "./inputs.js";
 import { requireAuth } from "@gql-prisma-api/utils/errors.js";
 import { BaseService } from "@gql-prisma-api/lib/BaseService.js";
 
-export class CartService extends BaseService {
+export class CartService {
+  constructor(private readonly base: BaseService) {}
+
   resolveCartUser(userId: string) {
-    return this.core.user.findUnique({ where: { id: userId } });
+    return this.base.core.user.findUnique({ where: { id: userId } });
   }
 
   resolveCartItems(cartId: string) {
-    return this.core.cartItem.findMany({ where: { cartId }, include: { product: true } });
+    return this.base.core.cartItem.findMany({ where: { cartId }, include: { product: true } });
   }
 
   async resolveCartTotalAmount(cartId: string) {
-    const items = await this.core.cartItem.findMany({
+    const items = await this.base.core.cartItem.findMany({
       where: { cartId },
       include: { product: true },
     });
@@ -21,20 +23,20 @@ export class CartService extends BaseService {
   }
 
   resolveCartItemCount(cartId: string) {
-    return this.core.cartItem.count({ where: { cartId } });
+    return this.base.core.cartItem.count({ where: { cartId } });
   }
 
   resolveCartItemCart(cartId: string) {
-    return this.core.cart.findUnique({ where: { id: cartId } });
+    return this.base.core.cart.findUnique({ where: { id: cartId } });
   }
 
   resolveCartItemProduct(productId: string) {
-    return this.core.product.findUnique({ where: { id: productId } });
+    return this.base.core.product.findUnique({ where: { id: productId } });
   }
 
   private async getOrCreateCart(userId: string) {
-    let cart = await this.core.cart.findUnique({ where: { userId } });
-    if (!cart) cart = await this.core.cart.create({ data: { userId } });
+    let cart = await this.base.core.cart.findUnique({ where: { userId } });
+    if (!cart) cart = await this.base.core.cart.create({ data: { userId } });
     return cart;
   }
 
@@ -44,20 +46,20 @@ export class CartService extends BaseService {
   ) {
     requireAuth(userId);
     const cart = await this.getOrCreateCart(userId!);
-    const existing = await this.core.cartItem.findUnique({
+    const existing = await this.base.core.cartItem.findUnique({
       where: { cartId_productId: { cartId: cart.id, productId: input.productId } },
     });
     if (existing) {
-      await this.core.cartItem.update({
+      await this.base.core.cartItem.update({
         where: { id: existing.id },
         data: { quantity: existing.quantity + (input.quantity ?? 1) },
       });
     } else {
-      await this.core.cartItem.create({
+      await this.base.core.cartItem.create({
         data: { cartId: cart.id, productId: input.productId, quantity: input.quantity ?? 1 },
       });
     }
-    return this.core.cart.findUnique({ where: { id: cart.id } });
+    return this.base.core.cart.findUnique({ where: { id: cart.id } });
   }
 
   async updateCartItem(
@@ -66,12 +68,12 @@ export class CartService extends BaseService {
   ) {
     requireAuth(userId);
     const cart = await this.getOrCreateCart(userId!);
-    const item = await this.core.cartItem.findUnique({
+    const item = await this.base.core.cartItem.findUnique({
       where: { cartId_productId: { cartId: cart.id, productId: input.productId } },
     });
     if (!item) throw new Error("Item not in cart");
-    await this.core.cartItem.update({ where: { id: item.id }, data: { quantity: input.quantity } });
-    return this.core.cart.findUnique({ where: { id: cart.id } });
+    await this.base.core.cartItem.update({ where: { id: item.id }, data: { quantity: input.quantity } });
+    return this.base.core.cart.findUnique({ where: { id: cart.id } });
   }
 
   async removeFromCart(
@@ -80,11 +82,11 @@ export class CartService extends BaseService {
   ) {
     requireAuth(userId);
     const cart = await this.getOrCreateCart(userId!);
-    const item = await this.core.cartItem.findUnique({
+    const item = await this.base.core.cartItem.findUnique({
       where: { cartId_productId: { cartId: cart.id, productId } },
     });
-    if (item) await this.core.cartItem.delete({ where: { id: item.id } });
-    return this.core.cart.findUnique({ where: { id: cart.id } });
+    if (item) await this.base.core.cartItem.delete({ where: { id: item.id } });
+    return this.base.core.cart.findUnique({ where: { id: cart.id } });
   }
 
   async clearCart(
@@ -92,12 +94,12 @@ export class CartService extends BaseService {
   ) {
     requireAuth(userId);
     const cart = await this.getOrCreateCart(userId!);
-    await this.core.cartItem.deleteMany({ where: { cartId: cart.id } });
+    await this.base.core.cartItem.deleteMany({ where: { cartId: cart.id } });
     return cart;
   }
 
   async getMyCart(userId: string | undefined) {
     requireAuth(userId);
-    return this.core.cart.findUnique({ where: { userId: userId! } });
+    return this.base.core.cart.findUnique({ where: { userId: userId! } });
   }
 }

@@ -27,10 +27,12 @@ function toDiscountUpdate(input: UpdateDiscountInput): Prisma.DiscountUpdateInpu
   return data;
 }
 
-export class DiscountService extends BaseService {
+export class DiscountService {
+  constructor(private readonly base: BaseService) {}
+
   // --- Type-field resolver functions ---
   resolveDiscountProduct(productId: string) {
-    return this.core.product.findUnique({ where: { id: productId } });
+    return this.base.core.product.findUnique({ where: { id: productId } });
   }
 
   // --- Existing business logic functions ---
@@ -39,9 +41,9 @@ export class DiscountService extends BaseService {
     input: CreateDiscountInput,
   ) {
     requireAuth(userId);
-    const product = await this.core.product.findUnique({ where: { id: input.productId } });
+    const product = await this.base.core.product.findUnique({ where: { id: input.productId } });
     if (!product) throw new Error("Product not found");
-    return this.core.discount.create({ data: toDiscountCreate(input) });
+    return this.base.core.discount.create({ data: toDiscountCreate(input) });
   }
 
   async updateDiscount(
@@ -50,7 +52,7 @@ export class DiscountService extends BaseService {
     input: UpdateDiscountInput,
   ) {
     requireAuth(userId);
-    return this.core.discount.update({ where: { id }, data: toDiscountUpdate(input) });
+    return this.base.core.discount.update({ where: { id }, data: toDiscountUpdate(input) });
   }
 
   async deleteDiscount(
@@ -58,13 +60,13 @@ export class DiscountService extends BaseService {
     id: string,
   ) {
     requireAuth(userId);
-    await this.core.discount.delete({ where: { id } });
+    await this.base.core.discount.delete({ where: { id } });
     return true;
   }
 
   getActiveDiscounts() {
     const now = new Date();
-    return this.core.discount.findMany({
+    return this.base.core.discount.findMany({
       where: { isActive: true, startDate: { lte: now }, endDate: { gte: now } },
       orderBy: { createdAt: "desc" },
     });
@@ -72,7 +74,7 @@ export class DiscountService extends BaseService {
 
   getProductDiscounts(productId: string) {
     const now = new Date();
-    return this.core.discount.findMany({
+    return this.base.core.discount.findMany({
       where: { productId, isActive: true, startDate: { lte: now }, endDate: { gte: now } },
     });
   }

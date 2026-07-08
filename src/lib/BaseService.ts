@@ -1,5 +1,5 @@
 import type { PrismaClient } from "@prisma/client";
 
 export class BaseService {
-  constructor(protected core: PrismaClient) {}
+  constructor(public readonly core: PrismaClient) {}
 }

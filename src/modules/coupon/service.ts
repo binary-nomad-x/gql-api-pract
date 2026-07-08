@@ -3,10 +3,12 @@ import type { CreateCouponInput } from "./inputs.js";
 import { requireAuth } from "@gql-prisma-api/utils/errors.js";
 import { BaseService } from "@gql-prisma-api/lib/BaseService.js";
 
-export class CouponService extends BaseService {
+export class CouponService {
+  constructor(private readonly base: BaseService) {}
+
   // --- Type-field resolver functions ---
   resolveCouponOrders(couponId: string) {
-    return this.core.order.findMany({ where: { couponId } });
+    return this.base.core.order.findMany({ where: { couponId } });
   }
 
   // --- Existing business logic functions ---
@@ -17,10 +19,10 @@ export class CouponService extends BaseService {
     requireAuth(userId);
     const { clean } = await import("@gql-prisma-api/utils/clean.js");
     const data: Prisma.CouponCreateInput = clean(input as unknown as Record<string, unknown>) as Prisma.CouponCreateInput;
-    return this.core.coupon.create({ data });
+    return this.base.core.coupon.create({ data });
   }
 
   getCouponByCode(code: string) {
-    return this.core.coupon.findUnique({ where: { code } });
+    return this.base.core.coupon.findUnique({ where: { code } });
   }
 }

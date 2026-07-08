@@ -1,5 +1,5 @@
 import { faker } from "@faker-js/faker";
-import type { SeedContext, SeedCounts } from "./types.js";
+import type { SeedContext, SeedCounts, CartItemSeed } from "./types.js";
 
 export async function seedCarts(
   ctx: SeedContext,
@@ -14,11 +14,7 @@ export async function seedCarts(
     counts.carts++;
 
     const itemCount = faker.number.int({ min: 1, max: 4 });
-    const items: Array<{
-      cartId: string;
-      productId: string;
-      quantity: number;
-    }> = [];
+    const items: CartItemSeed[] = [];
 
     const used = new Set<string>();
     for (let i = 0; i < itemCount; i++) {

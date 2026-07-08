@@ -1,5 +1,5 @@
 import { faker } from "@faker-js/faker";
-import type { SeedContext, SeedCounts } from "./types.js";
+import type { SeedContext, SeedCounts, ShipmentSeed } from "./types.js";
 
 const CARRIERS = ["UPS", "FedEx", "USPS", "DHL"];
 
@@ -16,14 +16,7 @@ export async function seedShipments(
     select: { id: true, status: true },
   });
 
-  const data: Array<{
-    orderId: string;
-    carrier: string;
-    trackingNumber: string;
-    status: string;
-    estimatedDelivery: Date;
-    deliveredAt: Date | null;
-  }> = [];
+  const data: ShipmentSeed[] = [];
 
   for (const order of orders) {
     data.push({

@@ -1,5 +1,5 @@
 import { faker } from "@faker-js/faker";
-import type { SeedContext, SeedCounts } from "./types.js";
+import type { SeedContext, SeedCounts, SubscriptionSeed } from "./types.js";
 
 const PLANS = ["FREE", "BASIC", "PRO", "ENTERPRISE"];
 
@@ -8,15 +8,7 @@ export async function seedSubscriptions(
   counts: SeedCounts,
   userIds: string[],
 ): Promise<void> {
-  const data: Array<{
-    userId: string;
-    plan: string;
-    status: string;
-    startDate: Date;
-    endDate: Date | null;
-    autoRenew: boolean;
-    cancelledAt: Date | null;
-  }> = [];
+  const data: SubscriptionSeed[] = [];
 
   for (const userId of userIds) {
     const plan = faker.helpers.arrayElement(PLANS);

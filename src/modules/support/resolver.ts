@@ -5,12 +5,6 @@ import type {
   AddTicketReplyInput,
 } from "./inputs.js";
 import {
-  findMyTickets,
-  findTicketById,
-  createTicket,
-  addTicketReply,
-  resolveTicket,
-  closeTicket,
   resolveSupportTicketUser,
   resolveSupportTicketReplies,
   resolveTicketReplyTicket,
@@ -33,16 +27,15 @@ export const TicketReply = {
 
 export const Query = {
   myTickets: (_: unknown, args: TicketFilterInput, ctx: Context) =>
-    findMyTickets(ctx.prisma, ctx.userId, args),
+    ctx.services.support.findMyTickets(ctx.userId, args),
   ticket: (_: unknown, args: { id: string }, ctx: Context) =>
-    findTicketById(ctx.prisma, ctx.userId, args.id),
+    ctx.services.support.findTicketById(ctx.userId, args.id),
   ticketReplies: async (
     _: unknown,
     args: { ticketId: string },
     ctx: Context,
   ) => {
-    const ticket = await findTicketById(
-      ctx.prisma,
+    const ticket = await ctx.services.support.findTicketById(
       ctx.userId,
       args.ticketId,
     );
@@ -55,14 +48,14 @@ export const Mutation = {
     _: unknown,
     args: { input: CreateTicketInput },
     ctx: Context,
-  ) => createTicket(ctx.prisma, ctx.userId, args.input),
+  ) => ctx.services.support.createTicket(ctx.userId, args.input),
   addTicketReply: (
     _: unknown,
     args: { input: AddTicketReplyInput },
     ctx: Context,
-  ) => addTicketReply(ctx.prisma, ctx.userId, args.input),
+  ) => ctx.services.support.addTicketReply(ctx.userId, args.input),
   resolveTicket: (_: unknown, args: { id: string }, ctx: Context) =>
-    resolveTicket(ctx.prisma, ctx.userId, args.id),
+    ctx.services.support.resolveTicket(ctx.userId, args.id),
   closeTicket: (_: unknown, args: { id: string }, ctx: Context) =>
-    closeTicket(ctx.prisma, ctx.userId, args.id),
+    ctx.services.support.closeTicket(ctx.userId, args.id),
 };

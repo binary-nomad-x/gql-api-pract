@@ -1,5 +1,5 @@
 import { faker } from "@faker-js/faker";
-import type { SeedContext, SeedCounts } from "./types.js";
+import type { SeedContext, SeedCounts, ReturnSeed } from "./types.js";
 
 export async function seedReturns(
   ctx: SeedContext,
@@ -22,14 +22,7 @@ export async function seedReturns(
 
   // Only return ~15% of delivered order items
   const returnItems = orderItems.filter(() => Math.random() > 0.85);
-  const data: Array<{
-    orderItemId: string;
-    userId: string;
-    reason: string;
-    status: string;
-    quantity: number;
-    resolvedAt: Date;
-  }> = [];
+  const data: ReturnSeed[] = [];
 
   for (const item of returnItems) {
     data.push({

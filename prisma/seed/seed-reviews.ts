@@ -1,5 +1,5 @@
 import { faker } from "@faker-js/faker";
-import type { SeedContext, SeedCounts } from "./types.js";
+import type { SeedContext, SeedCounts, ReviewSeed } from "./types.js";
 
 export async function seedReviews(
   ctx: SeedContext,
@@ -9,13 +9,7 @@ export async function seedReviews(
 ): Promise<void> {
   const seen = new Set<string>();
 
-  const data: Array<{
-    rating: number;
-    title: string | null;
-    content: string;
-    productId: string;
-    userId: string;
-  }> = [];
+  const data: ReviewSeed[] = [];
 
   for (const productId of productIds) {
     const n = Math.floor(Math.random() * 8) + 1;

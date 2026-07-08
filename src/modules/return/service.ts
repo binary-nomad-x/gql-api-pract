@@ -1,154 +1,150 @@
-import type { PrismaClient, Prisma } from "@prisma/client";
+import type { Prisma } from "@prisma/client";
+import { BaseService } from "@gql-prisma-api/lib/BaseService.js";
 import type { CreateReturnInput, ReturnFilterInput } from "./inputs.js";
 import { requireAuth } from "@gql-prisma-api/utils/errors.js";
 import { triggerNovuWorkflow } from "@gql-prisma-api/utils/novu.js";
 import { logger } from "@gql-prisma-api/utils/logger.js";
 
-// --- Type-field resolver functions ---
-export function resolveReturnRequestOrderItem(prisma: PrismaClient, orderItemId: string) {
-  return prisma.orderItem.findUnique({ where: { id: orderItemId } });
-}
-
-export function resolveReturnRequestUser(prisma: PrismaClient, userId: string) {
-  return prisma.user.findUnique({ where: { id: userId } });
-}
-
-// --- Existing business logic functions ---
-export async function findMyReturns(
-  prisma: PrismaClient,
-  userId: string | undefined,
-  filter?: ReturnFilterInput,
-) {
-  requireAuth(userId);
-  const conditions: Prisma.ReturnRequestWhereInput[] = [{ userId }];
-
-  if (filter?.status) {
-    conditions.push({ status: filter.status });
+export class ReturnService extends BaseService {
+  resolveReturnRequestOrderItem(orderItemId: string) {
+    return this.core.orderItem.findUnique({ where: { id: orderItemId } });
   }
 
-  const where: Prisma.ReturnRequestWhereInput = { AND: conditions };
+  resolveReturnRequestUser(userId: string) {
+    return this.core.user.findUnique({ where: { id: userId } });
+  }
 
-  return prisma.returnRequest.findMany({
-    where,
-    orderBy: { requestedAt: "desc" },
-    take: filter?.limit ?? 20,
-    skip: filter?.offset ?? 0,
-    include: { orderItem: { include: { product: true, order: true } }, user: true },
-  });
-}
+  async findMyReturns(
+    userId: string | undefined,
+    filter?: ReturnFilterInput,
+  ) {
+    requireAuth(userId);
+    const conditions: Prisma.ReturnRequestWhereInput[] = [{ userId }];
 
-export async function findReturnById(
-  prisma: PrismaClient,
-  userId: string | undefined,
-  id: string,
-) {
-  requireAuth(userId);
-  const record = await prisma.returnRequest.findUnique({
-    where: { id },
-    include: { orderItem: { include: { product: true, order: true } } },
-  });
-  if (!record) throw new Error("Return request not found");
-  return record;
-}
+    if (filter?.status) {
+      conditions.push({ status: filter.status });
+    }
 
-export async function createReturn(
-  prisma: PrismaClient,
-  userId: string | undefined,
-  input: CreateReturnInput,
-) {
-  requireAuth(userId);
-  const orderItem = await prisma.orderItem.findUnique({
-    where: { id: input.orderItemId },
-    include: { order: { include: { user: true } }, product: true },
-  });
-  if (!orderItem) throw new Error("Order item not found");
-  if (orderItem.order.userId !== userId) throw new Error("Unauthorized");
-  if (input.quantity > orderItem.quantity) throw new Error("Return quantity exceeds ordered quantity");
+    const where: Prisma.ReturnRequestWhereInput = { AND: conditions };
 
-  const record = await prisma.returnRequest.create({
-    data: {
-      orderItemId: input.orderItemId,
-      userId,
-      reason: input.reason,
-      quantity: input.quantity,
-    },
-    include: { orderItem: true, user: true },
-  });
+    return this.core.returnRequest.findMany({
+      where,
+      orderBy: { requestedAt: "desc" },
+      take: filter?.limit ?? 20,
+      skip: filter?.offset ?? 0,
+      include: { orderItem: { include: { product: true, order: true } }, user: true },
+    });
+  }
 
-  await prisma.notification.create({
-    data: {
-      userId: orderItem.order.userId,
-      type: "RETURN_REQUESTED",
-      title: "Return Requested",
-      message: `Return request for ${orderItem.product?.name ?? "item"} has been submitted.`,
-    },
-  });
+  async findReturnById(
+    userId: string | undefined,
+    id: string,
+  ) {
+    requireAuth(userId);
+    const record = await this.core.returnRequest.findUnique({
+      where: { id },
+      include: { orderItem: { include: { product: true, order: true } } },
+    });
+    if (!record) throw new Error("Return request not found");
+    return record;
+  }
 
-  await triggerNovuWorkflow(userId!, "return-requested", { returnId: record.id, reason: input.reason });
-  logger.info("Return request created", { returnId: record.id, orderItemId: input.orderItemId, userId });
-  return record;
-}
+  async createReturn(
+    userId: string | undefined,
+    input: CreateReturnInput,
+  ) {
+    requireAuth(userId);
+    const orderItem = await this.core.orderItem.findUnique({
+      where: { id: input.orderItemId },
+      include: { order: { include: { user: true } }, product: true },
+    });
+    if (!orderItem) throw new Error("Order item not found");
+    if (orderItem.order.userId !== userId) throw new Error("Unauthorized");
+    if (input.quantity > orderItem.quantity) throw new Error("Return quantity exceeds ordered quantity");
 
-export async function approveReturn(
-  prisma: PrismaClient,
-  userId: string | undefined,
-  id: string,
-) {
-  requireAuth(userId);
-  const record = await prisma.returnRequest.findUnique({
-    where: { id },
-    include: { orderItem: { include: { order: { include: { user: true } } } } },
-  });
-  if (!record) throw new Error("Return request not found");
+    const record = await this.core.returnRequest.create({
+      data: {
+        orderItemId: input.orderItemId,
+        userId,
+        reason: input.reason,
+        quantity: input.quantity,
+      },
+      include: { orderItem: true, user: true },
+    });
 
-  const updated = await prisma.returnRequest.update({
-    where: { id },
-    data: { status: "APPROVED", resolvedAt: new Date() },
-    include: { orderItem: true, user: true },
-  });
+    await this.core.notification.create({
+      data: {
+        userId: orderItem.order.userId,
+        type: "RETURN_REQUESTED",
+        title: "Return Requested",
+        message: `Return request for ${orderItem.product?.name ?? "item"} has been submitted.`,
+      },
+    });
 
-  await prisma.notification.create({
-    data: {
-      userId: record.userId,
-      type: "RETURN_APPROVED",
-      title: "Return Approved",
-      message: "Your return request has been approved.",
-    },
-  });
+    await triggerNovuWorkflow(userId!, "return-requested", { returnId: record.id, reason: input.reason });
+    logger.info("Return request created", { returnId: record.id, orderItemId: input.orderItemId, userId });
+    return record;
+  }
 
-  await triggerNovuWorkflow(userId!, "return-approved", { returnId: record.id });
-  logger.info("Return approved", { returnId: id, userId });
-  return updated;
-}
+  async approveReturn(
+    userId: string | undefined,
+    id: string,
+  ) {
+    requireAuth(userId);
+    const record = await this.core.returnRequest.findUnique({
+      where: { id },
+      include: { orderItem: { include: { order: { include: { user: true } } } } },
+    });
+    if (!record) throw new Error("Return request not found");
 
-export async function rejectReturn(
-  prisma: PrismaClient,
-  userId: string | undefined,
-  id: string,
-) {
-  requireAuth(userId);
-  const record = await prisma.returnRequest.findUnique({
-    where: { id },
-    include: { orderItem: { include: { order: { include: { user: true } } } } },
-  });
-  if (!record) throw new Error("Return request not found");
+    const updated = await this.core.returnRequest.update({
+      where: { id },
+      data: { status: "APPROVED", resolvedAt: new Date() },
+      include: { orderItem: true, user: true },
+    });
 
-  const updated = await prisma.returnRequest.update({
-    where: { id },
-    data: { status: "REJECTED", resolvedAt: new Date() },
-    include: { orderItem: true, user: true },
-  });
+    await this.core.notification.create({
+      data: {
+        userId: record.userId,
+        type: "RETURN_APPROVED",
+        title: "Return Approved",
+        message: "Your return request has been approved.",
+      },
+    });
 
-  await prisma.notification.create({
-    data: {
-      userId: record.userId,
-      type: "RETURN_REJECTED",
-      title: "Return Rejected",
-      message: "Your return request has been rejected.",
-    },
-  });
+    await triggerNovuWorkflow(userId!, "return-approved", { returnId: record.id });
+    logger.info("Return approved", { returnId: id, userId });
+    return updated;
+  }
 
-  await triggerNovuWorkflow(userId!, "return-rejected", { returnId: record.id });
-  logger.info("Return rejected", { returnId: id, userId });
-  return updated;
+  async rejectReturn(
+    userId: string | undefined,
+    id: string,
+  ) {
+    requireAuth(userId);
+    const record = await this.core.returnRequest.findUnique({
+      where: { id },
+      include: { orderItem: { include: { order: { include: { user: true } } } } },
+    });
+    if (!record) throw new Error("Return request not found");
+
+    const updated = await this.core.returnRequest.update({
+      where: { id },
+      data: { status: "REJECTED", resolvedAt: new Date() },
+      include: { orderItem: true, user: true },
+    });
+
+    await this.core.notification.create({
+      data: {
+        userId: record.userId,
+        type: "RETURN_REJECTED",
+        title: "Return Rejected",
+        message: "Your return request has been rejected.",
+      },
+    });
+
+    await triggerNovuWorkflow(userId!, "return-rejected", { returnId: record.id });
+    logger.info("Return rejected", { returnId: id, userId });
+    return updated;
+  }
 }

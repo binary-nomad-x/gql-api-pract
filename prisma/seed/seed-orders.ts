@@ -1,5 +1,5 @@
 import { faker } from "@faker-js/faker";
-import type { SeedContext, SeedCounts } from "./types.js";
+import type { SeedContext, SeedCounts, OrderSeed, OrderItemSeed } from "./types.js";
 import { randomUUID } from "node:crypto";
 
 const ORDER_STATUSES = [
@@ -28,20 +28,8 @@ export async function seedOrders(
     randomUUID(),
   );
 
-  const orderData: Array<{
-    id: string;
-    userId: string;
-    status: string;
-    shippingAddress: string | null;
-    couponId: string | null;
-  }> = [];
-
-  const itemData: Array<{
-    orderId: string;
-    productId: string;
-    quantity: number;
-    unitPrice: number;
-  }> = [];
+  const orderData: OrderSeed[] = [];
+  const itemData: OrderItemSeed[] = [];
 
   for (const orderId of orderIds) {
     const status = faker.helpers.arrayElement(ORDER_STATUSES);

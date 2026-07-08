@@ -4,42 +4,29 @@ import type {
   CreateWishlistInput,
   AddToWishlistInput,
 } from "./inputs.js";
-import {
-  createWishlist,
-  addToWishlist,
-  removeFromWishlist,
-  deleteWishlist,
-  getMyWishlists,
-  getWishlist,
-  resolveWishlistUser,
-  resolveWishlistItems,
-  resolveWishlistItemCount,
-  resolveWishlistItemWishlist,
-  resolveWishlistItemProduct,
-} from "./service.js";
 
 export const Wishlist = {
   user: (parent: WishlistModel, _args: unknown, ctx: Context) =>
-    resolveWishlistUser(ctx.prisma, parent.userId),
+    ctx.services.wishlist.resolveWishlistUser(parent.userId),
   items: (parent: WishlistModel, _args: unknown, ctx: Context) =>
-    resolveWishlistItems(ctx.prisma, parent.id),
+    ctx.services.wishlist.resolveWishlistItems(parent.id),
   itemCount: (parent: WishlistModel, _args: unknown, ctx: Context) =>
-    resolveWishlistItemCount(ctx.prisma, parent.id),
+    ctx.services.wishlist.resolveWishlistItemCount(parent.id),
 };
 
 export const WishlistItem = {
   wishlist: (parent: WishlistItemModel, _args: unknown, ctx: Context) =>
-    resolveWishlistItemWishlist(ctx.prisma, parent.wishlistId),
+    ctx.services.wishlist.resolveWishlistItemWishlist(parent.wishlistId),
   product: (parent: WishlistItemModel, _args: unknown, ctx: Context) =>
-    resolveWishlistItemProduct(ctx.prisma, parent.productId),
+    ctx.services.wishlist.resolveWishlistItemProduct(parent.productId),
 };
 
 export const Query = {
   myWishlists: (_parent: unknown, _args: unknown, ctx: Context) =>
-    getMyWishlists(ctx.prisma, ctx.userId),
+    ctx.services.wishlist.getMyWishlists(ctx.userId),
 
   wishlist: (_parent: unknown, { id }: { id: string }, ctx: Context) =>
-    getWishlist(ctx.prisma, ctx.userId, id),
+    ctx.services.wishlist.getWishlist(ctx.userId, id),
 };
 
 export const Mutation = {
@@ -47,21 +34,21 @@ export const Mutation = {
     _parent: unknown,
     { input }: { input: CreateWishlistInput },
     ctx: Context,
-  ) => createWishlist(ctx.prisma, ctx.userId, input),
+  ) => ctx.services.wishlist.createWishlist(ctx.userId, input),
 
   addToWishlist: (
     _parent: unknown,
     { input }: { input: AddToWishlistInput },
     ctx: Context,
-  ) => addToWishlist(ctx.prisma, ctx.userId, input),
+  ) => ctx.services.wishlist.addToWishlist(ctx.userId, input),
 
   removeFromWishlist: (
     _parent: unknown,
     args: { wishlistId: string; productId: string },
     ctx: Context,
   ) =>
-    removeFromWishlist(ctx.prisma, ctx.userId, args.wishlistId, args.productId),
+    ctx.services.wishlist.removeFromWishlist(ctx.userId, args.wishlistId, args.productId),
 
   deleteWishlist: (_parent: unknown, { id }: { id: string }, ctx: Context) =>
-    deleteWishlist(ctx.prisma, ctx.userId, id),
+    ctx.services.wishlist.deleteWishlist(ctx.userId, id),
 };

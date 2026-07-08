@@ -1,5 +1,5 @@
 import { faker } from "@faker-js/faker";
-import type { SeedContext, SeedCounts } from "./types.js";
+import type { SeedContext, SeedCounts, CommentSeed } from "./types.js";
 
 export async function seedComments(
   ctx: SeedContext,
@@ -7,11 +7,7 @@ export async function seedComments(
   userIds: string[],
   postIds: string[],
 ): Promise<void> {
-  const data: Array<{
-    content: string;
-    authorId: string;
-    postId: string;
-  }> = [];
+  const data: CommentSeed[] = [];
 
   for (const postId of postIds) {
     const commentCount = faker.number.int({ min: 1, max: 5 });

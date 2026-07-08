@@ -1,5 +1,5 @@
-import { fa, faker } from "@faker-js/faker";
-import type { SeedContext, SeedCounts } from "./types.js";
+import { faker } from "@faker-js/faker";
+import type { SeedContext, SeedCounts, DiscountSeed } from "./types.js";
 
 const DISCOUNT_TYPES = ["PERCENTAGE", "FIXED"];
 
@@ -8,17 +8,7 @@ export async function seedDiscounts(
   counts: SeedCounts,
   productIds: string[],
 ): Promise<void> {
-  const data: Array<{
-    productId: string;
-    name: string;
-    type: string;
-    value: number;
-    startDate: Date;
-    endDate: Date;
-    isActive: boolean;
-    maxUsage: number;
-    usedCount: number;
-  }> = [];
+  const data: DiscountSeed[] = [];
 
   for (const productId of productIds) {
     const hasDiscount = Math.random() > 0.6;

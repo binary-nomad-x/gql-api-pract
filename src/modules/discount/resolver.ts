@@ -1,32 +1,27 @@
 import type { Context } from "@gql-prisma-api/types/context.js";
 import type { Discount as DiscountModel } from "@prisma/client";
 import type { CreateDiscountInput, UpdateDiscountInput } from "./inputs.js";
-import {
-  createDiscount, updateDiscount, deleteDiscount,
-  getActiveDiscounts, getProductDiscounts,
-  resolveDiscountProduct,
-} from "./service.js";
 
 export const Discount = {
   product: (parent: DiscountModel, _args: unknown, ctx: Context) =>
-    resolveDiscountProduct(ctx.prisma, parent.productId),
+    ctx.services.discount.resolveDiscountProduct(parent.productId),
 };
 
 export const Query = {
   activeDiscounts: (_parent: unknown, _args: unknown, ctx: Context) =>
-    getActiveDiscounts(ctx.prisma),
+    ctx.services.discount.getActiveDiscounts(),
 
   productDiscounts: (_parent: unknown, { productId }: { productId: string }, ctx: Context) =>
-    getProductDiscounts(ctx.prisma, productId),
+    ctx.services.discount.getProductDiscounts(productId),
 };
 
 export const Mutation = {
   createDiscount: (_parent: unknown, { input }: { input: CreateDiscountInput }, ctx: Context) =>
-    createDiscount(ctx.prisma, ctx.userId, input),
+    ctx.services.discount.createDiscount(ctx.userId, input),
 
   updateDiscount: (_parent: unknown, { id, input }: { id: string; input: UpdateDiscountInput }, ctx: Context) =>
-    updateDiscount(ctx.prisma, ctx.userId, id, input),
+    ctx.services.discount.updateDiscount(ctx.userId, id, input),
 
   deleteDiscount: (_parent: unknown, { id }: { id: string }, ctx: Context) =>
-    deleteDiscount(ctx.prisma, ctx.userId, id),
+    ctx.services.discount.deleteDiscount(ctx.userId, id),
 };

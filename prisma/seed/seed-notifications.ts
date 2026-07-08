@@ -1,5 +1,5 @@
 import { faker } from "@faker-js/faker";
-import type { SeedContext, SeedCounts } from "./types.js";
+import type { SeedContext, SeedCounts, NotificationSeed } from "./types.js";
 
 const TYPES = ["info", "warning", "success", "error"] as const;
 
@@ -8,15 +8,7 @@ export async function seedNotifications(
   counts: SeedCounts,
   userIds: string[],
 ): Promise<void> {
-  const data: Array<{
-    userId: string;
-    type: string;
-    title: string;
-    message: string | null;
-    isRead: boolean;
-    link: string | null;
-    readAt: Date | null;
-  }> = [];
+  const data: NotificationSeed[] = [];
 
   for (const userId of userIds) {
     const n = faker.number.int({ min: 3, max: 8 });

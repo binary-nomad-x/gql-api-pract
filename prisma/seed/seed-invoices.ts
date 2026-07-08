@@ -1,11 +1,12 @@
 import { faker } from "@faker-js/faker";
-import type { SeedContext, SeedCounts } from "./types.js";
+import type { SeedContext, SeedCounts, InvoiceSeed } from "./types.js";
 
 export async function seedInvoices(
   ctx: SeedContext,
   counts: SeedCounts,
   orderIds: string[],
 ): Promise<void> {
+
   const orders = await ctx.prisma.order.findMany({
     where: { id: { in: orderIds } },
     select: {
@@ -16,14 +17,7 @@ export async function seedInvoices(
     },
   });
 
-  const data: Array<{
-    orderId: string;
-    invoiceNumber: string;
-    amount: number;
-    status: string;
-    dueDate: Date;
-    paidAt: Date | null;
-  }> = [];
+  const data: InvoiceSeed[] = [];
 
   for (let i = 0; i < orders.length; i++) {
     const order = orders[i];

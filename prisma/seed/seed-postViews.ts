@@ -1,5 +1,5 @@
 import { faker } from "@faker-js/faker";
-import type { SeedContext, SeedCounts } from "./types.js";
+import type { SeedContext, SeedCounts, PostViewSeed } from "./types.js";
 
 export async function seedPostViews(
   ctx: SeedContext,
@@ -7,7 +7,7 @@ export async function seedPostViews(
   postIds: string[],
   userIds: string[],
 ): Promise<void> {
-  const data: Array<{ postId: string; userId: string; ip: string }> = [];
+  const data: PostViewSeed[] = [];
 
   for (const postId of postIds) {
     const n = faker.number.int({ min: 5, max: 30 });

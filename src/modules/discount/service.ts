@@ -1,11 +1,7 @@
-import type { PrismaClient, Prisma } from "@prisma/client";
+import type { Prisma } from "@prisma/client";
 import type { CreateDiscountInput, UpdateDiscountInput } from "./inputs.js";
 import { requireAuth } from "@gql-prisma-api/utils/errors.js";
-
-// --- Type-field resolver functions ---
-export function resolveDiscountProduct(prisma: PrismaClient, productId: string) {
-  return prisma.product.findUnique({ where: { id: productId } });
-}
+import { BaseService } from "@gql-prisma-api/lib/BaseService.js";
 
 // --- Helper functions ---
 function toDiscountCreate(input: CreateDiscountInput): Prisma.DiscountUncheckedCreateInput {
@@ -31,49 +27,53 @@ function toDiscountUpdate(input: UpdateDiscountInput): Prisma.DiscountUpdateInpu
   return data;
 }
 
-// --- Existing business logic functions ---
-export async function createDiscount(
-  prisma: PrismaClient,
-  userId: string | undefined,
-  input: CreateDiscountInput,
-) {
-  requireAuth(userId);
-  const product = await prisma.product.findUnique({ where: { id: input.productId } });
-  if (!product) throw new Error("Product not found");
-  return prisma.discount.create({ data: toDiscountCreate(input) });
-}
+export class DiscountService extends BaseService {
+  // --- Type-field resolver functions ---
+  resolveDiscountProduct(productId: string) {
+    return this.core.product.findUnique({ where: { id: productId } });
+  }
 
-export async function updateDiscount(
-  prisma: PrismaClient,
-  userId: string | undefined,
-  id: string,
-  input: UpdateDiscountInput,
-) {
-  requireAuth(userId);
-  return prisma.discount.update({ where: { id }, data: toDiscountUpdate(input) });
-}
+  // --- Existing business logic functions ---
+  async createDiscount(
+    userId: string | undefined,
+    input: CreateDiscountInput,
+  ) {
+    requireAuth(userId);
+    const product = await this.core.product.findUnique({ where: { id: input.productId } });
+    if (!product) throw new Error("Product not found");
+    return this.core.discount.create({ data: toDiscountCreate(input) });
+  }
 
-export async function deleteDiscount(
-  prisma: PrismaClient,
-  userId: string | undefined,
-  id: string,
-) {
-  requireAuth(userId);
-  await prisma.discount.delete({ where: { id } });
-  return true;
-}
+  async updateDiscount(
+    userId: string | undefined,
+    id: string,
+    input: UpdateDiscountInput,
+  ) {
+    requireAuth(userId);
+    return this.core.discount.update({ where: { id }, data: toDiscountUpdate(input) });
+  }
 
-export function getActiveDiscounts(prisma: PrismaClient) {
-  const now = new Date();
-  return prisma.discount.findMany({
-    where: { isActive: true, startDate: { lte: now }, endDate: { gte: now } },
-    orderBy: { createdAt: "desc" },
-  });
-}
+  async deleteDiscount(
+    userId: string | undefined,
+    id: string,
+  ) {
+    requireAuth(userId);
+    await this.core.discount.delete({ where: { id } });
+    return true;
+  }
 
-export function getProductDiscounts(prisma: PrismaClient, productId: string) {
-  const now = new Date();
-  return prisma.discount.findMany({
-    where: { productId, isActive: true, startDate: { lte: now }, endDate: { gte: now } },
-  });
+  getActiveDiscounts() {
+    const now = new Date();
+    return this.core.discount.findMany({
+      where: { isActive: true, startDate: { lte: now }, endDate: { gte: now } },
+      orderBy: { createdAt: "desc" },
+    });
+  }
+
+  getProductDiscounts(productId: string) {
+    const now = new Date();
+    return this.core.discount.findMany({
+      where: { productId, isActive: true, startDate: { lte: now }, endDate: { gte: now } },
+    });
+  }
 }

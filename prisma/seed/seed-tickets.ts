@@ -1,5 +1,5 @@
 import { faker } from "@faker-js/faker";
-import type { SeedContext, SeedCounts } from "./types.js";
+import type { SeedContext, SeedCounts, TicketReplySeed } from "./types.js";
 
 const CATEGORIES = ["general", "billing", "technical", "account"];
 const PRIORITIES = ["LOW", "MEDIUM", "HIGH", "URGENT"];
@@ -38,12 +38,7 @@ export async function seedTickets(
 
     const replyCount = faker.number.int({ min: 1, max: 4 });
 
-    const replies: Array<{
-      ticketId: string;
-      userId: string;
-      content: string;
-      isStaff: boolean;
-    }> = [];
+    const replies: TicketReplySeed[] = [];
 
     for (let r = 0; r < replyCount; r++) {
       replies.push({

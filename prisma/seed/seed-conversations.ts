@@ -1,5 +1,5 @@
 import { faker } from "@faker-js/faker";
-import type { SeedContext, SeedCounts } from "./types.js";
+import type { SeedContext, SeedCounts, MessageSeed } from "./types.js";
 
 export async function seedConversations(
   ctx: SeedContext,
@@ -48,11 +48,7 @@ export async function seedConversations(
     counts.participants += 2;
 
     const messageCount = faker.number.int({ min: 3, max: 10 });
-    const messages: Array<{
-      conversationId: string;
-      senderId: string;
-      content: string;
-    }> = [];
+    const messages: MessageSeed[] = [];
 
     for (let m = 0; m < messageCount; m++) {
       messages.push({

@@ -1,5 +1,5 @@
 import { faker } from "@faker-js/faker";
-import type { SeedContext, SeedCounts } from "./types.js";
+import type { SeedContext, SeedCounts, RefundSeed } from "./types.js";
 
 export async function seedRefunds(
   ctx: SeedContext,
@@ -24,13 +24,7 @@ export async function seedRefunds(
     select: { id: true, orderId: true, amount: true },
   });
 
-  const data: Array<{
-    paymentId: string;
-    orderId: string;
-    amount: number;
-    reason: string;
-    status: string;
-  }> = [];
+  const data: RefundSeed[] = [];
 
   for (const payment of payments) {
     const refundAmount = parseFloat(

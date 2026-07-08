@@ -1,5 +1,5 @@
 import { faker } from "@faker-js/faker";
-import type { SeedContext, SeedCounts } from "./types.js";
+import type { SeedContext, SeedCounts, PaymentSeed } from "./types.js";
 
 const PAYMENT_METHODS = ["credit_card", "debit_card", "paypal", "stripe"];
 
@@ -13,13 +13,7 @@ export async function seedPayments(
     select: { id: true, totalAmount: true, discountAmount: true, status: true },
   });
 
-  const data: Array<{
-    orderId: string;
-    amount: number;
-    method: string;
-    status: string;
-    transactionId: string;
-  }> = [];
+  const data: PaymentSeed[] = [];
 
   for (const order of orders) {
     const amount = order.totalAmount - order.discountAmount;

@@ -1,5 +1,5 @@
 import { faker } from "@faker-js/faker";
-import type { SeedContext, SeedCounts } from "./types.js";
+import type { SeedContext, SeedCounts, FollowSeed } from "./types.js";
 
 export async function seedFollows(
   ctx: SeedContext,
@@ -7,7 +7,7 @@ export async function seedFollows(
   userIds: string[],
 ): Promise<void> {
   const seen = new Set<string>();
-  const data: Array<{ followerId: string; followingId: string }> = [];
+  const data: FollowSeed[] = [];
 
   for (const userId of userIds) {
     const followCount = Math.floor(Math.random() * 10) + 1;

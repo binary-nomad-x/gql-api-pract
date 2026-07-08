@@ -1,19 +1,19 @@
 import type { PrismaClient } from "@prisma/client";
+import { BaseService } from "@gql-prisma-api/lib/BaseService.js";
 
-// --- Type-field resolver functions ---
-export function resolvePostViewPost(prisma: PrismaClient, postId: string) {
-  return prisma.post.findUnique({ where: { id: postId } });
-}
+export class PostViewService extends BaseService {
+  resolvePostViewPost(postId: string) {
+    return this.core.post.findUnique({ where: { id: postId } });
+  }
 
-export function resolvePostViewUser(prisma: PrismaClient, userId: string | null) {
-  return userId ? prisma.user.findUnique({ where: { id: userId } }) : null;
-}
+  resolvePostViewUser(userId: string | null) {
+    return userId ? this.core.user.findUnique({ where: { id: userId } }) : null;
+  }
 
-// --- Existing business logic functions ---
-export function recordPostView(
-  prisma: PrismaClient,
-  postId: string,
-  userId?: string,
-) {
-  return prisma.postView.create({ data: { postId, userId } });
+  recordPostView(
+    postId: string,
+    userId?: string,
+  ) {
+    return this.core.postView.create({ data: { postId, userId } });
+  }
 }

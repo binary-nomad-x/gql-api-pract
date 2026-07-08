@@ -1,16 +1,10 @@
 import type { Context } from "@gql-prisma-api/types/context.js";
 import type { Shipment as ShipmentModel } from "@prisma/client";
 import type { CreateShipmentInput } from "./inputs.js";
-import {
-  createShipment,
-  updateShipmentStatus,
-  getOrderShipments,
-  resolveShipmentOrder,
-} from "./service.js";
 
 export const Shipment = {
   order: (parent: ShipmentModel, _args: unknown, ctx: Context) =>
-    resolveShipmentOrder(ctx.prisma, parent.orderId),
+    ctx.services.shipment.resolveShipmentOrder(parent.orderId),
 };
 
 export const Query = {
@@ -18,7 +12,7 @@ export const Query = {
     _parent: unknown,
     { orderId }: { orderId: string },
     ctx: Context,
-  ) => getOrderShipments(ctx.prisma, ctx.userId, orderId),
+  ) => ctx.services.shipment.getOrderShipments(ctx.userId, orderId),
 };
 
 export const Mutation = {
@@ -26,10 +20,10 @@ export const Mutation = {
     _parent: unknown,
     { input }: { input: CreateShipmentInput },
     ctx: Context,
-  ) => createShipment(ctx.prisma, ctx.userId, input),
+  ) => ctx.services.shipment.createShipment(ctx.userId, input),
   updateShipmentStatus: (
     _parent: unknown,
     { id, status }: { id: string; status: string },
     ctx: Context,
-  ) => updateShipmentStatus(ctx.prisma, ctx.userId, id, status),
+  ) => ctx.services.shipment.updateShipmentStatus(ctx.userId, id, status),
 };

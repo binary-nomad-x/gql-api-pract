@@ -1,5 +1,5 @@
 import { faker } from "@faker-js/faker";
-import type { SeedContext, SeedCounts } from "./types.js";
+import type { SeedContext, SeedCounts, SavedPostSeed } from "./types.js";
 
 export async function seedSavedPosts(
   ctx: SeedContext,
@@ -8,7 +8,7 @@ export async function seedSavedPosts(
   postIds: string[],
 ): Promise<void> {
   const seen = new Set<string>();
-  const data: Array<{ userId: string; postId: string }> = [];
+  const data: SavedPostSeed[] = [];
 
   for (const userId of userIds) {
     const n = Math.floor(Math.random() * 5) + 1;

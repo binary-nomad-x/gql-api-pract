@@ -1,21 +1,12 @@
 import { faker } from "@faker-js/faker";
-import type { SeedContext, SeedCounts } from "./types.js";
+import type { SeedContext, SeedCounts, AddressSeed } from "./types.js";
 
 export async function seedAddresses(
   ctx: SeedContext,
   counts: SeedCounts,
   userIds: string[],
 ): Promise<void> {
-  const data: Array<{
-    userId: string;
-    label: string;
-    street: string;
-    city: string;
-    state: string;
-    zip: string;
-    country: string;
-    isDefault: boolean;
-  }> = [];
+  const data: AddressSeed[] = [];
 
   for (const userId of userIds) {
     const addressCount = faker.number.int({ min: 1, max: 3 });

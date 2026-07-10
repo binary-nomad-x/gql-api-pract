@@ -11,8 +11,8 @@ export async function seedLikes(
   const data: LikeSeed[] = [];
 
   for (const postId of postIds) {
-    const likeCount = Math.floor(Math.random() * userIds.length * 0.4);
-    for (let j = 0; j < likeCount; j++) {
+    const likesCountPeruser = Math.floor(Math.random() * userIds.length * 0.4);
+    for (let j = 0; j < likesCountPeruser; j++) {
       const userId = faker.helpers.arrayElement(userIds);
       const key = `${userId}:${postId}`;
       if (!seen.has(key)) {
@@ -25,5 +25,6 @@ export async function seedLikes(
   if (data.length > 0) {
     await ctx.prisma.like.createMany({ data, skipDuplicates: true });
   }
+
   counts.likes += data.length;
 }

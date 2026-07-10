@@ -3,7 +3,9 @@
     "target": "ES2022",
     "module": "NodeNext",
     "moduleResolution": "NodeNext",
-    "lib": ["ES2022"],
+    "lib": [
+      "ES2022"
+    ],
     "outDir": "./dist",
     "rootDir": "./src",
     "strict": true,
@@ -14,10 +16,20 @@
     "declaration": true,
     "declarationMap": true,
     "sourceMap": true,
+    "types": [
+      "node"
+    ],
     "paths": {
-      "@gql-prisma-api/*": ["./src/*"]
+      "@gql-prisma-api/*": [
+        "./src/*"
+      ]
     }
   },
-  "include": ["src/**/*"],
-  "exclude": ["node_modules", "dist"],
+  "include": [
+    "src/**/*"
+  ],
+  "exclude": [
+    "node_modules",
+    "dist"
+  ],
 }

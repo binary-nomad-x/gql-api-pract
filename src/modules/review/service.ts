@@ -4,7 +4,9 @@ import { requireAuth, requireOwner } from "@gql-prisma-api/utils/errors.js";
 import { triggerNovuWorkflow } from "@gql-prisma-api/utils/novu.js";
 
 export class ReviewService {
-  constructor(private readonly core: PrismaClient) {}
+
+  constructor(private readonly core: PrismaClient) { }
+
   resolveReviewProduct(productId: string) {
     return this.core.product.findUnique({ where: { id: productId } });
   }

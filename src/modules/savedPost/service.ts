@@ -2,7 +2,8 @@ import type { PrismaClient } from "@prisma/client";
 import { requireAuth } from "@gql-prisma-api/utils/errors.js";
 
 export class SavedPostService {
-  constructor(private readonly core: PrismaClient) {}
+  constructor(private readonly core: PrismaClient) { }
+
   resolveSavedPostUser(userId: string) {
     return this.core.user.findUnique({ where: { id: userId } });
   }
@@ -15,15 +16,19 @@ export class SavedPostService {
     userId: string | undefined,
     postId: string,
   ) {
+
     requireAuth(userId);
     const existing = await this.core.savedPost.findUnique({
       where: { userId_postId: { userId: userId!, postId } },
     });
+
     if (existing) {
       await this.core.savedPost.delete({ where: { id: existing.id } });
       return existing;
     }
+    
     return this.core.savedPost.create({ data: { userId: userId!, postId } });
+
   }
 
   getMySavedPosts(

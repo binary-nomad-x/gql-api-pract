@@ -10,7 +10,7 @@ export async function seedComments(
   const data: CommentSeed[] = [];
 
   for (const postId of postIds) {
-    const commentCount = faker.number.int({ min: 1, max: 5 });
+    const commentCount = faker.number.int({ min: 2, max: 10 });
     for (let j = 0; j < commentCount; j++) {
       data.push({
         content: faker.lorem.sentences({ min: 1, max: 3 }),

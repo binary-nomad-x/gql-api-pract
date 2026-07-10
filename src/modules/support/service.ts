@@ -10,10 +10,7 @@ import { logger } from "@gql-prisma-api/utils/logger.js";
 
 export class SupportService {
   constructor(private readonly core: PrismaClient) {}
-  async findMyTickets(
-    userId: string | undefined,
-    filter?: TicketFilterInput,
-  ) {
+  async findMyTickets(userId: string | undefined, filter?: TicketFilterInput) {
     requireAuth(userId);
     const conditions: Prisma.SupportTicketWhereInput[] = [{ userId }];
 
@@ -34,10 +31,7 @@ export class SupportService {
     });
   }
 
-  async findTicketById(
-    userId: string | undefined,
-    id: string,
-  ) {
+  async findTicketById(userId: string | undefined, id: string) {
     requireAuth(userId);
     const ticket = await this.core.supportTicket.findUnique({
       where: { id },
@@ -49,10 +43,7 @@ export class SupportService {
     return ticket;
   }
 
-  async createTicket(
-    userId: string | undefined,
-    input: CreateTicketInput,
-  ) {
+  async createTicket(userId: string | undefined, input: CreateTicketInput) {
     requireAuth(userId);
     const ticket = await this.core.supportTicket.create({
       data: {
@@ -82,10 +73,7 @@ export class SupportService {
     return ticket;
   }
 
-  async addTicketReply(
-    userId: string | undefined,
-    input: AddTicketReplyInput,
-  ) {
+  async addTicketReply(userId: string | undefined, input: AddTicketReplyInput) {
     requireAuth(userId);
     const ticket = await this.core.supportTicket.findUnique({
       where: { id: input.ticketId },
@@ -118,10 +106,7 @@ export class SupportService {
     return reply;
   }
 
-  async resolveTicket(
-    userId: string | undefined,
-    id: string,
-  ) {
+  async resolveTicket(userId: string | undefined, id: string) {
     requireAuth(userId);
     const ticket = await this.core.supportTicket.findUnique({ where: { id } });
     if (!ticket) throw new Error("Ticket not found");
@@ -137,10 +122,7 @@ export class SupportService {
     return updated;
   }
 
-  async closeTicket(
-    userId: string | undefined,
-    id: string,
-  ) {
+  async closeTicket(userId: string | undefined, id: string) {
     requireAuth(userId);
     const ticket = await this.core.supportTicket.findUnique({ where: { id } });
     if (!ticket) throw new Error("Ticket not found");

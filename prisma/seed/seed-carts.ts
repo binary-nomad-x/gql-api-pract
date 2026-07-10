@@ -49,7 +49,7 @@ export async function seedCarts(
         unitPrice: product.price,
         discountAmount: 0,
         totalPrice,
-        notes: Math.random() > 0.7 ? faker.lorem.sentence() : "",
+        notes: Math.random() > 0.7 ? faker.lorem.sentence() : null,
         isSavedForLater: false,
       });
     }

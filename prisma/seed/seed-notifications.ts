@@ -12,7 +12,7 @@ export async function seedNotifications(
 ): Promise<void> {
   const data: {
     userId: string; type: string; title: string; message: string;
-    link: string; actionUrl: string; imageUrl: string;
+    link: string; actionUrl: string | null; imageUrl: string | null;
     channel: string; category: string; isRead: boolean;
     readAt: Date | null; seenAt: Date | null;
     deliveredAt: Date | null; expiresAt: Date | null; metadata: object;
@@ -29,8 +29,8 @@ export async function seedNotifications(
         title: faker.lorem.sentence({ min: 3, max: 8 }),
         message: faker.lorem.sentences({ min: 1, max: 2 }),
         link: faker.internet.url(),
-        actionUrl: Math.random() > 0.5 ? faker.internet.url() : "",
-        imageUrl: Math.random() > 0.7 ? faker.image.url() : "",
+        actionUrl: Math.random() > 0.5 ? faker.internet.url() : null,
+        imageUrl: Math.random() > 0.7 ? faker.image.url() : null,
         channel: faker.helpers.arrayElement(CHANNELS),
         category: faker.helpers.arrayElement(CATEGORIES),
         isRead,

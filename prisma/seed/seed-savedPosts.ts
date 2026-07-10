@@ -22,7 +22,7 @@ export async function seedSavedPosts(
         data.push({
           userId,
           postId,
-          note: Math.random() > 0.5 ? faker.lorem.sentence() : "",
+          note: Math.random() > 0.5 ? faker.lorem.sentence() : null,
           folder: faker.helpers.arrayElement(FOLDERS),
         });
       }

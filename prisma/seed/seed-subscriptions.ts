@@ -13,8 +13,8 @@ export async function seedSubscriptions(
   const data: {
     userId: string; plan: string; status: string; startDate: Date;
     endDate: Date | null; trialStartDate: Date | null; trialEndDate: Date | null;
-    autoRenew: boolean; billingCycle: string; paymentMethod: string;
-    cancelledBy: string; cancellationReason: string; cancelledAt: Date | null;
+    autoRenew: boolean; billingCycle: string; paymentMethod: string | null;
+    cancelledBy: string | null; cancellationReason: string | null; cancelledAt: Date | null;
     lastBillingAt: Date | null; nextBillingAt: Date | null;
     currentPeriodStart: Date | null; currentPeriodEnd: Date | null; metadata: object;
   }[] = [];
@@ -36,9 +36,9 @@ export async function seedSubscriptions(
       trialEndDate: plan !== "FREE" ? faker.date.past({ days: 14 }) : null,
       autoRenew: isActive && Math.random() > 0.3,
       billingCycle: plan === "FREE" ? "monthly" : faker.helpers.arrayElement(BILLING_CYCLES),
-      paymentMethod: plan === "FREE" ? "" : faker.helpers.arrayElement(PAYMENT_METHODS),
-      cancelledBy: isActive ? "" : faker.helpers.arrayElement(["user", "system", "admin"]),
-      cancellationReason: isActive ? "" : faker.helpers.arrayElement([
+      paymentMethod: plan === "FREE" ? null : faker.helpers.arrayElement(PAYMENT_METHODS),
+      cancelledBy: isActive ? null : faker.helpers.arrayElement(["user", "system", "admin"]),
+      cancellationReason: isActive ? null : faker.helpers.arrayElement([
         "Too expensive", "Not using enough", "Found alternative",
         "Technical issues", "No longer needed",
       ]),
@@ -50,18 +50,11 @@ export async function seedSubscriptions(
       metadata: {
         planTier: plan,
         discountApplied: plan !== "FREE",
-        referrer: Math.random() > 0.7 ? faker.internet.email() : "",
+        referrer: Math.random() > 0.7 ? faker.internet.email() : null,
       },
     });
   }
 
-  await ctx.prisma.subscription.createMany({
-    data: data.map((s) => ({
-      ...s,
-      paymentMethod: s.paymentMethod || null,
-      cancelledBy: s.cancelledBy || null,
-      cancellationReason: s.cancellationReason || null,
-    })),
-  });
+  await ctx.prisma.subscription.createMany({ data });
   counts.subscriptions += data.length;
 }

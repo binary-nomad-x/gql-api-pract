@@ -35,7 +35,7 @@ export async function seedShipments(
       height: parseFloat(faker.number.float({ min: 1, max: 30 }).toFixed(1)),
       cost: parseFloat(faker.commerce.price({ min: 5, max: 50 })),
       currency: "USD",
-      notes: Math.random() > 0.7 ? "Fragile - handle with care" : "",
+      notes: Math.random() > 0.7 ? "Fragile - handle with care" : null,
       estimatedDelivery: faker.date.future(),
       deliveredAt: isDelivered ? faker.date.past() : null,
       shippedAt: faker.date.recent({ days: 10 }),

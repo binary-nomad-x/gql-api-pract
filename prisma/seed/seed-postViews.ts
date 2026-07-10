@@ -24,7 +24,7 @@ export async function seedPostViews(
         ip: faker.internet.ip(),
         referrer: faker.helpers.arrayElement([
           "https://google.com", "https://facebook.com", "https://twitter.com",
-          "https://reddit.com", "https://linkedin.com", "https://bing.com", "",
+          "https://reddit.com", "https://linkedin.com", "https://bing.com", null,
         ]),
         userAgent: faker.internet.userAgent(),
         country,

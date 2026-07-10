@@ -68,7 +68,7 @@ export interface CartItemSeed {
   unitPrice: number;
   discountAmount: number;
   totalPrice: number;
-  notes: string;
+  notes: string | null;
   isSavedForLater: boolean;
 }
 
@@ -135,10 +135,10 @@ export interface InvoiceSeed {
   totalAmount: number;
   currency: string;
   status: string;
-  notes: string;
+  notes: string | null;
   billingAddress: string;
   shippingAddress: string;
-  pdfUrl: string;
+  pdfUrl: string | null;
   items: object[];
   dueDate: Date;
   paidAt: Date | null;
@@ -157,8 +157,8 @@ export interface NotificationSeed {
   title: string;
   message: string;
   link: string;
-  actionUrl: string;
-  imageUrl: string;
+  actionUrl: string | null;
+  imageUrl: string | null;
   channel: string;
   category: string;
   isRead: boolean;
@@ -180,16 +180,16 @@ export interface OrderSeed {
   shippingAddress: string;
   email: string;
   phone: string;
-  notes: string;
+  notes: string | null;
   source: string;
   isGift: boolean;
-  giftMessage: string;
-  trackingUrl: string;
+  giftMessage: string | null;
+  trackingUrl: string | null;
   couponId: string | null;
   estimatedDelivery: Date | null;
   deliveredAt: Date | null;
   cancelledAt: Date | null;
-  cancelReason: string;
+  cancelReason: string | null;
 }
 
 export interface OrderItemSeed {
@@ -218,7 +218,7 @@ export interface PaymentSeed {
   payerEmail: string;
   payerName: string;
   billingAddress: string;
-  failureReason: string;
+  failureReason: string | null;
   refundedAmount: number;
   capturedAmount: number;
   transactionId: string;
@@ -278,7 +278,7 @@ export interface ReviewSeed {
   pros: string[];
   cons: string[];
   images: string[];
-  responseFromSeller: string;
+  responseFromSeller: string | null;
   responseDate: Date | null;
   productId: string;
   userId: string;
@@ -287,7 +287,7 @@ export interface ReviewSeed {
 export interface SavedPostSeed {
   userId: string;
   postId: string;
-  note: string;
+  note: string | null;
   folder: string;
 }
 
@@ -305,7 +305,7 @@ export interface ShipmentSeed {
   height: number;
   cost: number;
   currency: string;
-  notes: string;
+  notes: string | null;
   estimatedDelivery: Date;
   deliveredAt: Date | null;
   shippedAt: Date | null;
@@ -321,9 +321,9 @@ export interface SubscriptionSeed {
   trialEndDate: Date | null;
   autoRenew: boolean;
   billingCycle: string;
-  paymentMethod: string;
-  cancelledBy: string;
-  cancellationReason: string;
+  paymentMethod: string | null;
+  cancelledBy: string | null;
+  cancellationReason: string | null;
   cancelledAt: Date | null;
   lastBillingAt: Date | null;
   nextBillingAt: Date | null;

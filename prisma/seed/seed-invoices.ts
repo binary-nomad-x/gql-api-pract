@@ -19,8 +19,8 @@ export async function seedInvoices(
     orderId: string; invoiceNumber: string; amount: number;
     subtotal: number; taxAmount: number; discountAmount: number;
     totalAmount: number; currency: string; status: string;
-    notes: string; billingAddress: string; shippingAddress: string;
-    pdfUrl: string; items: object[];
+    notes: string | null; billingAddress: string; shippingAddress: string;
+    pdfUrl: string | null; items: object[];
     dueDate: Date; paidAt: Date | null; sentAt: Date | null;
   }[] = [];
 
@@ -39,10 +39,10 @@ export async function seedInvoices(
       totalAmount: order.totalAmount,
       currency: "USD",
       status: isPaid ? "PAID" : isCancelled ? "CANCELLED" : "PENDING",
-      notes: Math.random() > 0.7 ? faker.lorem.sentence() : "",
+      notes: Math.random() > 0.7 ? faker.lorem.sentence() : null,
       billingAddress: faker.location.streetAddress(),
       shippingAddress: order.shippingAddress || faker.location.streetAddress(),
-      pdfUrl: "",
+      pdfUrl: null,
       items: [
         { description: "Order items", quantity: 1, unitPrice: order.subtotal },
         { description: "Tax", quantity: 1, unitPrice: order.taxAmount },
@@ -54,12 +54,6 @@ export async function seedInvoices(
     });
   }
 
-  await ctx.prisma.invoice.createMany({
-    data: data.map((inv) => ({
-      ...inv,
-      notes: inv.notes || null,
-      pdfUrl: null,
-    })),
-  });
+  await ctx.prisma.invoice.createMany({ data });
   counts.invoices += data.length;
 }

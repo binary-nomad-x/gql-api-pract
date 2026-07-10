@@ -27,7 +27,7 @@ export async function seedPayments(
     payerEmail: string;
     payerName: string;
     billingAddress: string;
-    failureReason: string;
+    failureReason: string | null;
     refundedAmount: number;
     capturedAmount: number;
     transactionId: string;
@@ -55,18 +55,13 @@ export async function seedPayments(
       payerEmail: faker.internet.email().toLowerCase(),
       payerName: faker.person.fullName(),
       billingAddress: faker.location.streetAddress(),
-      failureReason: isCompleted ? "" : "Payment cancelled by user",
+      failureReason: isCompleted ? null : "Payment cancelled by user",
       refundedAmount: isCompleted ? 0 : amount,
       capturedAmount: isCompleted ? amount : 0,
       transactionId: `txn_${faker.string.alphanumeric({ length: 16 })}`,
     });
   }
 
-  await ctx.prisma.payment.createMany({
-    data: data.map((p) => ({
-      ...p,
-      failureReason: p.failureReason || null,
-    })),
-  });
+  await ctx.prisma.payment.createMany({ data });
   counts.payments += data.length;
 }

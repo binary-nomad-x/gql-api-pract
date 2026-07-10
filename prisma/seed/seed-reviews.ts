@@ -38,7 +38,7 @@ export async function seedReviews(
         images: Math.random() > 0.6
           ? Array.from({ length: faker.number.int({ min: 1, max: 3 }) }, () => faker.image.url())
           : [],
-        responseFromSeller: Math.random() > 0.7 ? faker.lorem.sentence() : "",
+        responseFromSeller: Math.random() > 0.7 ? faker.lorem.sentence() : null,
         responseDate: Math.random() > 0.7 ? faker.date.recent({ days: 30 }) : null,
         productId,
         userId,

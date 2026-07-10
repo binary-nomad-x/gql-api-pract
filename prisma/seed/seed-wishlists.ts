@@ -24,7 +24,7 @@ export async function seedWishlists(
           isPublic: w === 0 ? false : faker.datatype.boolean({ probability: 0.3 }),
           isDefault: w === 0,
           itemCount: 0,
-          shareCode: w === 0 ? "" : randomUUID().slice(0, 8),
+          shareCode: w === 0 ? null : randomUUID().slice(0, 8),
         },
       });
       counts.wishlists++;
@@ -44,7 +44,7 @@ export async function seedWishlists(
             quantity: faker.number.int({ min: 1, max: 3 }),
             priority: faker.helpers.arrayElement(["LOW", "MEDIUM", "HIGH"]),
             priceAtAddition: product.price,
-            note: Math.random() > 0.5 ? faker.lorem.sentence() : "",
+            note: Math.random() > 0.5 ? faker.lorem.sentence() : null,
           },
         });
         counts.wishlistItems++;

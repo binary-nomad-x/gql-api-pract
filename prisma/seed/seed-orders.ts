@@ -39,16 +39,16 @@ export async function seedOrders(
     shippingAddress: string;
     email: string;
     phone: string;
-    notes: string;
+    notes: string | null;
     source: string;
     isGift: boolean;
-    giftMessage: string;
-    trackingUrl: string;
+    giftMessage: string | null;
+    trackingUrl: string | null;
     couponId: string | null;
     estimatedDelivery: Date | null;
     deliveredAt: Date | null;
     cancelledAt: Date | null;
-    cancelReason: string;
+    cancelReason: string | null;
   }[] = [];
   const itemData: {
     orderId: string;
@@ -83,11 +83,11 @@ export async function seedOrders(
       shippingAddress: faker.location.streetAddress(),
       email: faker.internet.email().toLowerCase(),
       phone: faker.phone.number(),
-      notes: Math.random() > 0.4 ? faker.lorem.sentence() : "",
+      notes: Math.random() > 0.4 ? faker.lorem.sentence() : null,
       source: faker.helpers.arrayElement(["web", "mobile", "api"]),
       isGift: Math.random() > 0.9,
-      giftMessage: Math.random() > 0.9 ? faker.lorem.sentence() : "",
-      trackingUrl: "",
+      giftMessage: Math.random() > 0.9 ? faker.lorem.sentence() : null,
+      trackingUrl: null,
       couponId,
       estimatedDelivery: faker.date.future(),
       deliveredAt: status === "DELIVERED" ? faker.date.past() : null,
@@ -95,7 +95,7 @@ export async function seedOrders(
       cancelReason: isCancelled ? faker.helpers.arrayElement([
         "Changed mind", "Found better price", "Ordered by mistake",
         "Shipping too slow", "Duplicate order",
-      ]) : "",
+      ]) : null,
     });
 
     const itemCount = faker.number.int({ min: 1, max: 5 });

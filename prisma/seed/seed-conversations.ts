@@ -44,7 +44,7 @@ export async function seedConversations(
         {
           conversationId: conversation.id,
           userId: userA,
-          nickname: "",
+          nickname: null,
           role: "member",
           isMuted: false,
           notificationsEnabled: true,
@@ -54,7 +54,7 @@ export async function seedConversations(
         {
           conversationId: conversation.id,
           userId: userB,
-          nickname: "",
+          nickname: null,
           role: "member",
           isMuted: Math.random() > 0.9,
           notificationsEnabled: true,

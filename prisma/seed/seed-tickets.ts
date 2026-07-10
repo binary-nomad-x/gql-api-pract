@@ -31,10 +31,10 @@ export async function seedTickets(
         category: faker.helpers.arrayElement(CATEGORIES),
         language: faker.helpers.arrayElement(LANGUAGES),
         assignedToId,
-        resolution: isResolved ? faker.lorem.paragraph() : "",
-        escalationReason: "",
+        resolution: isResolved ? faker.lorem.paragraph() : null,
+        escalationReason: null,
         satisfactionRating: isResolved ? faker.number.int({ min: 1, max: 5 }) : null,
-        feedback: isResolved ? faker.lorem.sentence() : "",
+        feedback: isResolved ? faker.lorem.sentence() : null,
         tags: faker.helpers.arrayElements(
           ["urgent", "recurring", "high-value", "vip", "follow-up", "escalated"],
           { min: 0, max: 3 },

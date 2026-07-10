@@ -18,7 +18,8 @@ export class AuthService {
     const user = await this.core.user.create({
       data: {
         email: input.email,
-        name: input.name ?? null,
+        username: input.email.split("@")[0],
+        name: input.name ?? "",
         password: await hashPassword(input.password),
       },
     });

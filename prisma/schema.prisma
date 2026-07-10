@@ -8,12 +8,21 @@ datasource db {
 
 // ==================== User Model ====================
 model User {
-  id       String  @id @default(cuid())
-  email    String  @unique
-  name     String?
-  age      Int?
-  password String
-  role     String  @default("USER")
+  id        String   @id @default(cuid())
+  email     String   @unique
+  username  String   @unique
+  name      String   @default("")
+  age       Int      @default(0)
+  password  String
+  role      String   @default("USER")
+  avatarUrl String   @default("")
+  bio       String   @default("")
+  phone     String   @default("")
+  isVerified Boolean @default(false)
+  lastLoginAt DateTime @default(now())
+  locale    String   @default("en-US")
+  timezone  String   @default("UTC")
+  metadata  Json     @default("{}")
 
   profile        Profile?
   posts          Post[]
@@ -26,9 +35,10 @@ model User {
   addresses      Address[]
   wishlists      Wishlist[]
   cart           Cart?
-  notifications  Notification[]
-  followers      Follow[]                  @relation("FollowingRelation")
-  following      Follow[]                  @relation("FollowerRelation")
+  notifications  Notification[]      @relation("UserNotifications")
+  sentNotifications Notification[]   @relation("SentNotifications")
+  followers      Follow[]            @relation("FollowingRelation")
+  following      Follow[]            @relation("FollowerRelation")
   savedPosts     SavedPost[]
   subscriptions  Subscription[]
   conversations  ConversationParticipant[]
@@ -38,21 +48,52 @@ model User {
 
   createdTickets  SupportTicket[] @relation("CreatedTickets")
   assignedTickets SupportTicket[] @relation("AssignedTickets")
+  escalatedTickets SupportTicket[] @relation("EscalatedTickets")
+
+  followedCategories UserCategoryFollow[]
+  couponCreations    Coupon[]        @relation("CouponCreator")
+  discountCreations  Discount[]      @relation("DiscountCreator")
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
   @@index([email])
+  @@index([username])
+  @@index([role])
   @@map("users")
+}
+
+// ==================== UserCategoryFollow (new junction) ====================
+model UserCategoryFollow {
+  id         String   @id @default(cuid())
+  userId     String
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  categoryId String
+  category   Category @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+  notifyOnNew Boolean @default(true)
+  followedAt DateTime @default(now())
+
+  @@unique([userId, categoryId])
+  @@map("user_category_follows")
 }
 
 // ==================== Profile Model ====================
 model Profile {
   id        String   @id @default(cuid())
-  bio       String?
-  avatar    String?
-  phone     String?
-  address   String?
+  bio       String   @default("")
+  avatar    String   @default("")
+  phone     String   @default("")
+  address   String   @default("")
+  fullName  String   @default("")
+  dateOfBirth DateTime @default(now())
+  gender    String   @default("")
+  occupation String  @default("")
+  company   String   @default("")
+  website   String   @default("")
+  education String   @default("")
+  newsletter Boolean @default(true)
+  marketingOptIn Boolean @default(true)
+
   userId    String   @unique
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   createdAt DateTime @default(now())
@@ -63,18 +104,26 @@ model Profile {
 
 // ==================== Address Model ====================
 model Address {
-  id        String   @id @default(cuid())
-  userId    String
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  label     String   @default("Home")
-  street    String
-  city      String
-  state     String?
-  zip       String
-  country   String   @default("US")
-  isDefault Boolean  @default(false)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id                  String   @id @default(cuid())
+  userId              String
+  user                User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  label               String   @default("Home")
+  street              String
+  addressLine2        String   @default("")
+  city                String
+  state               String   @default("")
+  zip                 String
+  country             String   @default("US")
+  phone               String   @default("")
+  deliveryInstructions String  @default("")
+  latitude            Float    @default(0)
+  longitude           Float    @default(0)
+  isDefault           Boolean  @default(false)
+  isBilling           Boolean  @default(false)
+  contactName         String   @default("")
+  contactPhone        String   @default("")
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
 
   @@index([userId])
   @@map("addresses")
@@ -82,23 +131,36 @@ model Address {
 
 // ==================== Post Model ====================
 model Post {
-  id         String      @id @default(cuid())
-  title      String
-  content    String?
-  published  Boolean     @default(false)
-  authorId   String
-  author     User        @relation(fields: [authorId], references: [id], onDelete: Cascade)
-  tags       Tag[]       @relation("PostToTag")
-  categories Category[]  @relation("PostToCategory")
-  comments   Comment[]
-  likes      Like[]
-  savedBy    SavedPost[]
-  views      PostView[]
-  createdAt  DateTime    @default(now())
-  updatedAt  DateTime    @updatedAt
+  id          String      @id @default(cuid())
+  title       String
+  slug        String      @unique
+  content     String      @default("")
+  excerpt     String      @default("")
+  coverImage  String      @default("")
+  readingTime Int         @default(1)
+  published   Boolean     @default(false)
+  isFeatured  Boolean     @default(false)
+  isArchived  Boolean     @default(false)
+  metaTitle   String      @default("")
+  metaDescription String  @default("")
+  allowComments Boolean   @default(true)
+  viewCount   Int         @default(0)
+  likeCount   Int         @default(0)
+  commentCount Int        @default(0)
+  authorId    String
+  author      User        @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  tags        Tag[]       @relation("PostToTag")
+  categories  Category[]  @relation("PostToCategory")
+  comments    Comment[]
+  likes       Like[]
+  savedBy     SavedPost[]
+  views       PostView[]
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
 
   @@index([authorId])
   @@index([published])
+  @@index([slug])
   @@map("posts")
 }
 
@@ -109,6 +171,8 @@ model SavedPost {
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   postId    String
   post      Post     @relation(fields: [postId], references: [id], onDelete: Cascade)
+  note      String   @default("")
+  folder    String   @default("Default")
   createdAt DateTime @default(now())
 
   @@unique([userId, postId])
@@ -117,13 +181,20 @@ model SavedPost {
 
 // ==================== PostView Model ====================
 model PostView {
-  id       String   @id @default(cuid())
-  postId   String
-  post     Post     @relation(fields: [postId], references: [id], onDelete: Cascade)
-  userId   String?
-  user     User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
-  ip       String?
-  viewedAt DateTime @default(now())
+  id        String   @id @default(cuid())
+  postId    String
+  post      Post     @relation(fields: [postId], references: [id], onDelete: Cascade)
+  userId    String?
+  user      User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+  ip        String   @default("")
+  referrer  String   @default("")
+  userAgent String   @default("")
+  country   String   @default("")
+  city      String   @default("")
+  device    String   @default("")
+  browser   String   @default("")
+  duration  Int      @default(0)
+  viewedAt  DateTime @default(now())
 
   @@index([postId])
   @@map("post_views")
@@ -131,41 +202,66 @@ model PostView {
 
 // ==================== Tag Model ====================
 model Tag {
-  id        String   @id @default(cuid())
-  name      String   @unique
-  posts     Post[]   @relation("PostToTag")
-  createdAt DateTime @default(now())
+  id          String   @id @default(cuid())
+  name        String   @unique
+  slug        String   @unique
+  description String   @default("")
+  color       String   @default("#6366f1")
+  icon        String   @default("")
+  isFeatured  Boolean  @default(false)
+  posts       Post[]   @relation("PostToTag")
+  createdAt   DateTime @default(now())
 
   @@map("tags")
 }
 
 // ==================== Category Model ====================
 model Category {
-  id          String    @id @default(cuid())
-  name        String    @unique
-  slug        String    @unique
-  description String?
-  posts       Post[]    @relation("PostToCategory")
-  products    Product[]
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
+  id              String    @id @default(cuid())
+  name            String    @unique
+  slug            String    @unique
+  description     String    @default("")
+  icon            String    @default("")
+  imageUrl        String    @default("")
+  displayOrder    Int       @default(0)
+  isFeatured      Boolean   @default(false)
 
+  parentId        String?
+  parent          Category?  @relation("CategoryHierarchy", fields: [parentId], references: [id], onDelete: SetNull)
+  children        Category[] @relation("CategoryHierarchy")
+
+  posts           Post[]    @relation("PostToCategory")
+  products        Product[]
+  userFollows     UserCategoryFollow[]
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  @@index([parentId])
   @@map("categories")
 }
 
 // ==================== Comment Model ====================
 model Comment {
-  id        String   @id @default(cuid())
-  content   String
-  authorId  String
-  author    User     @relation(fields: [authorId], references: [id], onDelete: Cascade)
-  postId    String
-  post      Post     @relation(fields: [postId], references: [id], onDelete: Cascade)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id         String   @id @default(cuid())
+  content    String
+  isEdited   Boolean  @default(false)
+  isApproved Boolean  @default(true)
+  upvotes    Int      @default(0)
+  downvotes  Int      @default(0)
+  authorId   String
+  author     User     @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  postId     String
+  post       Post     @relation(fields: [postId], references: [id], onDelete: Cascade)
+  parentId   String?
+  parent     Comment? @relation("CommentReplies", fields: [parentId], references: [id], onDelete: SetNull)
+  replies    Comment[] @relation("CommentReplies")
+  editedAt   DateTime?
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
 
   @@index([authorId])
   @@index([postId])
+  @@index([parentId])
   @@map("comments")
 }
 
@@ -176,6 +272,7 @@ model Like {
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   postId    String
   post      Post     @relation(fields: [postId], references: [id], onDelete: Cascade)
+  type      String   @default("LIKE")
   createdAt DateTime @default(now())
 
   @@unique([userId, postId])
@@ -184,12 +281,15 @@ model Like {
 
 // ==================== Follow Model ====================
 model Follow {
-  id          String   @id @default(cuid())
-  followerId  String
-  follower    User     @relation("FollowerRelation", fields: [followerId], references: [id], onDelete: Cascade)
-  followingId String
-  following   User     @relation("FollowingRelation", fields: [followingId], references: [id], onDelete: Cascade)
-  createdAt   DateTime @default(now())
+  id            String   @id @default(cuid())
+  followerId    String
+  follower      User     @relation("FollowerRelation", fields: [followerId], references: [id], onDelete: Cascade)
+  followingId   String
+  following     User     @relation("FollowingRelation", fields: [followingId], references: [id], onDelete: Cascade)
+  isMutual      Boolean  @default(false)
+  notifyOnPost  Boolean  @default(true)
+  notifyOnStory Boolean  @default(true)
+  createdAt     DateTime @default(now())
 
   @@unique([followerId, followingId])
   @@index([followerId])
@@ -201,11 +301,27 @@ model Follow {
 model Product {
   id            String         @id @default(cuid())
   name          String
-  description   String?
+  description   String         @default("")
   price         Float
   stock         Int            @default(0)
   sku           String         @unique
-  imageUrl      String?
+  barcode       String         @default("")
+  brand         String         @default("")
+  color         String         @default("")
+  weight        Float          @default(0)
+  dimensions    String         @default("")
+  rating        Float          @default(0)
+  reviewCount   Int            @default(0)
+  soldCount     Int            @default(0)
+  minimumStock  Int            @default(0)
+  allowBackorder Boolean       @default(false)
+  warrantyInfo  String         @default("")
+  returnPolicy  String         @default("")
+  taxClass      String         @default("standard")
+  metaTitle     String         @default("")
+  metaDescription String       @default("")
+  attributes    Json           @default("{}")
+  imageUrl      String         @default("")
   images        ProductImage[]
   isActive      Boolean        @default(true)
   sellerId      String
@@ -223,6 +339,7 @@ model Product {
   @@index([sellerId])
   @@index([categoryId])
   @@index([sku])
+  @@index([brand])
   @@map("products")
 }
 
@@ -232,7 +349,12 @@ model ProductImage {
   productId String
   product   Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
   url       String
-  alt       String?
+  alt       String   @default("")
+  isPrimary Boolean  @default(false)
+  width     Int      @default(0)
+  height    Int      @default(0)
+  fileSize  Int      @default(0)
+  mimeType  String   @default("image/jpeg")
   sortOrder Int      @default(0)
   createdAt DateTime @default(now())
 
@@ -247,8 +369,23 @@ model Order {
   user            User        @relation(fields: [userId], references: [id], onDelete: Cascade)
   status          String      @default("PENDING")
   totalAmount     Float       @default(0)
+  subtotal        Float       @default(0)
+  taxAmount       Float       @default(0)
+  shippingAmount  Float       @default(0)
   discountAmount  Float       @default(0)
-  shippingAddress String?
+  currency        String      @default("USD")
+  shippingAddress String      @default("")
+  email           String      @default("")
+  phone           String      @default("")
+  notes           String      @default("")
+  source          String      @default("web")
+  isGift          Boolean     @default(false)
+  giftMessage     String      @default("")
+  trackingUrl     String      @default("")
+  estimatedDelivery DateTime?
+  deliveredAt     DateTime?
+  cancelledAt     DateTime?
+  cancelReason    String      @default("")
   couponId        String?
   coupon          Coupon?     @relation(fields: [couponId], references: [id], onDelete: SetNull)
   items           OrderItem[]
@@ -273,6 +410,12 @@ model OrderItem {
   product        Product         @relation(fields: [productId], references: [id], onDelete: Restrict)
   quantity       Int             @default(1)
   unitPrice      Float
+  productName    String          @default("")
+  productSku     String          @default("")
+  productImage   String          @default("")
+  discountAmount Float           @default(0)
+  taxAmount      Float           @default(0)
+  totalPrice     Float           @default(0)
   returnRequests ReturnRequest[]
 
   @@index([orderId])
@@ -282,32 +425,47 @@ model OrderItem {
 
 // ==================== Payment Model ====================
 model Payment {
-  id            String   @id @default(cuid())
-  orderId       String   @unique
-  order         Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
-  amount        Float
-  method        String
-  status        String   @default("PENDING")
-  transactionId String   @unique
-  refunds       Refund[]
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
+  id                  String   @id @default(cuid())
+  orderId             String   @unique
+  order               Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  amount              Float
+  currency            String   @default("USD")
+  method              String
+  gateway             String   @default("stripe")
+  gatewayTransactionId String  @default("")
+  status              String   @default("PENDING")
+  fee                 Float    @default(0)
+  netAmount           Float    @default(0)
+  payerEmail          String   @default("")
+  payerName           String   @default("")
+  billingAddress      String   @default("")
+  failureReason       String   @default("")
+  refundedAmount      Float    @default(0)
+  capturedAmount      Float    @default(0)
+  transactionId       String   @unique
+  refunds             Refund[]
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
 
   @@map("payments")
 }
 
 // ==================== Refund Model ====================
 model Refund {
-  id        String   @id @default(cuid())
-  paymentId String
-  payment   Payment  @relation(fields: [paymentId], references: [id], onDelete: Cascade)
-  orderId   String
-  order     Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
-  amount    Float
-  reason    String?
-  status    String   @default("PENDING")
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id               String   @id @default(cuid())
+  paymentId        String
+  payment          Payment  @relation(fields: [paymentId], references: [id], onDelete: Cascade)
+  orderId          String
+  order            Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  amount           Float
+  currency         String   @default("USD")
+  reason           String   @default("")
+  reasonDescription String  @default("")
+  status           String   @default("PENDING")
+  initiatedBy      String   @default("system")
+  fee              Float    @default(0)
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
 
   @@index([paymentId])
   @@index([orderId])
@@ -316,32 +474,47 @@ model Refund {
 
 // ==================== Review Model ====================
 model Review {
-  id        String   @id @default(cuid())
-  rating    Int
-  title     String?
-  content   String?
-  productId String
-  product   Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
-  userId    String
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id               String   @id @default(cuid())
+  rating           Int
+  title            String   @default("")
+  content          String   @default("")
+  isVerified       Boolean  @default(false)
+  isRecommended    Boolean  @default(true)
+  helpfulCount     Int      @default(0)
+  unhelpfulCount   Int      @default(0)
+  pros             Json     @default("[]")
+  cons             Json     @default("[]")
+  images           Json     @default("[]")
+  responseFromSeller String @default("")
+  responseDate     DateTime?
+  productId        String
+  product          Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  userId           String
+  user             User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
 
   @@unique([productId, userId])
   @@index([productId])
   @@index([userId])
+  @@index([rating])
   @@map("reviews")
 }
 
 // ==================== Wishlist Model ====================
 model Wishlist {
-  id        String         @id @default(cuid())
-  userId    String
-  user      User           @relation(fields: [userId], references: [id], onDelete: Cascade)
-  name      String         @default("Default")
-  items     WishlistItem[]
-  createdAt DateTime       @default(now())
-  updatedAt DateTime       @updatedAt
+  id          String         @id @default(cuid())
+  userId      String
+  user        User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  name        String         @default("Default")
+  description String         @default("")
+  isPublic    Boolean        @default(false)
+  isDefault   Boolean        @default(true)
+  itemCount   Int            @default(0)
+  shareCode   String         @default("")
+  items       WishlistItem[]
+  createdAt   DateTime       @default(now())
+  updatedAt   DateTime       @updatedAt
 
   @@index([userId])
   @@map("wishlists")
@@ -349,13 +522,16 @@ model Wishlist {
 
 // ==================== WishlistItem Model ====================
 model WishlistItem {
-  id         String   @id @default(cuid())
-  wishlistId String
-  wishlist   Wishlist @relation(fields: [wishlistId], references: [id], onDelete: Cascade)
-  productId  String
-  product    Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
-  note       String?
-  createdAt  DateTime @default(now())
+  id              String   @id @default(cuid())
+  wishlistId      String
+  wishlist        Wishlist @relation(fields: [wishlistId], references: [id], onDelete: Cascade)
+  productId       String
+  product         Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  quantity        Int      @default(1)
+  priority        String   @default("MEDIUM")
+  priceAtAddition Float    @default(0)
+  note            String   @default("")
+  createdAt       DateTime @default(now())
 
   @@unique([wishlistId, productId])
   @@map("wishlist_items")
@@ -363,25 +539,38 @@ model WishlistItem {
 
 // ==================== Cart Model ====================
 model Cart {
-  id        String     @id @default(cuid())
-  userId    String     @unique
-  user      User       @relation(fields: [userId], references: [id], onDelete: Cascade)
-  items     CartItem[]
-  createdAt DateTime   @default(now())
-  updatedAt DateTime   @updatedAt
+  id         String     @id @default(cuid())
+  userId     String     @unique
+  user       User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  notes      String     @default("")
+  subtotal   Float      @default(0)
+  total      Float      @default(0)
+  currency   String     @default("USD")
+  couponCode String     @default("")
+  discountAmount Float  @default(0)
+  sessionId  String     @default("")
+  expiresAt  DateTime?
+  items      CartItem[]
+  createdAt  DateTime   @default(now())
+  updatedAt  DateTime   @updatedAt
 
   @@map("carts")
 }
 
 // ==================== CartItem Model ====================
 model CartItem {
-  id        String   @id @default(cuid())
-  cartId    String
-  cart      Cart     @relation(fields: [cartId], references: [id], onDelete: Cascade)
-  productId String
-  product   Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
-  quantity  Int      @default(1)
-  createdAt DateTime @default(now())
+  id              String   @id @default(cuid())
+  cartId          String
+  cart            Cart     @relation(fields: [cartId], references: [id], onDelete: Cascade)
+  productId       String
+  product         Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  quantity        Int      @default(1)
+  unitPrice       Float    @default(0)
+  discountAmount  Float    @default(0)
+  totalPrice      Float    @default(0)
+  notes           String   @default("")
+  isSavedForLater Boolean  @default(false)
+  createdAt       DateTime @default(now())
 
   @@unique([cartId, productId])
   @@map("cart_items")
@@ -389,19 +578,29 @@ model CartItem {
 
 // ==================== Coupon Model ====================
 model Coupon {
-  id              String    @id @default(cuid())
-  code            String    @unique
-  description     String?
-  discountPercent Float     @default(0)
-  discountAmount  Float     @default(0)
-  minPurchase     Float     @default(0)
-  maxUses         Int       @default(0)
-  usedCount       Int       @default(0)
-  isActive        Boolean   @default(true)
-  orders          Order[]
-  expiresAt       DateTime?
-  createdAt       DateTime  @default(now())
-  updatedAt       DateTime  @updatedAt
+  id                String    @id @default(cuid())
+  code              String    @unique
+  name              String    @default("")
+  description       String    @default("")
+  type              String    @default("PERCENTAGE")
+  discountPercent   Float     @default(0)
+  discountAmount    Float     @default(0)
+  minPurchase       Float     @default(0)
+  minQuantity       Int       @default(0)
+  maxDiscountAmount Float     @default(0)
+  maxUses           Int       @default(0)
+  usedCount         Int       @default(0)
+  usageLimit        Int       @default(0)
+  usageLimitPerUser Int       @default(0)
+  isActive          Boolean   @default(true)
+  firstOrderOnly    Boolean   @default(false)
+  startedAt         DateTime  @default(now())
+  expiresAt         DateTime?
+  createdById       String?
+  createdBy         User?     @relation("CouponCreator", fields: [createdById], references: [id], onDelete: SetNull)
+  orders            Order[]
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
 
   @@index([code])
   @@map("coupons")
@@ -415,8 +614,19 @@ model Shipment {
   carrier           String
   trackingNumber    String
   status            String    @default("PENDING")
+  shippingMethod    String    @default("standard")
+  originAddress     String    @default("")
+  destinationAddress String   @default("")
+  weight            Float     @default(0)
+  length            Float     @default(0)
+  width             Float     @default(0)
+  height            Float     @default(0)
+  cost              Float     @default(0)
+  currency          String    @default("USD")
+  notes             String    @default("")
   estimatedDelivery DateTime?
   deliveredAt       DateTime?
+  shippedAt         DateTime?
   createdAt         DateTime  @default(now())
   updatedAt         DateTime  @updatedAt
 
@@ -427,16 +637,26 @@ model Shipment {
 
 // ==================== Notification Model ====================
 model Notification {
-  id        String    @id @default(cuid())
-  userId    String
-  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
-  type      String
-  title     String
-  message   String?
-  link      String?
-  isRead    Boolean   @default(false)
-  readAt    DateTime?
-  createdAt DateTime  @default(now())
+  id         String    @id @default(cuid())
+  userId     String
+  user       User      @relation("UserNotifications", fields: [userId], references: [id], onDelete: Cascade)
+  senderId   String?
+  sender     User?     @relation("SentNotifications", fields: [senderId], references: [id], onDelete: SetNull)
+  type       String
+  title      String
+  message    String    @default("")
+  link       String    @default("")
+  actionUrl  String    @default("")
+  imageUrl   String    @default("")
+  channel    String    @default("in-app")
+  category   String    @default("general")
+  isRead     Boolean   @default(false)
+  readAt     DateTime?
+  seenAt     DateTime?
+  deliveredAt DateTime?
+  expiresAt  DateTime?
+  metadata   Json      @default("{}")
+  createdAt  DateTime  @default(now())
 
   @@index([userId])
   @@index([userId, isRead])
@@ -445,17 +665,28 @@ model Notification {
 
 // ==================== Subscription Model ====================
 model Subscription {
-  id          String    @id @default(cuid())
-  userId      String
-  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
-  plan        String
-  status      String    @default("ACTIVE")
-  startDate   DateTime
-  endDate     DateTime?
-  autoRenew   Boolean   @default(true)
-  cancelledAt DateTime?
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
+  id                String    @id @default(cuid())
+  userId            String
+  user              User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  plan              String
+  status            String    @default("ACTIVE")
+  startDate         DateTime
+  endDate           DateTime?
+  trialStartDate    DateTime?
+  trialEndDate      DateTime?
+  autoRenew         Boolean   @default(true)
+  billingCycle      String    @default("monthly")
+  paymentMethod     String    @default("")
+  cancelledBy       String    @default("")
+  cancellationReason String   @default("")
+  cancelledAt       DateTime?
+  lastBillingAt     DateTime?
+  nextBillingAt     DateTime?
+  currentPeriodStart DateTime?
+  currentPeriodEnd  DateTime?
+  metadata          Json      @default("{}")
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
 
   @@index([userId])
   @@index([status])
@@ -464,19 +695,30 @@ model Subscription {
 
 // ==================== Discount Model ====================
 model Discount {
-  id        String   @id @default(cuid())
-  productId String
-  product   Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
-  name      String
-  type      String
-  value     Float
-  startDate DateTime
-  endDate   DateTime
-  isActive  Boolean  @default(true)
-  maxUsage  Int      @default(0)
-  usedCount Int      @default(0)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id                String   @id @default(cuid())
+  productId         String
+  product           Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  name              String
+  code              String   @default("")
+  description       String   @default("")
+  type              String
+  value             Float
+  minQuantity       Int      @default(0)
+  maxQuantity       Int      @default(0)
+  minimumOrderAmount Float   @default(0)
+  usageLimitPerUser Int      @default(0)
+  startDate         DateTime
+  endDate           DateTime
+  isActive          Boolean  @default(true)
+  stackable         Boolean  @default(false)
+  priority          Int      @default(0)
+  maxUsage          Int      @default(0)
+  usedCount         Int      @default(0)
+  metadata          Json     @default("{}")
+  createdById       String?
+  createdBy         User?    @relation("DiscountCreator", fields: [createdById], references: [id], onDelete: SetNull)
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
 
   @@index([productId])
   @@index([startDate, endDate])
@@ -485,25 +727,38 @@ model Discount {
 
 // ==================== Conversation Model ====================
 model Conversation {
-  id           String                    @id @default(cuid())
-  title        String?
-  participants ConversationParticipant[]
-  messages     Message[]
-  createdAt    DateTime                  @default(now())
-  updatedAt    DateTime                  @updatedAt
+  id                  String                    @id @default(cuid())
+  title               String                    @default("")
+  type                String                    @default("direct")
+  lastMessageAt       DateTime?
+  lastMessageContent  String                    @default("")
+  lastMessageSenderId String                    @default("")
+  isArchived          Boolean                   @default(false)
+  isMuted             Boolean                   @default(false)
+  participantCount    Int                       @default(0)
+  metadata            Json                      @default("{}")
+  participants        ConversationParticipant[]
+  messages            Message[]
+  createdAt           DateTime                  @default(now())
+  updatedAt           DateTime                  @updatedAt
 
   @@map("conversations")
 }
 
 // ==================== ConversationParticipant Model ====================
 model ConversationParticipant {
-  id             String       @id @default(cuid())
-  conversationId String
-  conversation   Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
-  userId         String
-  user           User         @relation(fields: [userId], references: [id], onDelete: Cascade)
-  lastReadAt     DateTime?
-  joinedAt       DateTime     @default(now())
+  id                  String       @id @default(cuid())
+  conversationId      String
+  conversation        Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  userId              String
+  user                User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  nickname            String       @default("")
+  role                String       @default("member")
+  isMuted             Boolean      @default(false)
+  notificationsEnabled Boolean     @default(true)
+  pinnedAt            DateTime?
+  lastReadAt          DateTime?
+  joinedAt            DateTime     @default(now())
 
   @@unique([conversationId, userId])
   @@map("conversation_participants")
@@ -511,33 +766,58 @@ model ConversationParticipant {
 
 // ==================== Message Model ====================
 model Message {
-  id             String       @id @default(cuid())
-  conversationId String
-  conversation   Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
-  senderId       String
-  sender         User         @relation(fields: [senderId], references: [id], onDelete: Cascade)
-  content        String
-  createdAt      DateTime     @default(now())
-  updatedAt      DateTime     @updatedAt
+  id              String       @id @default(cuid())
+  conversationId  String
+  conversation    Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  senderId        String
+  sender          User         @relation(fields: [senderId], references: [id], onDelete: Cascade)
+  content         String
+  type            String       @default("text")
+  parentId        String?
+  parent          Message?     @relation("MessageReplies", fields: [parentId], references: [id], onDelete: SetNull)
+  replies         Message[]    @relation("MessageReplies")
+  isRead          Boolean      @default(false)
+  readAt          DateTime?
+  deliveredAt     DateTime?
+  editedAt        DateTime?
+  attachments     Json         @default("[]")
+  reactions       Json         @default("{}")
+  createdAt       DateTime     @default(now())
+  updatedAt       DateTime     @updatedAt
 
   @@index([conversationId])
   @@index([senderId])
+  @@index([parentId])
   @@map("messages")
 }
 
 // ==================== Invoice Model ====================
 model Invoice {
-  id            String    @id @default(cuid())
-  orderId       String    @unique
-  order         Order     @relation(fields: [orderId], references: [id], onDelete: Cascade)
-  invoiceNumber String    @unique
-  amount        Float
-  status        String    @default("DRAFT")
-  issuedAt      DateTime  @default(now())
-  paidAt        DateTime?
-  dueDate       DateTime
-  createdAt     DateTime  @default(now())
-  updatedAt     DateTime  @updatedAt
+  id              String    @id @default(cuid())
+  orderId         String    @unique
+  order           Order     @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  invoiceNumber   String    @unique
+  amount          Float
+  subtotal        Float     @default(0)
+  taxAmount       Float     @default(0)
+  discountAmount  Float     @default(0)
+  totalAmount     Float     @default(0)
+  currency        String    @default("USD")
+  status          String    @default("DRAFT")
+  notes           String    @default("")
+  billingAddress  String    @default("")
+  shippingAddress String    @default("")
+  pdfUrl          String    @default("")
+  items           Json      @default("[]")
+  issuedAt        DateTime  @default(now())
+  dueDate         DateTime
+  paidAt          DateTime?
+  sentAt          DateTime?
+  reminderSentAt  DateTime?
+  cancelledAt     DateTime?
+  cancelReason    String    @default("")
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
 
   @@index([orderId])
   @@index([status])
@@ -546,16 +826,25 @@ model Invoice {
 
 // ==================== ReturnRequest Model ====================
 model ReturnRequest {
-  id          String    @id @default(cuid())
-  orderItemId String
-  orderItem   OrderItem @relation(fields: [orderItemId], references: [id], onDelete: Cascade)
-  userId      String
-  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
-  reason      String
-  status      String    @default("PENDING")
-  quantity    Int       @default(1)
-  requestedAt DateTime  @default(now())
-  resolvedAt  DateTime?
+  id               String    @id @default(cuid())
+  orderItemId      String
+  orderItem        OrderItem @relation(fields: [orderItemId], references: [id], onDelete: Cascade)
+  userId           String
+  user             User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  reason           String
+  reasonDescription String   @default("")
+  resolution       String    @default("")
+  refundAmount     Float     @default(0)
+  returnLabelUrl   String    @default("")
+  condition        String    @default("")
+  status           String    @default("PENDING")
+  quantity         Int       @default(1)
+  images           Json      @default("[]")
+  requestedAt      DateTime  @default(now())
+  pickedUpAt       DateTime?
+  deliveredBackAt  DateTime?
+  inspectedAt      DateTime?
+  resolvedAt       DateTime?
 
   @@index([orderItemId])
   @@index([userId])
@@ -573,20 +862,38 @@ model SupportTicket {
   assignedToId String?
   assignedTo   User?   @relation("AssignedTickets", fields: [assignedToId], references: [id])
 
+  escalatedToId String?
+  escalatedTo   User?   @relation("EscalatedTickets", fields: [escalatedToId], references: [id])
+
+  relatedOrderId  String?
+  relatedTicketId String?
+  relatedTicket   SupportTicket? @relation("RelatedTickets", fields: [relatedTicketId], references: [id], onDelete: SetNull)
+  relatedTickets  SupportTicket[] @relation("RelatedTickets")
+
   subject     String
   description String
 
-  status   String @default("OPEN")
-  priority String @default("MEDIUM")
-  category String @default("general")
+  status     String @default("OPEN")
+  priority   String @default("MEDIUM")
+  category   String @default("general")
+  language   String @default("en")
+
+  resolution      String @default("")
+  escalationReason String @default("")
+  satisfactionRating Int? @default(0)
+  feedback         String @default("")
+  tags             Json   @default("[]")
+
+  resolvedAt DateTime?
+  closedAt   DateTime?
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
 
   replies TicketReply[]
 
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
   @@index([userId])
   @@index([assignedToId])
+  @@index([escalatedToId])
   @@index([status])
   @@index([priority])
   @@map("support_tickets")
@@ -601,6 +908,10 @@ model TicketReply {
   user      User          @relation(fields: [userId], references: [id], onDelete: Cascade)
   content   String
   isStaff   Boolean       @default(false)
+  isInternal Boolean      @default(false)
+  isSolution Boolean      @default(false)
+  attachments Json        @default("[]")
+  editedAt  DateTime?
   createdAt DateTime      @default(now())
   updatedAt DateTime      @updatedAt
 

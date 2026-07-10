@@ -12,7 +12,7 @@ export async function seedReviews(
   const data: ReviewSeed[] = [];
 
   for (const productId of productIds) {
-    const n = Math.floor(Math.random() * 8) + 1;
+    const n = Math.floor(Math.random() * 10) + 2;
     for (let i = 0; i < n; i++) {
       const userId = faker.helpers.arrayElement(userIds);
       const key = `${userId}:${productId}`;
@@ -23,8 +23,23 @@ export async function seedReviews(
 
       data.push({
         rating,
-        title: rating >= 4 ? faker.lorem.sentence({ min: 3, max: 6 }) : null,
-        content: faker.lorem.sentences({ min: 1, max: 4 }),
+        title: rating >= 3 ? faker.lorem.sentence({ min: 3, max: 8 }) : "Disappointed with purchase",
+        content: faker.lorem.sentences({ min: 2, max: 6 }),
+        isVerified: faker.datatype.boolean({ probability: 0.8 }),
+        isRecommended: rating >= 3,
+        helpfulCount: faker.number.int({ min: 0, max: 100 }),
+        unhelpfulCount: faker.number.int({ min: 0, max: 20 }),
+        pros: rating >= 3
+          ? Array.from({ length: faker.number.int({ min: 1, max: 4 }) }, () => faker.lorem.words(3))
+          : [],
+        cons: rating <= 3
+          ? Array.from({ length: faker.number.int({ min: 1, max: 3 }) }, () => faker.lorem.words(3))
+          : [],
+        images: Math.random() > 0.6
+          ? Array.from({ length: faker.number.int({ min: 1, max: 3 }) }, () => faker.image.url())
+          : [],
+        responseFromSeller: Math.random() > 0.7 ? faker.lorem.sentence() : "",
+        responseDate: Math.random() > 0.7 ? faker.date.recent({ days: 30 }) : null,
         productId,
         userId,
       });

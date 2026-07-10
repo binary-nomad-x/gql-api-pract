@@ -39,86 +39,157 @@ export interface SeedCounts {
   returns: number;
   tickets: number;
   ticketReplies: number;
+  userCategoryFollows: number;
 }
-
-// --- Seed Data Transfer Objects ---
 
 export interface AddressSeed {
   userId: string;
   label: string;
   street: string;
+  addressLine2: string;
   city: string;
   state: string;
   zip: string;
   country: string;
+  phone: string;
+  deliveryInstructions: string;
+  latitude: number;
+  longitude: number;
   isDefault: boolean;
+  isBilling: boolean;
+  contactName: string;
+  contactPhone: string;
 }
 
 export interface CartItemSeed {
   cartId: string;
   productId: string;
   quantity: number;
+  unitPrice: number;
+  discountAmount: number;
+  totalPrice: number;
+  notes: string;
+  isSavedForLater: boolean;
 }
 
 export interface CommentSeed {
   content: string;
+  isEdited: boolean;
+  isApproved: boolean;
+  upvotes: number;
+  downvotes: number;
   authorId: string;
   postId: string;
+  parentId: string | null;
 }
 
 export interface MessageSeed {
   conversationId: string;
   senderId: string;
   content: string;
+  type: string;
+  isRead: boolean;
+  readAt: Date | null;
+  deliveredAt: Date | null;
+  attachments: object[];
+  reactions: object;
+  parentId: string | null;
 }
 
 export interface DiscountSeed {
   productId: string;
   name: string;
+  code: string;
+  description: string;
   type: string;
   value: number;
+  minQuantity: number;
+  maxQuantity: number;
+  minimumOrderAmount: number;
+  usageLimitPerUser: number;
   startDate: Date;
   endDate: Date;
   isActive: boolean;
+  stackable: boolean;
+  priority: number;
   maxUsage: number;
   usedCount: number;
+  metadata: object;
 }
 
 export interface FollowSeed {
   followerId: string;
   followingId: string;
+  isMutual: boolean;
+  notifyOnPost: boolean;
+  notifyOnStory: boolean;
 }
 
 export interface InvoiceSeed {
   orderId: string;
   invoiceNumber: string;
   amount: number;
+  subtotal: number;
+  taxAmount: number;
+  discountAmount: number;
+  totalAmount: number;
+  currency: string;
   status: string;
+  notes: string;
+  billingAddress: string;
+  shippingAddress: string;
+  pdfUrl: string;
+  items: object[];
   dueDate: Date;
   paidAt: Date | null;
+  sentAt: Date | null;
 }
 
 export interface LikeSeed {
   userId: string;
   postId: string;
+  type: string;
 }
 
 export interface NotificationSeed {
   userId: string;
   type: string;
   title: string;
-  message: string | null;
+  message: string;
+  link: string;
+  actionUrl: string;
+  imageUrl: string;
+  channel: string;
+  category: string;
   isRead: boolean;
-  link: string | null;
   readAt: Date | null;
+  seenAt: Date | null;
+  deliveredAt: Date | null;
+  expiresAt: Date | null;
+  metadata: object;
 }
 
 export interface OrderSeed {
   id: string;
   userId: string;
   status: string;
-  shippingAddress: string | null;
+  subtotal: number;
+  taxAmount: number;
+  shippingAmount: number;
+  currency: string;
+  shippingAddress: string;
+  email: string;
+  phone: string;
+  notes: string;
+  source: string;
+  isGift: boolean;
+  giftMessage: string;
+  trackingUrl: string;
   couponId: string | null;
+  estimatedDelivery: Date | null;
+  deliveredAt: Date | null;
+  cancelledAt: Date | null;
+  cancelReason: string;
 }
 
 export interface OrderItemSeed {
@@ -126,13 +197,30 @@ export interface OrderItemSeed {
   productId: string;
   quantity: number;
   unitPrice: number;
+  productName: string;
+  productSku: string;
+  productImage: string;
+  discountAmount: number;
+  taxAmount: number;
+  totalPrice: number;
 }
 
 export interface PaymentSeed {
   orderId: string;
   amount: number;
+  currency: string;
   method: string;
+  gateway: string;
+  gatewayTransactionId: string;
   status: string;
+  fee: number;
+  netAmount: number;
+  payerEmail: string;
+  payerName: string;
+  billingAddress: string;
+  failureReason: string;
+  refundedAmount: number;
+  capturedAmount: number;
   transactionId: string;
 }
 
@@ -140,29 +228,58 @@ export interface PostViewSeed {
   postId: string;
   userId: string;
   ip: string;
+  referrer: string;
+  userAgent: string;
+  country: string;
+  city: string;
+  device: string;
+  browser: string;
+  duration: number;
 }
 
 export interface RefundSeed {
   paymentId: string;
   orderId: string;
   amount: number;
+  currency: string;
   reason: string;
+  reasonDescription: string;
   status: string;
+  initiatedBy: string;
+  fee: number;
 }
 
 export interface ReturnSeed {
   orderItemId: string;
   userId: string;
   reason: string;
+  reasonDescription: string;
+  resolution: string;
+  refundAmount: number;
+  returnLabelUrl: string;
+  condition: string;
   status: string;
   quantity: number;
-  resolvedAt: Date;
+  images: object[];
+  resolvedAt: Date | null;
+  pickedUpAt: Date | null;
+  deliveredBackAt: Date | null;
+  inspectedAt: Date | null;
 }
 
 export interface ReviewSeed {
   rating: number;
-  title: string | null;
+  title: string;
   content: string;
+  isVerified: boolean;
+  isRecommended: boolean;
+  helpfulCount: number;
+  unhelpfulCount: number;
+  pros: string[];
+  cons: string[];
+  images: string[];
+  responseFromSeller: string;
+  responseDate: Date | null;
   productId: string;
   userId: string;
 }
@@ -170,6 +287,8 @@ export interface ReviewSeed {
 export interface SavedPostSeed {
   userId: string;
   postId: string;
+  note: string;
+  folder: string;
 }
 
 export interface ShipmentSeed {
@@ -177,8 +296,19 @@ export interface ShipmentSeed {
   carrier: string;
   trackingNumber: string;
   status: string;
+  shippingMethod: string;
+  originAddress: string;
+  destinationAddress: string;
+  weight: number;
+  length: number;
+  width: number;
+  height: number;
+  cost: number;
+  currency: string;
+  notes: string;
   estimatedDelivery: Date;
   deliveredAt: Date | null;
+  shippedAt: Date | null;
 }
 
 export interface SubscriptionSeed {
@@ -187,8 +317,19 @@ export interface SubscriptionSeed {
   status: string;
   startDate: Date;
   endDate: Date | null;
+  trialStartDate: Date | null;
+  trialEndDate: Date | null;
   autoRenew: boolean;
+  billingCycle: string;
+  paymentMethod: string;
+  cancelledBy: string;
+  cancellationReason: string;
   cancelledAt: Date | null;
+  lastBillingAt: Date | null;
+  nextBillingAt: Date | null;
+  currentPeriodStart: Date | null;
+  currentPeriodEnd: Date | null;
+  metadata: object;
 }
 
 export interface TicketReplySeed {
@@ -196,6 +337,9 @@ export interface TicketReplySeed {
   userId: string;
   content: string;
   isStaff: boolean;
+  isInternal: boolean;
+  isSolution: boolean;
+  attachments: object[];
 }
 
 export function createEmptyCounts(): SeedCounts {
@@ -207,6 +351,6 @@ export function createEmptyCounts(): SeedCounts {
     coupons: 0, orders: 0, orderItems: 0, payments: 0, shipments: 0,
     refunds: 0, discounts: 0, subscriptions: 0, conversations: 0,
     participants: 0, messages: 0, invoices: 0, returns: 0, tickets: 0,
-    ticketReplies: 0,
+    ticketReplies: 0, userCategoryFollows: 0,
   };
 }

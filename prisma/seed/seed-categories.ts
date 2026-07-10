@@ -1,52 +1,87 @@
+import { faker } from "@faker-js/faker";
 import type { SeedContext, SeedCounts } from "./types.js";
 
 const CATEGORY_DATA = [
-  { name: "Electronics", slug: "electronics", description: "Gadgets, devices, and tech accessories" },
-  { name: "Clothing", slug: "clothing", description: "Apparel, footwear, and accessories" },
-  { name: "Books", slug: "books", description: "Fiction, non-fiction, and educational" },
-  { name: "Home & Kitchen", slug: "home-kitchen", description: "Furniture, decor, and kitchenware" },
-  { name: "Sports & Outdoors", slug: "sports-outdoors", description: "Sports equipment and outdoor gear" },
-  { name: "Beauty & Health", slug: "beauty-health", description: "Skincare, cosmetics, and wellness" },
-  { name: "Toys & Games", slug: "toys-games", description: "Toys, board games, and puzzles" },
-  { name: "Automotive", slug: "automotive", description: "Car parts, accessories, and tools" },
-  { name: "Groceries", slug: "groceries", description: "Daily essentials, beverages, and packaged foods" },
-  { name: "Pet Supplies", slug: "pet-supplies", description: "Food, toys, and accessories for pets" },
-  { name: "Jewelry", slug: "jewelry", description: "Rings, necklaces, bracelets, and watches" },
-  { name: "Office Supplies", slug: "office-supplies", description: "Stationery, office furniture, and equipment" },
-  { name: "Baby Products", slug: "baby-products", description: "Diapers, strollers, toys, and baby care" },
-  { name: "Garden & Outdoor", slug: "garden-outdoor", description: "Gardening tools, plants, and outdoor furniture" },
-  { name: "Music & Instruments", slug: "music-instruments", description: "Musical instruments and audio accessories" },
-  { name: "Arts & Crafts", slug: "arts-crafts", description: "Craft supplies, painting, and DIY materials" },
-  { name: "Industrial & Scientific", slug: "industrial-scientific", description: "Professional tools and laboratory equipment" },
-  { name: "Software", slug: "software", description: "Operating systems, productivity, and creative software" },
-  { name: "Video Games", slug: "video-games", description: "Gaming consoles, games, and accessories" },
-  { name: "Mobile Phones", slug: "mobile-phones", description: "Smartphones, accessories, and wearables" },
-  { name: "Laptops & Computers", slug: "laptops-computers", description: "Laptops, desktops, monitors, and peripherals" },
-  { name: "Cameras & Photography", slug: "cameras-photography", description: "Cameras, lenses, drones, and accessories" },
-  { name: "Furniture", slug: "furniture", description: "Home and office furniture for every space" },
-  { name: "Appliances", slug: "appliances", description: "Kitchen and home appliances" },
-  { name: "Travel & Luggage", slug: "travel-luggage", description: "Suitcases, backpacks, and travel accessories" },
-  { name: "Watches", slug: "watches", description: "Luxury, smart, and casual watches" },
-  { name: "Shoes", slug: "shoes", description: "Men's, women's, and children's footwear" },
-  { name: "Bags & Accessories", slug: "bags-accessories", description: "Handbags, wallets, belts, and backpacks" },
-  { name: "Jewelry & Accessories", slug: "jewelry-accessories", description: "Fashion and fine jewelry collections" },
-  { name: "Medical Supplies", slug: "medical-supplies", description: "Healthcare devices and medical essentials" },
-  { name: "Fitness Equipment", slug: "fitness-equipment", description: "Gym machines, weights, and fitness accessories" },
-  { name: "Smart Home", slug: "smart-home", description: "Home automation, security, and smart devices" },
-  { name: "Party Supplies", slug: "party-supplies", description: "Decorations, balloons, and celebration essentials" },
-  { name: "Gift Cards", slug: "gift-cards", description: "Digital and physical gift cards for popular brands" },
+  { name: "Electronics", slug: "electronics", description: "Gadgets, devices, and tech accessories", icon: "electronics", isFeatured: true, displayOrder: 1, parentName: null },
+  { name: "Clothing", slug: "clothing", description: "Apparel, footwear, and accessories", icon: "clothing", isFeatured: true, displayOrder: 2, parentName: null },
+  { name: "Books", slug: "books", description: "Fiction, non-fiction, and educational", icon: "books", isFeatured: true, displayOrder: 3, parentName: null },
+  { name: "Home & Kitchen", slug: "home-kitchen", description: "Furniture, decor, and kitchenware", icon: "home", isFeatured: true, displayOrder: 4, parentName: null },
+  { name: "Sports & Outdoors", slug: "sports-outdoors", description: "Sports equipment and outdoor gear", icon: "sports", isFeatured: false, displayOrder: 5, parentName: null },
+  { name: "Beauty & Health", slug: "beauty-health", description: "Skincare, cosmetics, and wellness", icon: "beauty", isFeatured: false, displayOrder: 6, parentName: null },
+  { name: "Toys & Games", slug: "toys-games", description: "Toys, board games, and puzzles", icon: "toys", isFeatured: false, displayOrder: 7, parentName: null },
+  { name: "Automotive", slug: "automotive", description: "Car parts, accessories, and tools", icon: "auto", isFeatured: false, displayOrder: 8, parentName: null },
+  { name: "Groceries", slug: "groceries", description: "Daily essentials, beverages, and packaged foods", icon: "groceries", isFeatured: false, displayOrder: 9, parentName: null },
+  { name: "Pet Supplies", slug: "pet-supplies", description: "Food, toys, and accessories for pets", icon: "pets", isFeatured: false, displayOrder: 10, parentName: null },
+  { name: "Office Supplies", slug: "office-supplies", description: "Stationery, office furniture, and equipment", icon: "office", isFeatured: false, displayOrder: 11, parentName: null },
+  { name: "Garden & Outdoor", slug: "garden-outdoor", description: "Gardening tools, plants, and outdoor furniture", icon: "garden", isFeatured: false, displayOrder: 12, parentName: null },
+  { name: "Music & Instruments", slug: "music-instruments", description: "Musical instruments and audio accessories", icon: "music", isFeatured: false, displayOrder: 13, parentName: null },
+  { name: "Arts & Crafts", slug: "arts-crafts", description: "Craft supplies, painting, and DIY materials", icon: "arts", isFeatured: false, displayOrder: 14, parentName: null },
+  { name: "Software", slug: "software", description: "Operating systems, productivity, and creative software", icon: "software", isFeatured: false, displayOrder: 15, parentName: null },
+  { name: "Video Games", slug: "video-games", description: "Gaming consoles, games, and accessories", icon: "gaming", isFeatured: false, displayOrder: 16, parentName: null },
+  { name: "Mobile Phones", slug: "mobile-phones", description: "Smartphones, accessories, and wearables", icon: "mobile", isFeatured: false, displayOrder: 17, parentName: "Electronics" },
+  { name: "Laptops & Computers", slug: "laptops-computers", description: "Laptops, desktops, monitors, and peripherals", icon: "laptop", isFeatured: false, displayOrder: 18, parentName: "Electronics" },
+  { name: "Cameras & Photography", slug: "cameras-photography", description: "Cameras, lenses, drones, and accessories", icon: "camera", isFeatured: false, displayOrder: 19, parentName: "Electronics" },
+  { name: "Smart Home", slug: "smart-home", description: "Home automation, security, and smart devices", icon: "smarthome", isFeatured: false, displayOrder: 20, parentName: "Electronics" },
+  { name: "Men's Clothing", slug: "mens-clothing", description: "Clothing for men including formal and casual", icon: "mens", isFeatured: false, displayOrder: 21, parentName: "Clothing" },
+  { name: "Women's Clothing", slug: "womens-clothing", description: "Clothing for women including formal and casual", icon: "womens", isFeatured: false, displayOrder: 22, parentName: "Clothing" },
+  { name: "Children's Clothing", slug: "childrens-clothing", description: "Kids apparel and accessories", icon: "kids", isFeatured: false, displayOrder: 23, parentName: "Clothing" },
+  { name: "Shoes", slug: "shoes", description: "Men's, women's, and children's footwear", icon: "shoes", isFeatured: false, displayOrder: 24, parentName: "Clothing" },
+  { name: "Fiction Books", slug: "fiction-books", description: "Novels, stories, and literary fiction", icon: "fiction", isFeatured: false, displayOrder: 25, parentName: "Books" },
+  { name: "Non-Fiction Books", slug: "non-fiction-books", description: "Educational, biographies, and reference", icon: "nonfiction", isFeatured: false, displayOrder: 26, parentName: "Books" },
+  { name: "Educational Books", slug: "educational-books", description: "Textbooks and academic resources", icon: "edu", isFeatured: false, displayOrder: 27, parentName: "Books" },
+  { name: "Furniture", slug: "furniture", description: "Home and office furniture for every space", icon: "furniture", isFeatured: false, displayOrder: 28, parentName: "Home & Kitchen" },
+  { name: "Appliances", slug: "appliances", description: "Kitchen and home appliances", icon: "appliances", isFeatured: false, displayOrder: 29, parentName: "Home & Kitchen" },
+  { name: "Kitchenware", slug: "kitchenware", description: "Cookware, utensils, and dining essentials", icon: "kitchen", isFeatured: false, displayOrder: 30, parentName: "Home & Kitchen" },
+  { name: "Fitness Equipment", slug: "fitness-equipment", description: "Gym machines, weights, and fitness accessories", icon: "fitness", isFeatured: false, displayOrder: 31, parentName: "Sports & Outdoors" },
+  { name: "Camping & Hiking", slug: "camping-hiking", description: "Tents, backpacks, and hiking gear", icon: "camping", isFeatured: false, displayOrder: 32, parentName: "Sports & Outdoors" },
+  { name: "Cycling", slug: "cycling", description: "Bikes, accessories, and cycling gear", icon: "cycling", isFeatured: false, displayOrder: 33, parentName: "Sports & Outdoors" },
+  { name: "Travel & Luggage", slug: "travel-luggage", description: "Suitcases, backpacks, and travel accessories", icon: "travel", isFeatured: false, displayOrder: 34, parentName: null },
 ];
 
 export async function seedCategories(
   ctx: SeedContext,
   counts: SeedCounts,
 ): Promise<string[]> {
-
-  const categories = await Promise.all(
-    CATEGORY_DATA.map((data) => ctx.prisma.category.create({ data })),
+  // First pass — create root categories (no parent)
+  const rootData = CATEGORY_DATA.filter((c) => !c.parentName);
+  const rootCategories = await Promise.all(
+    rootData.map((data) =>
+      ctx.prisma.category.create({
+        data: {
+          name: data.name,
+          slug: data.slug,
+          description: data.description,
+          icon: data.icon,
+          imageUrl: faker.image.url(),
+          displayOrder: data.displayOrder,
+          isFeatured: data.isFeatured,
+        },
+      }),
+    ),
   );
 
-  counts.categories += categories.length;
-  return categories.map((c) => c.id);
+  const nameToId = new Map(rootCategories.map((c) => [c.name, c.id]));
 
+  // Second pass — create child categories with parentId
+  const childData = CATEGORY_DATA.filter((c) => c.parentName);
+  const children = await Promise.all(
+    childData.map((data) =>
+      ctx.prisma.category.create({
+        data: {
+          name: data.name,
+          slug: data.slug,
+          description: data.description,
+          icon: data.icon,
+          imageUrl: faker.image.url(),
+          displayOrder: data.displayOrder,
+          isFeatured: data.isFeatured,
+          parentId: nameToId.get(data.parentName!) ?? null,
+        },
+      }),
+    ),
+  );
+
+  const allCategories = [...rootCategories, ...children];
+  counts.categories += allCategories.length;
+  return allCategories.map((c) => c.id);
 }

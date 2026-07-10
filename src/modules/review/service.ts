@@ -35,8 +35,8 @@ export class ReviewService {
     const review = await this.core.review.create({
       data: {
         rating: input.rating,
-        title: input.title ?? null,
-        content: input.content ?? null,
+        title: input.title ?? "",
+        content: input.content ?? "",
         productId: input.productId,
         userId: userId!,
       },

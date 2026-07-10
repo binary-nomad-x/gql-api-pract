@@ -15,7 +15,7 @@ export async function seedRefunds(
   });
 
   // Only refund some cancelled/delivered orders
-  const eligibleOrders = orders.filter(() => Math.random() > 0.7);
+  const eligibleOrders = orders.filter(() => Math.random() > 0.65);
 
   if (eligibleOrders.length === 0) return;
 
@@ -34,8 +34,15 @@ export async function seedRefunds(
       paymentId: payment.id,
       orderId: payment.orderId,
       amount: refundAmount,
-      reason: faker.lorem.sentence(),
-      status: Math.random() > 0.2 ? "COMPLETED" : "PENDING",
+      currency: "USD",
+      reason: faker.helpers.arrayElement([
+        "Defective product", "Wrong item shipped", "Not as described",
+        "Customer changed mind", "Duplicate order", "Quality issue",
+      ]),
+      reasonDescription: faker.lorem.sentence(),
+      status: Math.random() > 0.15 ? "COMPLETED" : "PENDING",
+      initiatedBy: faker.helpers.arrayElement(["system", "customer", "support"]),
+      fee: parseFloat((refundAmount * 0.029).toFixed(2)),
     });
   }
 

@@ -10,10 +10,8 @@ export async function seedInvoices(
   const orders = await ctx.prisma.order.findMany({
     where: { id: { in: orderIds } },
     select: {
-      id: true,
-      totalAmount: true,
-      discountAmount: true,
-      status: true,
+      id: true, totalAmount: true, subtotal: true, taxAmount: true,
+      discountAmount: true, status: true, shippingAddress: true,
     },
   });
 
@@ -22,14 +20,30 @@ export async function seedInvoices(
   for (let i = 0; i < orders.length; i++) {
     const order = orders[i];
     const isPaid = order.status !== "PENDING" && order.status !== "CANCELLED";
+    const isCancelled = order.status === "CANCELLED";
 
     data.push({
       orderId: order.id,
       invoiceNumber: `INV-${String(i + 1).padStart(6, "0")}`,
-      amount: order.totalAmount - order.discountAmount,
-      status: isPaid ? "PAID" : order.status === "CANCELLED" ? "CANCELLED" : "PENDING",
+      amount: order.totalAmount,
+      subtotal: order.subtotal,
+      taxAmount: order.taxAmount,
+      discountAmount: order.discountAmount,
+      totalAmount: order.totalAmount,
+      currency: "USD",
+      status: isPaid ? "PAID" : isCancelled ? "CANCELLED" : "PENDING",
+      notes: Math.random() > 0.8 ? faker.lorem.sentence() : "",
+      billingAddress: faker.location.streetAddress(),
+      shippingAddress: order.shippingAddress,
+      pdfUrl: `https://invoices.example.com/INV-${String(i + 1).padStart(6, "0")}.pdf`,
+      items: [
+        { description: "Order items", quantity: 1, unitPrice: order.subtotal },
+        { description: "Tax", quantity: 1, unitPrice: order.taxAmount },
+        { description: "Discount", quantity: 1, unitPrice: -order.discountAmount },
+      ],
       dueDate: faker.date.future(),
       paidAt: isPaid ? faker.date.past() : null,
+      sentAt: isPaid ? faker.date.past() : null,
     });
   }
 

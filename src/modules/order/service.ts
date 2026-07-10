@@ -87,13 +87,23 @@ export class OrderService {
         user: { connect: { id: userId! } },
         totalAmount,
         discountAmount,
-        shippingAddress: input.shippingAddress ?? null,
+        shippingAddress: input.shippingAddress ?? "",
         items: {
-          create: input.items.map((item) => ({
-            product: { connect: { id: item.productId } },
-            quantity: item.quantity,
-            unitPrice: productMap.get(item.productId)!.price,
-          })),
+          create: input.items.map((item) => {
+            const p = productMap.get(item.productId)!;
+            const totalPrice = p.price * item.quantity;
+            return {
+              product: { connect: { id: item.productId } },
+              quantity: item.quantity,
+              unitPrice: p.price,
+              productName: p.name,
+              productSku: p.sku,
+              productImage: p.imageUrl,
+              discountAmount: 0,
+              taxAmount: 0,
+              totalPrice,
+            };
+          }),
         },
       };
       if (input.couponCode) {

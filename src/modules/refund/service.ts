@@ -26,7 +26,10 @@ export class RefundService {
         paymentId: input.paymentId,
         orderId: input.orderId,
         amount: input.amount,
-        reason: input.reason ?? null,
+        currency: "USD",
+        reason: input.reason ?? "",
+        initiatedBy: "system",
+        fee: 0,
       },
     });
   }

@@ -79,16 +79,22 @@ export class BlogService {
     input: CreatePostInput,
   ) {
     requireAuth(userId);
+    const slug = input.title
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, "-")
+      .replace(/(^-|-$)/g, "")
+      .slice(0, 80) + "-" + Date.now().toString(36);
     const post = await this.core.post.create({
       data: {
         title: input.title,
-        content: input.content ?? null,
+        slug,
+        content: input.content ?? "",
         published: input.published ?? false,
         authorId: userId!,
         tags: {
           connectOrCreate: (input.tags ?? []).map((t: string) => ({
             where: { name: t },
-            create: { name: t },
+            create: { name: t, slug: t.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "") },
           })),
         },
         categories: {
@@ -147,14 +153,15 @@ export class BlogService {
   }
 
   createTag(name: string) {
-    return this.core.tag.upsert({ where: { name }, update: {}, create: { name } });
+    const slug = name.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "");
+    return this.core.tag.upsert({ where: { name }, update: {}, create: { name, slug } });
   }
 
   createCategory(input: CreateCategoryInput) {
     return this.core.category.upsert({
       where: { slug: input.slug },
-      update: { name: input.name, description: input.description ?? null },
-      create: input,
+      update: { name: input.name, description: input.description ?? "" },
+      create: { name: input.name, slug: input.slug, description: input.description ?? "" },
     });
   }
 

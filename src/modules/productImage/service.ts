@@ -1,5 +1,8 @@
 import type { PrismaClient } from "@prisma/client";
 
-export function resolveProductImageProduct(prisma: PrismaClient, productId: string) {
-  return prisma.product.findUnique({ where: { id: productId } });
+export class ProductImageService {
+  constructor(private readonly core: PrismaClient) {}
+  resolveProductImageProduct(productId: string) {
+    return this.core.product.findUnique({ where: { id: productId } });
+  }
 }

@@ -30,10 +30,11 @@ import { seedConversations } from "./seed-conversations.js";
 import { seedInvoices } from "./seed-invoices.js";
 import { seedReturns } from "./seed-returns.js";
 import { seedTickets } from "./seed-tickets.js";
+import { seedUserCategoryFollows } from "./seed-userCategoryFollows.js";
 
-const USER_COUNT = 50;
-const POST_COUNT = 100;
-const PRODUCT_COUNT = 100;
+const USER_COUNT = 65;
+const POST_COUNT = 130;
+const PRODUCT_COUNT = 130;
 
 const pool = new pg.Pool({ connectionString: process.env.DATABASE_URL });
 const adapter = new PrismaPg(pool);
@@ -80,6 +81,7 @@ async function main(): Promise<void> {
     seedLikes(ctx, counts, userIds, postIds),
     seedFollows(ctx, counts, userIds),
     seedAddresses(ctx, counts, userIds),
+    seedUserCategoryFollows(ctx, counts, userIds, categoryIds),
   ]);
 
   // Phase 4 — Shopping-related (carts, wishlists, reviews)
@@ -136,7 +138,8 @@ async function main(): Promise<void> {
     `Summary: ${counts.users} users, ${counts.products} products, ` +
       `${counts.orders} orders, ${counts.messages} messages, ` +
       `${counts.posts} posts, ${counts.comments} comments, ` +
-      `${counts.reviews} reviews, ${counts.tickets} tickets`,
+      `${counts.reviews} reviews, ${counts.tickets} tickets, ` +
+      `${counts.categories} categories`,
   );
 }
 

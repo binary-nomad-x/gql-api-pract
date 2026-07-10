@@ -1,20 +1,12 @@
 import type { Context } from "@gql-prisma-api/types/context.js";
 import type { Refund as RefundModel } from "@prisma/client";
 import type { CreateRefundInput, RefundFilterInput } from "./inputs.js";
-import {
-  resolveRefundPayment,
-  resolveRefundOrder,
-  createRefund,
-  updateRefundStatus,
-  getMyRefunds,
-  getRefund,
-} from "./service.js";
 
 export const Refund = {
   payment: (parent: RefundModel, _args: unknown, ctx: Context) =>
-    resolveRefundPayment(ctx.prisma, parent.paymentId),
+    ctx.services.refund.resolveRefundPayment(parent.paymentId),
   order: (parent: RefundModel, _args: unknown, ctx: Context) =>
-    resolveRefundOrder(ctx.prisma, parent.orderId),
+    ctx.services.refund.resolveRefundOrder(parent.orderId),
 };
 
 export const Query = {
@@ -22,10 +14,10 @@ export const Query = {
     _parent: unknown,
     args: RefundFilterInput,
     ctx: Context,
-  ) => getMyRefunds(ctx.prisma, ctx.userId, args),
+  ) => ctx.services.refund.getMyRefunds(ctx.userId, args),
 
   refund: async (_parent: unknown, { id }: { id: string }, ctx: Context) =>
-    getRefund(ctx.prisma, ctx.userId, id),
+    ctx.services.refund.getRefund(ctx.userId, id),
 };
 
 export const Mutation = {
@@ -33,11 +25,11 @@ export const Mutation = {
     _parent: unknown,
     { input }: { input: CreateRefundInput },
     ctx: Context,
-  ) => createRefund(ctx.prisma, ctx.userId, input),
+  ) => ctx.services.refund.createRefund(ctx.userId, input),
 
   updateRefundStatus: async (
     _parent: unknown,
     { id, status }: { id: string; status: string },
     ctx: Context,
-  ) => updateRefundStatus(ctx.prisma, ctx.userId, id, status),
+  ) => ctx.services.refund.updateRefundStatus(ctx.userId, id, status),
 };

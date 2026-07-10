@@ -1,96 +1,82 @@
-import type { PrismaClient, Prisma } from "@prisma/client";
+import type { Prisma, PrismaClient } from "@prisma/client";
 import type { CreateAddressInput, UpdateAddressInput } from "./inputs.js";
 import { requireAuth } from "@gql-prisma-api/utils/errors.js";
-import { unescape } from "querystring";
+import { clean } from "@gql-prisma-api/lib/core.js";
 
-// --- Type-field resolver functions ---
-export function resolveAddressUser(prisma: PrismaClient, userId: string) {
-  return prisma.user.findUnique({ where: { id: userId } });
-}
+export class AddressService {
+  constructor(private readonly core: PrismaClient) {}
 
-// --- Existing business logic functions ---
-export async function createAddress(
-  prisma: PrismaClient,
-  userId: string | undefined,
-  input: CreateAddressInput,
-) {
+  // --- Type-field resolver functions ---
+  resolveAddressUser(userId: string) {
+    return this.core.user.findUnique({ where: { id: userId } });
+  }
+
+  // --- Existing business logic functions ---
+  async createAddress(userId: string | undefined, input: CreateAddressInput) {
   requireAuth(userId);
-  const { clean } = await import("@gql-prisma-api/utils/clean.js");
   const data: Prisma.AddressCreateInput = clean({
-    ...input,
-    userId: userId!,
-    country: input.country ?? "US",
-    label: input.label ?? "Home",
-  }) as unknown as Prisma.AddressCreateInput;
-  return prisma.address.create({ data });
-}
+      ...input,
+      userId: userId!,
+      country: input.country ?? "US",
+      label: input.label ?? "Home",
+    }) as unknown as Prisma.AddressCreateInput;
+    return this.core.address.create({ data });
+  }
 
-export async function updateAddress(
-  prisma: PrismaClient,
-  userId: string | undefined,
-  id: string,
-  input: UpdateAddressInput,
-) {
-  requireAuth(userId);
+  async updateAddress(
+    userId: string | undefined,
+    id: string,
+    input: UpdateAddressInput,
+  ) {
+    requireAuth(userId);
 
-  const addr = await prisma.address.findFirst({
-    where: { id, userId: userId! },
-  });
+    const addr = await this.core.address.findFirst({
+      where: { id, userId: userId! },
+    });
 
-  if (!addr) throw new Error("Address not found");
-  return prisma.address.update({
-    where: { id },
-    data: {
-      label: input?.label || undefined,
-      street: input?.street || undefined,
-      city: input.city || undefined,
-      zip: input.zip || undefined,
-      country: input.country || undefined,
-      isDefault: input.isDefault || undefined,
-    },
-  });
-}
+    if (!addr) throw new Error("Address not found");
+    return this.core.address.update({
+      where: { id },
+      data: {
+        label: input?.label || undefined,
+        street: input?.street || undefined,
+        city: input.city || undefined,
+        zip: input.zip || undefined,
+        country: input.country || undefined,
+        isDefault: input.isDefault || undefined,
+      },
+    });
+  }
 
-export async function deleteAddress(
-  prisma: PrismaClient,
-  userId: string | undefined,
-  id: string,
-) {
-  requireAuth(userId);
-  const addr = await prisma.address.findFirst({
-    where: { id, userId: userId! },
-  });
-  if (!addr) throw new Error("Address not found");
-  await prisma.address.delete({ where: { id } });
-  return true;
-}
+  async deleteAddress(userId: string | undefined, id: string) {
+    requireAuth(userId);
+    const addr = await this.core.address.findFirst({
+      where: { id, userId: userId! },
+    });
+    if (!addr) throw new Error("Address not found");
+    await this.core.address.delete({ where: { id } });
+    return true;
+  }
 
-export async function setDefaultAddress(
-  prisma: PrismaClient,
-  userId: string | undefined,
-  id: string,
-) {
-  requireAuth(userId);
-  await prisma.address.updateMany({
-    where: { userId: userId!, isDefault: true },
-    data: { isDefault: false },
-  });
-  return prisma.address.update({ where: { id }, data: { isDefault: true } });
-}
+  async setDefaultAddress(userId: string | undefined, id: string) {
+    requireAuth(userId);
+    await this.core.address.updateMany({
+      where: { userId: userId!, isDefault: true },
+      data: { isDefault: false },
+    });
+    return this.core.address.update({
+      where: { id },
+      data: { isDefault: true },
+    });
+  }
 
-export function getMyAddresses(
-  prisma: PrismaClient,
-  userId: string | undefined,
-) {
-  requireAuth(userId);
-  return prisma.address.findMany({ where: { userId: userId! } });
-}
+  getMyAddresses(userId: string | undefined) {
+    requireAuth(userId);
+    return this.core.address.findMany({ where: { userId: userId! } });
+  }
 
-export async function getAddress(
-  prisma: PrismaClient,
-  userId: string | undefined,
-  id: string,
-) {
-  requireAuth(userId);
-  return prisma.address.findFirst({ where: { id, userId: userId! } });
+  async getAddress(userId: string | undefined, id: string) {
+    requireAuth(userId);
+    return this.core.address.findFirst({ where: { id, userId: userId! } });
+  }
 }

@@ -1,37 +1,31 @@
 import type { Context } from "@gql-prisma-api/types/context.js";
 import type { Subscription as SubscriptionModel } from "@prisma/client";
 import type { SubscriptionPlan } from "./types/index.js";
-import {
-  createSubscription, cancelSubscription,
-  getMySubscription, getAllSubscriptions,
-  triggerTrialEndingNotification,
-  resolveSubscriptionUser,
-} from "./service.js";
 import type { TrialEndingInput } from "./service.js";
 
 export const Subscription = {
   user: (parent: SubscriptionModel, _args: unknown, ctx: Context) =>
-    resolveSubscriptionUser(ctx.prisma, parent.userId),
+    ctx.services.subscription.resolveSubscriptionUser(parent.userId),
 };
 
 export const Query = {
   mySubscription: (_parent: unknown, _args: unknown, ctx: Context) =>
-    getMySubscription(ctx.prisma, ctx.userId),
+    ctx.services.subscription.getMySubscription(ctx.userId),
 
   subscriptions: (_parent: unknown, _args: unknown, ctx: Context) =>
-    getAllSubscriptions(ctx.prisma, ctx.userId),
+    ctx.services.subscription.getAllSubscriptions(ctx.userId),
 };
 
 export const Mutation = {
   createSubscription: (_parent: unknown, { plan }: { plan: SubscriptionPlan }, ctx: Context) =>
-    createSubscription(ctx.prisma, ctx.userId, plan),
+    ctx.services.subscription.createSubscription(ctx.userId, plan),
 
   cancelSubscription: (_parent: unknown, _args: unknown, ctx: Context) =>
-    cancelSubscription(ctx.prisma, ctx.userId),
+    ctx.services.subscription.cancelSubscription(ctx.userId),
 
   triggerTrialEndingNotification: (
     _parent: unknown,
     { input }: { input: TrialEndingInput },
     ctx: Context,
-  ) => triggerTrialEndingNotification(ctx.prisma, ctx.userId, input),
+  ) => ctx.services.subscription.triggerTrialEndingNotification(ctx.userId, input),
 };

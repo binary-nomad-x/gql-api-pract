@@ -1,45 +1,29 @@
 import type { Context } from "@gql-prisma-api/types/context.js";
 import type { Order as OrderModel, OrderItem as OrderItemModel } from "@prisma/client";
 import type { PlaceOrderInput, OrderFilterInput } from "./inputs.js";
-import {
-  resolveOrderUser,
-  resolveOrderItems,
-  resolveOrderPayment,
-  resolveOrderRefunds,
-  resolveOrderShipments,
-  resolveOrderCoupon,
-  resolveOrderItemCount,
-  resolveOrderItemOrder,
-  resolveOrderItemProduct,
-  placeOrder,
-  cancelOrder,
-  updateOrderStatus,
-  getMyOrders,
-  getOrder,
-} from "./service.js";
 
 export const Order = {
   user: (parent: OrderModel, _args: unknown, ctx: Context) =>
-    resolveOrderUser(ctx.prisma, parent.userId),
+    ctx.services.order.resolveOrderUser(parent.userId),
   items: (parent: OrderModel, _args: unknown, ctx: Context) =>
-    resolveOrderItems(ctx.prisma, parent.id),
+    ctx.services.order.resolveOrderItems(parent.id),
   payment: (parent: OrderModel, _args: unknown, ctx: Context) =>
-    resolveOrderPayment(ctx.prisma, parent.id),
+    ctx.services.order.resolveOrderPayment(parent.id),
   refunds: (parent: OrderModel, _args: unknown, ctx: Context) =>
-    resolveOrderRefunds(ctx.prisma, parent.id),
+    ctx.services.order.resolveOrderRefunds(parent.id),
   shipments: (parent: OrderModel, _args: unknown, ctx: Context) =>
-    resolveOrderShipments(ctx.prisma, parent.id),
+    ctx.services.order.resolveOrderShipments(parent.id),
   coupon: (parent: OrderModel, _args: unknown, ctx: Context) =>
-    resolveOrderCoupon(ctx.prisma, parent.couponId),
+    ctx.services.order.resolveOrderCoupon(parent.couponId),
   itemCount: (parent: OrderModel, _args: unknown, ctx: Context) =>
-    resolveOrderItemCount(ctx.prisma, parent.id),
+    ctx.services.order.resolveOrderItemCount(parent.id),
 };
 
 export const OrderItem = {
   order: (parent: OrderItemModel, _args: unknown, ctx: Context) =>
-    resolveOrderItemOrder(ctx.prisma, parent.orderId),
+    ctx.services.order.resolveOrderItemOrder(parent.orderId),
   product: (parent: OrderItemModel, _args: unknown, ctx: Context) =>
-    resolveOrderItemProduct(ctx.prisma, parent.productId),
+    ctx.services.order.resolveOrderItemProduct(parent.productId),
 };
 
 export const Query = {
@@ -47,10 +31,10 @@ export const Query = {
     _parent: unknown,
     args: OrderFilterInput,
     ctx: Context,
-  ) => getMyOrders(ctx.prisma, ctx.userId, args),
+  ) => ctx.services.order.getMyOrders(ctx.userId, args),
 
   order: async (_parent: unknown, { id }: { id: string }, ctx: Context) =>
-    getOrder(ctx.prisma, ctx.userId, id),
+    ctx.services.order.getOrder(ctx.userId, id),
 
   orderShipments: (_parent: unknown, { orderId }: { orderId: string }, ctx: Context) =>
     ctx.prisma.shipment.findMany({ where: { orderId } }),
@@ -61,14 +45,14 @@ export const Mutation = {
     _parent: unknown,
     { input }: { input: PlaceOrderInput },
     ctx: Context,
-  ) => placeOrder(ctx.prisma, ctx.userId, input),
+  ) => ctx.services.order.placeOrder(ctx.userId, input),
 
   cancelOrder: async (_parent: unknown, { id }: { id: string }, ctx: Context) =>
-    cancelOrder(ctx.prisma, ctx.userId, id),
+    ctx.services.order.cancelOrder(ctx.userId, id),
 
   updateOrderStatus: async (
     _parent: unknown,
     { id, status }: { id: string; status: string },
     ctx: Context,
-  ) => updateOrderStatus(ctx.prisma, ctx.userId, id, status),
+  ) => ctx.services.order.updateOrderStatus(ctx.userId, id, status),
 };

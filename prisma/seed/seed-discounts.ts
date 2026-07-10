@@ -1,5 +1,5 @@
-import { fa, faker } from "@faker-js/faker";
-import type { SeedContext, SeedCounts } from "./types.js";
+import { faker } from "@faker-js/faker";
+import type { SeedContext, SeedCounts, DiscountSeed } from "./types.js";
 
 const DISCOUNT_TYPES = ["PERCENTAGE", "FIXED"];
 
@@ -8,40 +8,41 @@ export async function seedDiscounts(
   counts: SeedCounts,
   productIds: string[],
 ): Promise<void> {
-  const data: Array<{
-    productId: string;
-    name: string;
-    type: string;
-    value: number;
-    startDate: Date;
-    endDate: Date;
-    isActive: boolean;
-    maxUsage: number;
-    usedCount: number;
-  }> = [];
+  const data: DiscountSeed[] = [];
 
   for (const productId of productIds) {
-    const hasDiscount = Math.random() > 0.6;
+    const hasDiscount = Math.random() > 0.5;
     if (!hasDiscount) continue;
 
     const type = faker.helpers.arrayElement(DISCOUNT_TYPES);
-
     const maxUsage = faker.number.int({ min: 10, max: 200 });
     const usedCount = faker.number.int({ min: 0, max: maxUsage });
 
     data.push({
       productId,
-      name: faker.lorem.words({ min: 3, max: 5 }),
+      name: faker.lorem.words({ min: 3, max: 6 }),
+      code: faker.string.alphanumeric({ length: 8 }).toUpperCase(),
+      description: faker.lorem.sentence(),
       type,
       value:
         type === "PERCENTAGE"
-          ? faker.helpers.arrayElement([10, 15, 20, 25, 30, 40, 50])
-          : parseFloat(faker.commerce.price({ min: 5, max: 50 })),
+          ? faker.helpers.arrayElement([10, 15, 20, 25, 30, 40, 50, 60])
+          : parseFloat(faker.commerce.price({ min: 5, max: 100 })),
+      minQuantity: faker.number.int({ min: 0, max: 3 }),
+      maxQuantity: faker.number.int({ min: 5, max: 50 }),
+      minimumOrderAmount: parseFloat(faker.commerce.price({ min: 0, max: 100 })),
+      usageLimitPerUser: faker.number.int({ min: 1, max: 5 }),
       startDate: faker.date.past(),
       endDate: faker.date.future(),
-      isActive: Math.random() > 0.2,
+      isActive: Math.random() > 0.15,
+      stackable: Math.random() > 0.7,
+      priority: faker.number.int({ min: 0, max: 10 }),
       maxUsage,
       usedCount,
+      metadata: {
+        createdBy: "seed",
+        campaign: faker.helpers.arrayElement(["summer", "winter", "spring", "fall", "clearance"]),
+      },
     });
   }
 

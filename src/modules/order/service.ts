@@ -1,213 +1,219 @@
-import type { PrismaClient, Prisma } from "@prisma/client";
+import type { Prisma, PrismaClient } from "@prisma/client";
 import type { PlaceOrderInput, OrderFilterInput } from "./inputs.js";
 import { requireAuth, requireOwner } from "@gql-prisma-api/utils/errors.js";
 import { triggerNovuWorkflow } from "@gql-prisma-api/utils/novu.js";
 import { logger } from "@gql-prisma-api/utils/logger.js";
 
-// --- Type-field resolver functions ---
-export function resolveOrderUser(prisma: PrismaClient, userId: string) {
-  return prisma.user.findUnique({ where: { id: userId } });
-}
-
-export function resolveOrderItems(prisma: PrismaClient, orderId: string) {
-  return prisma.orderItem.findMany({ where: { orderId } });
-}
-
-export function resolveOrderPayment(prisma: PrismaClient, orderId: string) {
-  return prisma.payment.findUnique({ where: { orderId } });
-}
-
-export function resolveOrderRefunds(prisma: PrismaClient, orderId: string) {
-  return prisma.refund.findMany({ where: { orderId } });
-}
-
-export function resolveOrderShipments(prisma: PrismaClient, orderId: string) {
-  return prisma.shipment.findMany({ where: { orderId } });
-}
-
-export function resolveOrderCoupon(prisma: PrismaClient, couponId: string | null) {
-  return couponId
-    ? prisma.coupon.findUnique({ where: { id: couponId } })
-    : null;
-}
-
-export function resolveOrderItemCount(prisma: PrismaClient, orderId: string) {
-  return prisma.orderItem.count({ where: { orderId } });
-}
-
-export function resolveOrderItemOrder(prisma: PrismaClient, orderId: string) {
-  return prisma.order.findUnique({ where: { id: orderId } });
-}
-
-export function resolveOrderItemProduct(prisma: PrismaClient, productId: string) {
-  return prisma.product.findUnique({ where: { id: productId } });
-}
-
-// --- Existing business logic functions ---
-export async function placeOrder(
-  prisma: PrismaClient,
-  userId: string | undefined,
-  input: PlaceOrderInput,
-) {
-  requireAuth(userId);
-
-  const products = await prisma.product.findMany({
-    where: { id: { in: input.items.map((i) => i.productId) } },
-  });
-  const productMap = new Map(products.map((p) => [p.id, p]));
-
-  let totalAmount = 0;
-  for (const item of input.items) {
-    const p = productMap.get(item.productId);
-    if (!p) throw new Error(`Product ${item.productId} not found`);
-    if (!p.isActive) throw new Error(`${p.name} is inactive`);
-    if (p.stock < item.quantity)
-      throw new Error(`Insufficient stock for ${p.name}`);
-    totalAmount += p.price * item.quantity;
+export class OrderService {
+  constructor(private readonly core: PrismaClient) {}
+  resolveOrderUser(userId: string) {
+    return this.core.user.findUnique({ where: { id: userId } });
   }
 
-  let discountAmount = 0;
-  if (input.couponCode) {
-    const coupon = await prisma.coupon.findUnique({
-      where: { code: input.couponCode },
-    });
-    if (
-      coupon?.isActive &&
-      coupon.usedCount < coupon.maxUses &&
-      totalAmount >= coupon.minPurchase
-    ) {
-      discountAmount =
-        coupon.discountAmount > 0
-          ? coupon.discountAmount
-          : totalAmount * (coupon.discountPercent / 100);
-    }
+  resolveOrderItems(orderId: string) {
+    return this.core.orderItem.findMany({ where: { orderId } });
   }
 
-  const order = await prisma.$transaction(async (tx: Prisma.TransactionClient) => {
-    const orderData: Prisma.OrderCreateInput = {
-      user: { connect: { id: userId! } },
-      totalAmount,
-      discountAmount,
-      shippingAddress: input.shippingAddress ?? null,
-      items: {
-        create: input.items.map((item) => ({
-          product: { connect: { id: item.productId } },
-          quantity: item.quantity,
-          unitPrice: productMap.get(item.productId)!.price,
-        })),
-      },
-    };
-    if (input.couponCode) {
-      orderData.coupon = { connect: { code: input.couponCode } };
-    }
-    const o = await tx.order.create({
-      data: orderData,
-      include: { items: { include: { product: true } } },
-    });
+  resolveOrderPayment(orderId: string) {
+    return this.core.payment.findUnique({ where: { orderId } });
+  }
 
+  resolveOrderRefunds(orderId: string) {
+    return this.core.refund.findMany({ where: { orderId } });
+  }
+
+  resolveOrderShipments(orderId: string) {
+    return this.core.shipment.findMany({ where: { orderId } });
+  }
+
+  resolveOrderCoupon(couponId: string | null) {
+    return couponId
+      ? this.core.coupon.findUnique({ where: { id: couponId } })
+      : null;
+  }
+
+  resolveOrderItemCount(orderId: string) {
+    return this.core.orderItem.count({ where: { orderId } });
+  }
+
+  resolveOrderItemOrder(orderId: string) {
+    return this.core.order.findUnique({ where: { id: orderId } });
+  }
+
+  resolveOrderItemProduct(productId: string) {
+    return this.core.product.findUnique({ where: { id: productId } });
+  }
+
+  async placeOrder(
+    userId: string | undefined,
+    input: PlaceOrderInput,
+  ) {
+    requireAuth(userId);
+
+    const products = await this.core.product.findMany({
+      where: { id: { in: input.items.map((i) => i.productId) } },
+    });
+    const productMap = new Map(products.map((p) => [p.id, p]));
+
+    let totalAmount = 0;
     for (const item of input.items) {
-      await tx.product.update({
-        where: { id: item.productId },
-        data: { stock: { decrement: item.quantity } },
-      });
+      const p = productMap.get(item.productId);
+      if (!p) throw new Error(`Product ${item.productId} not found`);
+      if (!p.isActive) throw new Error(`${p.name} is inactive`);
+      if (p.stock < item.quantity)
+        throw new Error(`Insufficient stock for ${p.name}`);
+      totalAmount += p.price * item.quantity;
     }
 
+    let discountAmount = 0;
     if (input.couponCode) {
-      await tx.coupon.update({
+      const coupon = await this.core.coupon.findUnique({
         where: { code: input.couponCode },
-        data: { usedCount: { increment: 1 } },
       });
+      if (
+        coupon?.isActive &&
+        coupon.usedCount < coupon.maxUses &&
+        totalAmount >= coupon.minPurchase
+      ) {
+        discountAmount =
+          coupon.discountAmount > 0
+            ? coupon.discountAmount
+            : totalAmount * (coupon.discountPercent / 100);
+      }
     }
 
-    return o;
-  });
+    const order = await this.core.$transaction(async (tx: Prisma.TransactionClient) => {
+      const orderData: Prisma.OrderCreateInput = {
+        user: { connect: { id: userId! } },
+        totalAmount,
+        discountAmount,
+        shippingAddress: input.shippingAddress ?? undefined,
+        items: {
+          create: input.items.map((item) => {
+            const p = productMap.get(item.productId)!;
+            const totalPrice = p.price * item.quantity;
+            return {
+              product: { connect: { id: item.productId } },
+              quantity: item.quantity,
+              unitPrice: p.price,
+              productName: p.name,
+              productSku: p.sku,
+              productImage: p.imageUrl,
+              discountAmount: 0,
+              taxAmount: 0,
+              totalPrice,
+            };
+          }),
+        },
+      };
+      if (input.couponCode) {
+        orderData.coupon = { connect: { code: input.couponCode } };
+      }
+      const o = await tx.order.create({
+        data: orderData,
+        include: { items: { include: { product: true } } },
+      });
 
-  await triggerNovuWorkflow(userId!, "order-placed", {
-    orderId: order.id,
-    totalAmount,
-    itemCount: input.items.length,
-  });
+      for (const item of input.items) {
+        await tx.product.update({
+          where: { id: item.productId },
+          data: { stock: { decrement: item.quantity } },
+        });
+      }
 
-  logger.info("Order placed", { orderId: order.id, userId: userId!, totalAmount, itemCount: input.items.length });
-  return order;
-}
+      if (input.couponCode) {
+        await tx.coupon.update({
+          where: { code: input.couponCode },
+          data: { usedCount: { increment: 1 } },
+        });
+      }
 
-export async function cancelOrder(
-  prisma: PrismaClient,
-  userId: string | undefined,
-  id: string,
-) {
-  requireAuth(userId);
-  const order = await prisma.order.findUnique({
-    where: { id },
-    include: { items: true },
-  });
-  if (!order) throw new Error("Order not found");
-  requireOwner(order.userId, userId);
-  if (["DELIVERED", "SHIPPED"].includes(order.status)) {
-    throw new Error("Cannot cancel shipped or delivered order");
-  }
-
-  const updated = await prisma.$transaction(async (tx: Prisma.TransactionClient) => {
-    const o = await tx.order.update({
-      where: { id },
-      data: { status: "CANCELLED" },
+      return o;
     });
-    for (const item of order.items) {
-      await tx.product.update({
-        where: { id: item.productId },
-        data: { stock: { increment: item.quantity } },
-      });
-    }
-    return o;
-  });
 
-  await triggerNovuWorkflow(userId!, "order-cancelled", { orderId: id });
+    await triggerNovuWorkflow(userId!, "order-placed", {
+      orderId: order.id,
+      totalAmount,
+      itemCount: input.items.length,
+    });
 
-  logger.info("Order cancelled", { orderId: id, userId: userId! });
-  return updated;
-}
-
-export async function updateOrderStatus(
-  prisma: PrismaClient,
-  userId: string | undefined,
-  id: string,
-  status: string,
-) {
-  requireAuth(userId);
-  const order = await prisma.order.findUnique({ where: { id } });
-  if (!order) throw new Error("Order not found");
-  requireOwner(order.userId, userId);
-  return prisma.order.update({ where: { id }, data: { status } });
-}
-
-export async function getMyOrders(
-  prisma: PrismaClient,
-  userId: string | undefined,
-  args: OrderFilterInput,
-) {
-  requireAuth(userId);
-  const conditions: Prisma.OrderWhereInput[] = [{ userId: userId! }];
-
-  if (args.status) {
-    conditions.push({ status: args.status });
+    logger.info("Order placed", { orderId: order.id, userId: userId!, totalAmount, itemCount: input.items.length });
+    return order;
   }
 
-  const where: Prisma.OrderWhereInput = { AND: conditions };
+  async cancelOrder(
+    userId: string | undefined,
+    id: string,
+  ) {
+    requireAuth(userId);
+    const order = await this.core.order.findUnique({
+      where: { id },
+      include: { items: true },
+    });
+    if (!order) throw new Error("Order not found");
+    requireOwner(order.userId, userId);
+    if (["DELIVERED", "SHIPPED"].includes(order.status)) {
+      throw new Error("Cannot cancel shipped or delivered order");
+    }
 
-  return prisma.order.findMany({
-    where,
-    take: args.limit ?? 20,
-    skip: args.offset ?? 0,
-    orderBy: { createdAt: "desc" },
-  });
-}
+    const updated = await this.core.$transaction(async (tx: Prisma.TransactionClient) => {
+      const o = await tx.order.update({
+        where: { id },
+        data: { status: "CANCELLED" },
+      });
+      for (const item of order.items) {
+        await tx.product.update({
+          where: { id: item.productId },
+          data: { stock: { increment: item.quantity } },
+        });
+      }
+      return o;
+    });
 
-export async function getOrder(
-  prisma: PrismaClient,
-  userId: string | undefined,
-  id: string,
-) {
-  requireAuth(userId);
-  return prisma.order.findFirst({ where: { id, userId: userId! } });
+    await triggerNovuWorkflow(userId!, "order-cancelled", { orderId: id });
+
+    logger.info("Order cancelled", { orderId: id, userId: userId! });
+    return updated;
+  }
+
+  async updateOrderStatus(
+    userId: string | undefined,
+    id: string,
+    status: string,
+  ) {
+    requireAuth(userId);
+    const order = await this.core.order.findUnique({ where: { id } });
+    if (!order) throw new Error("Order not found");
+    requireOwner(order.userId, userId);
+    return this.core.order.update({ where: { id }, data: { status } });
+  }
+
+  async getMyOrders(
+    userId: string | undefined,
+    args: OrderFilterInput,
+  ) {
+    requireAuth(userId);
+    const conditions: Prisma.OrderWhereInput[] = [{ userId: userId! }];
+
+    if (args.status) {
+      conditions.push({ status: args.status });
+    }
+
+    const where: Prisma.OrderWhereInput = { AND: conditions };
+
+    return this.core.order.findMany({
+      where,
+      take: args.limit ?? 20,
+      skip: args.offset ?? 0,
+      orderBy: { createdAt: "desc" },
+    });
+  }
+
+  async getOrder(
+    userId: string | undefined,
+    id: string,
+  ) {
+    requireAuth(userId);
+    return this.core.order.findFirst({ where: { id, userId: userId! } });
+  }
 }

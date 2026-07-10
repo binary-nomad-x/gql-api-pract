@@ -1,4 +1,4 @@
-import type { PrismaClient, Prisma } from "@prisma/client";
+import type { Prisma, PrismaClient } from "@prisma/client";
 import type {
   CreateTicketInput,
   TicketFilterInput,
@@ -8,168 +8,132 @@ import { requireAuth } from "@gql-prisma-api/utils/errors.js";
 import { triggerNovuWorkflow } from "@gql-prisma-api/utils/novu.js";
 import { logger } from "@gql-prisma-api/utils/logger.js";
 
-// --- Type-field resolver functions ---
-export function resolveSupportTicketUser(parent: Record<string, unknown>) {
-  return parent.user;
-}
-export function resolveSupportTicketReplies(parent: Record<string, unknown>) {
-  return parent.replies;
-}
-export function resolveTicketReplyTicket(parent: Record<string, unknown>) {
-  return parent.ticket;
-}
-export function resolveTicketReplyUser(parent: Record<string, unknown>) {
-  return parent.user;
-}
+export class SupportService {
+  constructor(private readonly core: PrismaClient) {}
+  async findMyTickets(userId: string | undefined, filter?: TicketFilterInput) {
+    requireAuth(userId);
+    const conditions: Prisma.SupportTicketWhereInput[] = [{ userId }];
 
-// --- Existing business logic functions ---
-export async function findMyTickets(
-  prisma: PrismaClient,
-  userId: string | undefined,
-  filter?: TicketFilterInput,
-) {
-  requireAuth(userId);
-  const conditions: Prisma.SupportTicketWhereInput[] = [{ userId }];
+    if (filter?.status) {
+      conditions.push({ status: filter.status });
+    }
 
-  if (filter?.status) {
-    conditions.push({ status: filter.status });
+    const where: Prisma.SupportTicketWhereInput = { AND: conditions };
+
+    return this.core.supportTicket.findMany({
+      where,
+      orderBy: { updatedAt: "desc" },
+      take: filter?.limit ?? 20,
+      skip: filter?.offset ?? 0,
+      include: {
+        replies: { include: { user: true }, orderBy: { createdAt: "asc" } },
+      },
+    });
   }
 
-  const where: Prisma.SupportTicketWhereInput = { AND: conditions };
+  async findTicketById(userId: string | undefined, id: string) {
+    requireAuth(userId);
+    const ticket = await this.core.supportTicket.findUnique({
+      where: { id },
+      include: {
+        replies: { include: { user: true }, orderBy: { createdAt: "asc" } },
+      },
+    });
+    if (!ticket) throw new Error("Ticket not found");
+    return ticket;
+  }
 
-  return prisma.supportTicket.findMany({
-    where,
-    orderBy: { updatedAt: "desc" },
-    take: filter?.limit ?? 20,
-    skip: filter?.offset ?? 0,
-    include: {
-      replies: { include: { user: true }, orderBy: { createdAt: "asc" } },
-    },
-  });
-}
+  async createTicket(userId: string | undefined, input: CreateTicketInput) {
+    requireAuth(userId);
+    const ticket = await this.core.supportTicket.create({
+      data: {
+        userId,
+        subject: input.subject,
+        description: input.description,
+        priority: input.priority ?? "MEDIUM",
+        category: input.category ?? "general",
+      },
+      include: { replies: true },
+    });
 
-export async function findTicketById(
-  prisma: PrismaClient,
-  userId: string | undefined,
-  id: string,
-) {
-  requireAuth(userId);
-  const ticket = await prisma.supportTicket.findUnique({
-    where: { id },
-    include: {
-      replies: { include: { user: true }, orderBy: { createdAt: "asc" } },
-    },
-  });
-  if (!ticket) throw new Error("Ticket not found");
-  return ticket;
-}
+    await this.core.notification.create({
+      data: {
+        userId,
+        type: "TICKET_CREATED",
+        title: "Support Ticket Created",
+        message: `Ticket "${input.subject}" has been created.`,
+      },
+    });
 
-export async function createTicket(
-  prisma: PrismaClient,
-  userId: string | undefined,
-  input: CreateTicketInput,
-) {
-  requireAuth(userId);
-  const ticket = await prisma.supportTicket.create({
-    data: {
-      userId,
+    await triggerNovuWorkflow(userId!, "ticket-created", {
+      ticketId: ticket.id,
       subject: input.subject,
-      description: input.description,
-      priority: input.priority ?? "MEDIUM",
-      category: input.category ?? "general",
-    },
-    include: { replies: true },
-  });
+    });
+    logger.info("Support ticket created", { ticketId: ticket.id, userId });
+    return ticket;
+  }
 
-  await prisma.notification.create({
-    data: {
-      userId,
-      type: "TICKET_CREATED",
-      title: "Support Ticket Created",
-      message: `Ticket "${input.subject}" has been created.`,
-    },
-  });
+  async addTicketReply(userId: string | undefined, input: AddTicketReplyInput) {
+    requireAuth(userId);
+    const ticket = await this.core.supportTicket.findUnique({
+      where: { id: input.ticketId },
+    });
+    if (!ticket) throw new Error("Ticket not found");
 
-  await triggerNovuWorkflow(userId!, "ticket-created", {
-    ticketId: ticket.id,
-    subject: input.subject,
-  });
-  logger.info("Support ticket created", { ticketId: ticket.id, userId });
-  return ticket;
-}
+    const user = await this.core.user.findUnique({ where: { id: userId } });
+    const isStaff = user?.role === "ADMIN" || user?.role === "MODERATOR";
 
-export async function addTicketReply(
-  prisma: PrismaClient,
-  userId: string | undefined,
-  input: AddTicketReplyInput,
-) {
-  requireAuth(userId);
-  const ticket = await prisma.supportTicket.findUnique({
-    where: { id: input.ticketId },
-  });
-  if (!ticket) throw new Error("Ticket not found");
+    const reply = await this.core.ticketReply.create({
+      data: {
+        ticketId: input.ticketId,
+        userId,
+        content: input.content,
+        isStaff,
+      },
+      include: { ticket: true, user: true },
+    });
 
-  const user = await prisma.user.findUnique({ where: { id: userId } });
-  const isStaff = user?.role === "ADMIN" || user?.role === "MODERATOR";
+    await this.core.supportTicket.update({
+      where: { id: input.ticketId },
+      data: { status: "IN_PROGRESS" },
+    });
 
-  const reply = await prisma.ticketReply.create({
-    data: {
+    await triggerNovuWorkflow(userId!, "ticket-updated", {
       ticketId: input.ticketId,
-      userId,
-      content: input.content,
-      isStaff,
-    },
-    include: { ticket: true, user: true },
-  });
+      replyId: reply.id,
+    });
+    logger.info("Ticket reply added", { ticketId: input.ticketId, userId });
+    return reply;
+  }
 
-  await prisma.supportTicket.update({
-    where: { id: input.ticketId },
-    data: { status: "IN_PROGRESS" },
-  });
+  async resolveTicket(userId: string | undefined, id: string) {
+    requireAuth(userId);
+    const ticket = await this.core.supportTicket.findUnique({ where: { id } });
+    if (!ticket) throw new Error("Ticket not found");
 
-  await triggerNovuWorkflow(userId!, "ticket-updated", {
-    ticketId: input.ticketId,
-    replyId: reply.id,
-  });
-  logger.info("Ticket reply added", { ticketId: input.ticketId, userId });
-  return reply;
-}
+    const updated = await this.core.supportTicket.update({
+      where: { id },
+      data: { status: "RESOLVED" },
+      include: { replies: { include: { user: true } } },
+    });
 
-export async function resolveTicket(
-  prisma: PrismaClient,
-  userId: string | undefined,
-  id: string,
-) {
-  requireAuth(userId);
-  const ticket = await prisma.supportTicket.findUnique({ where: { id } });
-  if (!ticket) throw new Error("Ticket not found");
+    await triggerNovuWorkflow(userId!, "ticket-resolved", { ticketId: id });
+    logger.info("Ticket resolved", { ticketId: id, userId });
+    return updated;
+  }
 
-  const updated = await prisma.supportTicket.update({
-    where: { id },
-    data: { status: "RESOLVED" },
-    include: { replies: { include: { user: true } } },
-  });
+  async closeTicket(userId: string | undefined, id: string) {
+    requireAuth(userId);
+    const ticket = await this.core.supportTicket.findUnique({ where: { id } });
+    if (!ticket) throw new Error("Ticket not found");
 
-  await triggerNovuWorkflow(userId!, "ticket-resolved", { ticketId: id });
-  logger.info("Ticket resolved", { ticketId: id, userId });
-  return updated;
-}
+    const updated = await this.core.supportTicket.update({
+      where: { id },
+      data: { status: "CLOSED" },
+      include: { replies: { include: { user: true } } },
+    });
 
-export async function closeTicket(
-  prisma: PrismaClient,
-  userId: string | undefined,
-  id: string,
-) {
-  requireAuth(userId);
-  const ticket = await prisma.supportTicket.findUnique({ where: { id } });
-  if (!ticket) throw new Error("Ticket not found");
-
-  const updated = await prisma.supportTicket.update({
-    where: { id },
-    data: { status: "CLOSED" },
-    include: { replies: { include: { user: true } } },
-  });
-
-  logger.info("Ticket closed", { ticketId: id, userId });
-  return updated;
+    logger.info("Ticket closed", { ticketId: id, userId });
+    return updated;
+  }
 }

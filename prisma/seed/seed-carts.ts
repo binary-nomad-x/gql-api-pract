@@ -16,11 +16,13 @@ export async function seedCarts(
     const cart = await ctx.prisma.cart.create({
       data: {
         userId,
-        notes: "",
+        notes: faker.lorem.text(),
         subtotal: 0,
         total: 0,
         currency: "USD",
-        couponCode: "",
+        couponCode: faker.datatype.boolean({ probability: 0.2 })
+          ? faker.string.alphanumeric({ length: 10, casing: "upper" })
+          : null,
         discountAmount: 0,
         sessionId: faker.string.alphanumeric(24),
         expiresAt: faker.date.future({ years: 1 }),
@@ -57,6 +59,7 @@ export async function seedCarts(
         data: items,
         skipDuplicates: true,
       });
+      
       counts.cartItems += items.length;
 
       await ctx.prisma.cart.update({

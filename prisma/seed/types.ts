@@ -46,13 +46,13 @@ export interface AddressSeed {
   userId: string;
   label: string;
   street: string;
-  addressLine2: string;
+  addressLine2: string | null;
   city: string;
   state: string;
   zip: string;
   country: string;
   phone: string;
-  deliveryInstructions: string;
+  deliveryInstructions: string | null;
   latitude: number;
   longitude: number;
   isDefault: boolean;

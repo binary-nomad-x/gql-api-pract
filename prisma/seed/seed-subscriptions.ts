@@ -1,5 +1,5 @@
 import { faker } from "@faker-js/faker";
-import type { SeedContext, SeedCounts, SubscriptionSeed } from "./types.js";
+import type { SeedContext, SeedCounts } from "./types.js";
 
 const PLANS = ["FREE", "BASIC", "PRO", "ENTERPRISE"];
 const BILLING_CYCLES = ["monthly", "quarterly", "annual"];
@@ -10,7 +10,14 @@ export async function seedSubscriptions(
   counts: SeedCounts,
   userIds: string[],
 ): Promise<void> {
-  const data: SubscriptionSeed[] = [];
+  const data: {
+    userId: string; plan: string; status: string; startDate: Date;
+    endDate: Date | null; trialStartDate: Date | null; trialEndDate: Date | null;
+    autoRenew: boolean; billingCycle: string; paymentMethod: string;
+    cancelledBy: string; cancellationReason: string; cancelledAt: Date | null;
+    lastBillingAt: Date | null; nextBillingAt: Date | null;
+    currentPeriodStart: Date | null; currentPeriodEnd: Date | null; metadata: object;
+  }[] = [];
 
   for (const userId of userIds) {
     const plan = faker.helpers.arrayElement(PLANS);
@@ -21,8 +28,7 @@ export async function seedSubscriptions(
     const currentPeriodEnd = faker.date.future({ days: 30 });
 
     data.push({
-      userId,
-      plan,
+      userId, plan,
       status: isActive ? "ACTIVE" : "CANCELLED",
       startDate,
       endDate: isActive ? faker.date.future() : faker.date.past(),
@@ -49,6 +55,13 @@ export async function seedSubscriptions(
     });
   }
 
-  await ctx.prisma.subscription.createMany({ data });
+  await ctx.prisma.subscription.createMany({
+    data: data.map((s) => ({
+      ...s,
+      paymentMethod: s.paymentMethod || null,
+      cancelledBy: s.cancelledBy || null,
+      cancellationReason: s.cancellationReason || null,
+    })),
+  });
   counts.subscriptions += data.length;
 }

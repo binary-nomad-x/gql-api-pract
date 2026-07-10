@@ -1,5 +1,5 @@
 import { faker } from "@faker-js/faker";
-import type { SeedContext, SeedCounts, ReturnSeed } from "./types.js";
+import type { SeedContext, SeedCounts } from "./types.js";
 
 export async function seedReturns(
   ctx: SeedContext,
@@ -8,31 +8,32 @@ export async function seedReturns(
   orderIds: string[],
 ): Promise<void> {
   const orderItems = await ctx.prisma.orderItem.findMany({
-    where: {
-      order: {
-        id: { in: orderIds },
-        status: "DELIVERED",
-      },
-    },
+    where: { order: { id: { in: orderIds }, status: "DELIVERED" } },
     select: { id: true, orderId: true, productId: true, quantity: true },
     take: 300,
   });
 
   if (orderItems.length === 0) return;
 
-  // Only return ~20% of delivered order items
   const returnItems = orderItems.filter(() => Math.random() > 0.8);
-  const data: ReturnSeed[] = [];
+
+  const data: {
+    orderItemId: string; userId: string; reason: string;
+    reasonDescription: string; resolution: string; refundAmount: number;
+    returnLabelUrl: string; condition: string; status: string;
+    quantity: number; images: object[];
+    resolvedAt: Date | null; pickedUpAt: Date | null;
+    deliveredBackAt: Date | null; inspectedAt: Date | null;
+  }[] = [];
 
   for (const item of returnItems) {
-    const reason = faker.helpers.arrayElement([
-      "Defective product", "Wrong size", "Not as described",
-      "Changed mind", "Quality issue", "Damaged in shipping",
-    ]);
     data.push({
       orderItemId: item.id,
       userId: faker.helpers.arrayElement(userIds),
-      reason,
+      reason: faker.helpers.arrayElement([
+        "Defective product", "Wrong size", "Not as described",
+        "Changed mind", "Quality issue", "Damaged in shipping",
+      ]),
       reasonDescription: faker.lorem.sentences({ min: 1, max: 2 }),
       resolution: faker.helpers.arrayElement(["refund", "replacement", "store_credit"]),
       refundAmount: parseFloat(faker.commerce.price({ min: 10, max: 200 })),

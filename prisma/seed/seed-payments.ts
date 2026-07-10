@@ -1,5 +1,5 @@
 import { faker } from "@faker-js/faker";
-import type { SeedContext, SeedCounts, PaymentSeed } from "./types.js";
+import type { SeedContext, SeedCounts } from "./types.js";
 
 const PAYMENT_METHODS = ["credit_card", "debit_card", "paypal", "stripe", "apple_pay", "google_pay"];
 const GATEWAYS = ["stripe", "paypal", "square", "adyen"];
@@ -11,13 +11,27 @@ export async function seedPayments(
 ): Promise<void> {
   const orders = await ctx.prisma.order.findMany({
     where: { id: { in: orderIds } },
-    select: {
-      id: true, totalAmount: true, discountAmount: true, status: true,
-      subtotal: true, taxAmount: true, shippingAmount: true,
-    },
+    select: { id: true, totalAmount: true, status: true },
   });
 
-  const data: PaymentSeed[] = [];
+  const data: {
+    orderId: string;
+    amount: number;
+    currency: string;
+    method: string;
+    gateway: string;
+    gatewayTransactionId: string;
+    status: string;
+    fee: number;
+    netAmount: number;
+    payerEmail: string;
+    payerName: string;
+    billingAddress: string;
+    failureReason: string;
+    refundedAmount: number;
+    capturedAmount: number;
+    transactionId: string;
+  }[] = [];
 
   for (const order of orders) {
     const amount = order.totalAmount;
@@ -26,7 +40,7 @@ export async function seedPayments(
     const isCompleted = order.status !== "CANCELLED";
     const method = faker.helpers.arrayElement(PAYMENT_METHODS);
     const gateway = faker.helpers.arrayElement(GATEWAYS);
-    const fee = parseFloat((amount * 0.029 + 0.30).toFixed(2)); // Stripe-like fee
+    const fee = parseFloat((amount * 0.029 + 0.30).toFixed(2));
 
     data.push({
       orderId: order.id,
@@ -48,6 +62,11 @@ export async function seedPayments(
     });
   }
 
-  await ctx.prisma.payment.createMany({ data });
+  await ctx.prisma.payment.createMany({
+    data: data.map((p) => ({
+      ...p,
+      failureReason: p.failureReason || null,
+    })),
+  });
   counts.payments += data.length;
 }

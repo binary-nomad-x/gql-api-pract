@@ -88,7 +88,7 @@ export class BlogService {
       data: {
         title: input.title,
         slug,
-        content: input.content ?? "",
+        content: input.content ?? undefined,
         published: input.published ?? false,
         authorId: userId!,
         tags: {
@@ -160,8 +160,8 @@ export class BlogService {
   createCategory(input: CreateCategoryInput) {
     return this.core.category.upsert({
       where: { slug: input.slug },
-      update: { name: input.name, description: input.description ?? "" },
-      create: { name: input.name, slug: input.slug, description: input.description ?? "" },
+      update: { name: input.name, description: input.description ?? undefined },
+      create: { name: input.name, slug: input.slug, description: input.description ?? undefined },
     });
   }
 

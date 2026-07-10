@@ -1,5 +1,5 @@
 import { faker } from "@faker-js/faker";
-import type { SeedContext, SeedCounts, OrderSeed, OrderItemSeed } from "./types.js";
+import type { SeedContext, SeedCounts } from "./types.js";
 import { randomUUID } from "node:crypto";
 
 const ORDER_STATUSES = [
@@ -28,8 +28,40 @@ export async function seedOrders(
     randomUUID(),
   );
 
-  const orderData: OrderSeed[] = [];
-  const itemData: OrderItemSeed[] = [];
+  const orderData: {
+    id: string;
+    userId: string;
+    status: string;
+    subtotal: number;
+    taxAmount: number;
+    shippingAmount: number;
+    currency: string;
+    shippingAddress: string;
+    email: string;
+    phone: string;
+    notes: string;
+    source: string;
+    isGift: boolean;
+    giftMessage: string;
+    trackingUrl: string;
+    couponId: string | null;
+    estimatedDelivery: Date | null;
+    deliveredAt: Date | null;
+    cancelledAt: Date | null;
+    cancelReason: string;
+  }[] = [];
+  const itemData: {
+    orderId: string;
+    productId: string;
+    quantity: number;
+    unitPrice: number;
+    productName: string;
+    productSku: string;
+    productImage: string;
+    discountAmount: number;
+    taxAmount: number;
+    totalPrice: number;
+  }[] = [];
 
   for (const orderId of orderIds) {
     const status = faker.helpers.arrayElement(ORDER_STATUSES);
@@ -37,7 +69,6 @@ export async function seedOrders(
     const useCoupon = couponIds.length > 0 && Math.random() > 0.65;
     const couponId = useCoupon ? faker.helpers.arrayElement(couponIds) : null;
     const isCancelled = status === "CANCELLED";
-    const isDelivered = status === "DELIVERED";
     const shippingAmount = parseFloat(faker.commerce.price({ min: 5, max: 25 }));
     const taxRate = faker.helpers.arrayElement([0.05, 0.07, 0.08, 0.10, 0.0]);
 
@@ -52,14 +83,14 @@ export async function seedOrders(
       shippingAddress: faker.location.streetAddress(),
       email: faker.internet.email().toLowerCase(),
       phone: faker.phone.number(),
-      notes: Math.random() > 0.6 ? faker.lorem.sentence() : "",
+      notes: Math.random() > 0.4 ? faker.lorem.sentence() : "",
       source: faker.helpers.arrayElement(["web", "mobile", "api"]),
       isGift: Math.random() > 0.9,
       giftMessage: Math.random() > 0.9 ? faker.lorem.sentence() : "",
       trackingUrl: "",
       couponId,
-      estimatedDelivery: isDelivered ? faker.date.past() : faker.date.future(),
-      deliveredAt: isDelivered ? faker.date.past() : null,
+      estimatedDelivery: faker.date.future(),
+      deliveredAt: status === "DELIVERED" ? faker.date.past() : null,
       cancelledAt: isCancelled ? faker.date.past() : null,
       cancelReason: isCancelled ? faker.helpers.arrayElement([
         "Changed mind", "Found better price", "Ordered by mistake",
@@ -91,13 +122,20 @@ export async function seedOrders(
       });
     }
 
-    // Update subtotal and tax in orderData
     const order = orderData[orderData.length - 1];
     order.subtotal = subtotal;
     order.taxAmount = parseFloat((subtotal * taxRate).toFixed(2));
   }
 
-  await ctx.prisma.order.createMany({ data: orderData });
+  await ctx.prisma.order.createMany({
+    data: orderData.map((o) => ({
+      ...o,
+      notes: o.notes || null,
+      giftMessage: o.giftMessage || null,
+      cancelReason: o.cancelReason || null,
+      trackingUrl: null,
+    })),
+  });
   counts.orders += orderData.length;
 
   await ctx.prisma.orderItem.createMany({ data: itemData });
@@ -146,7 +184,15 @@ export async function seedOrders(
         totalAmount: parseFloat(totalAmount.toFixed(2)),
         subtotal: totals.subtotal,
         taxAmount: totals.tax,
+        shippingAmount: totals.shipping,
         discountAmount: discount,
+        shippingAddress: order.shippingAddress || null,
+        email: order.email || null,
+        phone: order.phone || null,
+        notes: order.notes || null,
+        giftMessage: order.giftMessage || null,
+        trackingUrl: null,
+        cancelReason: order.cancelReason || null,
       },
     });
   }

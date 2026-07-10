@@ -18,6 +18,18 @@ export async function seedProducts(
       "TechPro", "HomeEssentials", "SportMax", "StyleCraft",
       "EcoGoods", "ProGear", "SmartBuy", "LuxeLiving",
     ]);
+    const color = faker.helpers.arrayElement([
+      "Black", "White", "Red", "Blue", "Green", "Silver",
+      "Gold", "Gray", "Navy", "Beige", "Brown",
+    ]);
+    const warrantyInfo = faker.helpers.arrayElement([
+      "1 Year Limited Warranty", "2 Year Extended Warranty",
+      "Lifetime Warranty", "90 Day Warranty", "No Warranty",
+    ]);
+    const returnPolicy = faker.helpers.arrayElement([
+      "30 Day Return Policy", "60 Day Return Policy",
+      "90 Day Return Policy", "No Returns Accepted",
+    ]);
     return {
       id,
       name,
@@ -27,10 +39,7 @@ export async function seedProducts(
       sku: faker.string.alphanumeric({ length: 10 }).toUpperCase(),
       barcode: faker.string.numeric({ length: 13 }),
       brand,
-      color: faker.helpers.arrayElement([
-        "Black", "White", "Red", "Blue", "Green", "Silver",
-        "Gold", "Gray", "Navy", "Beige", "Brown",
-      ]),
+      color,
       weight: parseFloat(faker.number.float({ min: 0.1, max: 25 }).toFixed(2)),
       dimensions: `${faker.number.int({ min: 5, max: 60 })}x${faker.number.int({ min: 5, max: 60 })}x${faker.number.int({ min: 1, max: 30 })}`,
       rating: parseFloat(faker.number.float({ min: 1, max: 5 }).toFixed(1)),
@@ -38,14 +47,8 @@ export async function seedProducts(
       soldCount: faker.number.int({ min: 0, max: 2000 }),
       minimumStock: faker.number.int({ min: 5, max: 50 }),
       allowBackorder: faker.datatype.boolean({ probability: 0.2 }),
-      warrantyInfo: faker.helpers.arrayElement([
-        "1 Year Limited Warranty", "2 Year Extended Warranty",
-        "Lifetime Warranty", "90 Day Warranty", "No Warranty",
-      ]),
-      returnPolicy: faker.helpers.arrayElement([
-        "30 Day Return Policy", "60 Day Return Policy",
-        "90 Day Return Policy", "No Returns Accepted",
-      ]),
+      warrantyInfo,
+      returnPolicy,
       taxClass: faker.helpers.arrayElement(["standard", "reduced", "zero", "luxury"]),
       metaTitle: name,
       metaDescription: faker.lorem.sentence(),

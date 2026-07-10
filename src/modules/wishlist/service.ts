@@ -53,8 +53,8 @@ export class WishlistService {
     const product = await this.core.product.findUnique({ where: { id: input.productId } });
     await this.core.wishlistItem.upsert({
       where: { wishlistId_productId: { wishlistId: input.wishlistId, productId: input.productId } },
-      update: { note: input.note ?? "" },
-      create: { wishlistId: input.wishlistId, productId: input.productId, note: input.note ?? "", priority: "MEDIUM", priceAtAddition: product?.price ?? 0 },
+      update: { note: input.note ?? undefined },
+      create: { wishlistId: input.wishlistId, productId: input.productId, note: input.note ?? undefined, priority: "MEDIUM", priceAtAddition: product?.price ?? 0 },
     });
 
     return this.core.wishlist.findUnique({ where: { id: input.wishlistId } });

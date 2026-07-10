@@ -1,5 +1,5 @@
 import { faker } from "@faker-js/faker";
-import type { SeedContext, SeedCounts, NotificationSeed } from "./types.js";
+import type { SeedContext, SeedCounts } from "./types.js";
 
 const TYPES = ["info", "warning", "success", "error", "promotion", "reminder"] as const;
 const CHANNELS = ["in-app", "email", "sms", "push"];
@@ -10,7 +10,13 @@ export async function seedNotifications(
   counts: SeedCounts,
   userIds: string[],
 ): Promise<void> {
-  const data: NotificationSeed[] = [];
+  const data: {
+    userId: string; type: string; title: string; message: string;
+    link: string; actionUrl: string; imageUrl: string;
+    channel: string; category: string; isRead: boolean;
+    readAt: Date | null; seenAt: Date | null;
+    deliveredAt: Date | null; expiresAt: Date | null; metadata: object;
+  }[] = [];
 
   for (const userId of userIds) {
     const n = faker.number.int({ min: 5, max: 12 });
@@ -19,8 +25,7 @@ export async function seedNotifications(
       const isRead = Math.random() > 0.4;
 
       data.push({
-        userId,
-        type,
+        userId, type,
         title: faker.lorem.sentence({ min: 3, max: 8 }),
         message: faker.lorem.sentences({ min: 1, max: 2 }),
         link: faker.internet.url(),
@@ -41,6 +46,12 @@ export async function seedNotifications(
     }
   }
 
-  await ctx.prisma.notification.createMany({ data });
+  await ctx.prisma.notification.createMany({
+    data: data.map((n) => ({
+      ...n,
+      actionUrl: n.actionUrl || null,
+      imageUrl: n.imageUrl || null,
+    })),
+  });
   counts.notifications += data.length;
 }

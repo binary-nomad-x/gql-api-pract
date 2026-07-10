@@ -11,13 +11,13 @@ model User {
   id        String   @id @default(cuid())
   email     String   @unique
   username  String   @unique
-  name      String   @default("")
+  name      String?
   age       Int      @default(0)
   password  String
   role      String   @default("USER")
-  avatarUrl String   @default("")
-  bio       String   @default("")
-  phone     String   @default("")
+  avatarUrl String?
+  bio       String?
+  phone     String?
   isVerified Boolean @default(false)
   lastLoginAt DateTime @default(now())
   locale    String   @default("en-US")
@@ -80,17 +80,17 @@ model UserCategoryFollow {
 // ==================== Profile Model ====================
 model Profile {
   id        String   @id @default(cuid())
-  bio       String   @default("")
-  avatar    String   @default("")
-  phone     String   @default("")
-  address   String   @default("")
-  fullName  String   @default("")
+  bio       String?
+  avatar    String?
+  phone     String?
+  address   String?
+  fullName  String?
   dateOfBirth DateTime @default(now())
-  gender    String   @default("")
-  occupation String  @default("")
-  company   String   @default("")
-  website   String   @default("")
-  education String   @default("")
+  gender    String?
+  occupation String?
+  company   String?
+  website   String?
+  education String?
   newsletter Boolean @default(true)
   marketingOptIn Boolean @default(true)
 
@@ -109,19 +109,19 @@ model Address {
   user                User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   label               String   @default("Home")
   street              String
-  addressLine2        String   @default("")
+  addressLine2        String?
   city                String
-  state               String   @default("")
+  state               String?
   zip                 String
   country             String   @default("US")
-  phone               String   @default("")
-  deliveryInstructions String  @default("")
+  phone               String?
+  deliveryInstructions String?
   latitude            Float    @default(0)
   longitude           Float    @default(0)
   isDefault           Boolean  @default(false)
   isBilling           Boolean  @default(false)
-  contactName         String   @default("")
-  contactPhone        String   @default("")
+  contactName         String?
+  contactPhone        String?
   createdAt           DateTime @default(now())
   updatedAt           DateTime @updatedAt
 
@@ -134,15 +134,15 @@ model Post {
   id          String      @id @default(cuid())
   title       String
   slug        String      @unique
-  content     String      @default("")
-  excerpt     String      @default("")
-  coverImage  String      @default("")
+  content     String?
+  excerpt     String?
+  coverImage  String?
   readingTime Int         @default(1)
   published   Boolean     @default(false)
   isFeatured  Boolean     @default(false)
   isArchived  Boolean     @default(false)
-  metaTitle   String      @default("")
-  metaDescription String  @default("")
+  metaTitle   String?
+  metaDescription String?
   allowComments Boolean   @default(true)
   viewCount   Int         @default(0)
   likeCount   Int         @default(0)
@@ -171,7 +171,7 @@ model SavedPost {
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   postId    String
   post      Post     @relation(fields: [postId], references: [id], onDelete: Cascade)
-  note      String   @default("")
+  note      String?
   folder    String   @default("Default")
   createdAt DateTime @default(now())
 
@@ -186,13 +186,13 @@ model PostView {
   post      Post     @relation(fields: [postId], references: [id], onDelete: Cascade)
   userId    String?
   user      User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
-  ip        String   @default("")
-  referrer  String   @default("")
-  userAgent String   @default("")
-  country   String   @default("")
-  city      String   @default("")
-  device    String   @default("")
-  browser   String   @default("")
+  ip        String?
+  referrer  String?
+  userAgent String?
+  country   String?
+  city      String?
+  device    String?
+  browser   String?
   duration  Int      @default(0)
   viewedAt  DateTime @default(now())
 
@@ -205,9 +205,9 @@ model Tag {
   id          String   @id @default(cuid())
   name        String   @unique
   slug        String   @unique
-  description String   @default("")
+  description String?
   color       String   @default("#6366f1")
-  icon        String   @default("")
+  icon        String?
   isFeatured  Boolean  @default(false)
   posts       Post[]   @relation("PostToTag")
   createdAt   DateTime @default(now())
@@ -220,9 +220,9 @@ model Category {
   id              String    @id @default(cuid())
   name            String    @unique
   slug            String    @unique
-  description     String    @default("")
-  icon            String    @default("")
-  imageUrl        String    @default("")
+  description     String?
+  icon            String?
+  imageUrl        String?
   displayOrder    Int       @default(0)
   isFeatured      Boolean   @default(false)
 
@@ -301,27 +301,27 @@ model Follow {
 model Product {
   id            String         @id @default(cuid())
   name          String
-  description   String         @default("")
+  description   String?
   price         Float
   stock         Int            @default(0)
   sku           String         @unique
-  barcode       String         @default("")
-  brand         String         @default("")
-  color         String         @default("")
+  barcode       String?
+  brand         String?
+  color         String?
   weight        Float          @default(0)
-  dimensions    String         @default("")
+  dimensions    String?
   rating        Float          @default(0)
   reviewCount   Int            @default(0)
   soldCount     Int            @default(0)
   minimumStock  Int            @default(0)
   allowBackorder Boolean       @default(false)
-  warrantyInfo  String         @default("")
-  returnPolicy  String         @default("")
+  warrantyInfo  String?
+  returnPolicy  String?
   taxClass      String         @default("standard")
-  metaTitle     String         @default("")
-  metaDescription String       @default("")
+  metaTitle     String?
+  metaDescription String?
   attributes    Json           @default("{}")
-  imageUrl      String         @default("")
+  imageUrl      String?
   images        ProductImage[]
   isActive      Boolean        @default(true)
   sellerId      String
@@ -349,7 +349,7 @@ model ProductImage {
   productId String
   product   Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
   url       String
-  alt       String   @default("")
+  alt       String?
   isPrimary Boolean  @default(false)
   width     Int      @default(0)
   height    Int      @default(0)
@@ -374,18 +374,18 @@ model Order {
   shippingAmount  Float       @default(0)
   discountAmount  Float       @default(0)
   currency        String      @default("USD")
-  shippingAddress String      @default("")
-  email           String      @default("")
-  phone           String      @default("")
-  notes           String      @default("")
+  shippingAddress String?
+  email           String?
+  phone           String?
+  notes           String?
   source          String      @default("web")
   isGift          Boolean     @default(false)
-  giftMessage     String      @default("")
-  trackingUrl     String      @default("")
+  giftMessage     String?
+  trackingUrl     String?
   estimatedDelivery DateTime?
   deliveredAt     DateTime?
   cancelledAt     DateTime?
-  cancelReason    String      @default("")
+  cancelReason    String?
   couponId        String?
   coupon          Coupon?     @relation(fields: [couponId], references: [id], onDelete: SetNull)
   items           OrderItem[]
@@ -410,9 +410,9 @@ model OrderItem {
   product        Product         @relation(fields: [productId], references: [id], onDelete: Restrict)
   quantity       Int             @default(1)
   unitPrice      Float
-  productName    String          @default("")
-  productSku     String          @default("")
-  productImage   String          @default("")
+  productName    String?
+  productSku     String?
+  productImage   String?
   discountAmount Float           @default(0)
   taxAmount      Float           @default(0)
   totalPrice     Float           @default(0)
@@ -432,14 +432,14 @@ model Payment {
   currency            String   @default("USD")
   method              String
   gateway             String   @default("stripe")
-  gatewayTransactionId String  @default("")
+  gatewayTransactionId String?
   status              String   @default("PENDING")
   fee                 Float    @default(0)
   netAmount           Float    @default(0)
-  payerEmail          String   @default("")
-  payerName           String   @default("")
-  billingAddress      String   @default("")
-  failureReason       String   @default("")
+  payerEmail          String?
+  payerName           String?
+  billingAddress      String?
+  failureReason       String?
   refundedAmount      Float    @default(0)
   capturedAmount      Float    @default(0)
   transactionId       String   @unique
@@ -459,8 +459,8 @@ model Refund {
   order            Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
   amount           Float
   currency         String   @default("USD")
-  reason           String   @default("")
-  reasonDescription String  @default("")
+  reason           String?
+  reasonDescription String?
   status           String   @default("PENDING")
   initiatedBy      String   @default("system")
   fee              Float    @default(0)
@@ -476,8 +476,8 @@ model Refund {
 model Review {
   id               String   @id @default(cuid())
   rating           Int
-  title            String   @default("")
-  content          String   @default("")
+  title            String?
+  content          String?
   isVerified       Boolean  @default(false)
   isRecommended    Boolean  @default(true)
   helpfulCount     Int      @default(0)
@@ -485,7 +485,7 @@ model Review {
   pros             Json     @default("[]")
   cons             Json     @default("[]")
   images           Json     @default("[]")
-  responseFromSeller String @default("")
+  responseFromSeller String?
   responseDate     DateTime?
   productId        String
   product          Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
@@ -507,11 +507,11 @@ model Wishlist {
   userId      String
   user        User           @relation(fields: [userId], references: [id], onDelete: Cascade)
   name        String         @default("Default")
-  description String         @default("")
+  description String?
   isPublic    Boolean        @default(false)
   isDefault   Boolean        @default(true)
   itemCount   Int            @default(0)
-  shareCode   String         @default("")
+  shareCode   String?
   items       WishlistItem[]
   createdAt   DateTime       @default(now())
   updatedAt   DateTime       @updatedAt
@@ -530,7 +530,7 @@ model WishlistItem {
   quantity        Int      @default(1)
   priority        String   @default("MEDIUM")
   priceAtAddition Float    @default(0)
-  note            String   @default("")
+  note            String?
   createdAt       DateTime @default(now())
 
   @@unique([wishlistId, productId])
@@ -542,13 +542,13 @@ model Cart {
   id         String     @id @default(cuid())
   userId     String     @unique
   user       User       @relation(fields: [userId], references: [id], onDelete: Cascade)
-  notes      String     @default("")
+  notes      String?
   subtotal   Float      @default(0)
   total      Float      @default(0)
   currency   String     @default("USD")
-  couponCode String     @default("")
+  couponCode String?
   discountAmount Float  @default(0)
-  sessionId  String     @default("")
+  sessionId  String?
   expiresAt  DateTime?
   items      CartItem[]
   createdAt  DateTime   @default(now())
@@ -568,7 +568,7 @@ model CartItem {
   unitPrice       Float    @default(0)
   discountAmount  Float    @default(0)
   totalPrice      Float    @default(0)
-  notes           String   @default("")
+  notes           String?
   isSavedForLater Boolean  @default(false)
   createdAt       DateTime @default(now())
 
@@ -580,8 +580,8 @@ model CartItem {
 model Coupon {
   id                String    @id @default(cuid())
   code              String    @unique
-  name              String    @default("")
-  description       String    @default("")
+  name              String?
+  description       String?
   type              String    @default("PERCENTAGE")
   discountPercent   Float     @default(0)
   discountAmount    Float     @default(0)
@@ -615,15 +615,15 @@ model Shipment {
   trackingNumber    String
   status            String    @default("PENDING")
   shippingMethod    String    @default("standard")
-  originAddress     String    @default("")
-  destinationAddress String   @default("")
+  originAddress     String?
+  destinationAddress String?
   weight            Float     @default(0)
   length            Float     @default(0)
   width             Float     @default(0)
   height            Float     @default(0)
   cost              Float     @default(0)
   currency          String    @default("USD")
-  notes             String    @default("")
+  notes             String?
   estimatedDelivery DateTime?
   deliveredAt       DateTime?
   shippedAt         DateTime?
@@ -644,10 +644,10 @@ model Notification {
   sender     User?     @relation("SentNotifications", fields: [senderId], references: [id], onDelete: SetNull)
   type       String
   title      String
-  message    String    @default("")
-  link       String    @default("")
-  actionUrl  String    @default("")
-  imageUrl   String    @default("")
+  message    String?
+  link       String?
+  actionUrl  String?
+  imageUrl   String?
   channel    String    @default("in-app")
   category   String    @default("general")
   isRead     Boolean   @default(false)
@@ -676,9 +676,9 @@ model Subscription {
   trialEndDate      DateTime?
   autoRenew         Boolean   @default(true)
   billingCycle      String    @default("monthly")
-  paymentMethod     String    @default("")
-  cancelledBy       String    @default("")
-  cancellationReason String   @default("")
+  paymentMethod     String?
+  cancelledBy       String?
+  cancellationReason String?
   cancelledAt       DateTime?
   lastBillingAt     DateTime?
   nextBillingAt     DateTime?
@@ -699,8 +699,8 @@ model Discount {
   productId         String
   product           Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
   name              String
-  code              String   @default("")
-  description       String   @default("")
+  code              String?
+  description       String?
   type              String
   value             Float
   minQuantity       Int      @default(0)
@@ -728,11 +728,11 @@ model Discount {
 // ==================== Conversation Model ====================
 model Conversation {
   id                  String                    @id @default(cuid())
-  title               String                    @default("")
+  title               String?
   type                String                    @default("direct")
   lastMessageAt       DateTime?
-  lastMessageContent  String                    @default("")
-  lastMessageSenderId String                    @default("")
+  lastMessageContent  String?
+  lastMessageSenderId String?
   isArchived          Boolean                   @default(false)
   isMuted             Boolean                   @default(false)
   participantCount    Int                       @default(0)
@@ -752,7 +752,7 @@ model ConversationParticipant {
   conversation        Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
   userId              String
   user                User         @relation(fields: [userId], references: [id], onDelete: Cascade)
-  nickname            String       @default("")
+  nickname            String?
   role                String       @default("member")
   isMuted             Boolean      @default(false)
   notificationsEnabled Boolean     @default(true)
@@ -804,10 +804,10 @@ model Invoice {
   totalAmount     Float     @default(0)
   currency        String    @default("USD")
   status          String    @default("DRAFT")
-  notes           String    @default("")
-  billingAddress  String    @default("")
-  shippingAddress String    @default("")
-  pdfUrl          String    @default("")
+  notes           String?
+  billingAddress  String?
+  shippingAddress String?
+  pdfUrl          String?
   items           Json      @default("[]")
   issuedAt        DateTime  @default(now())
   dueDate         DateTime
@@ -815,7 +815,7 @@ model Invoice {
   sentAt          DateTime?
   reminderSentAt  DateTime?
   cancelledAt     DateTime?
-  cancelReason    String    @default("")
+  cancelReason    String?
   createdAt       DateTime  @default(now())
   updatedAt       DateTime  @updatedAt
 
@@ -832,11 +832,11 @@ model ReturnRequest {
   userId           String
   user             User      @relation(fields: [userId], references: [id], onDelete: Cascade)
   reason           String
-  reasonDescription String   @default("")
-  resolution       String    @default("")
+  reasonDescription String?
+  resolution       String?
   refundAmount     Float     @default(0)
-  returnLabelUrl   String    @default("")
-  condition        String    @default("")
+  returnLabelUrl   String?
+  condition        String?
   status           String    @default("PENDING")
   quantity         Int       @default(1)
   images           Json      @default("[]")
@@ -878,10 +878,10 @@ model SupportTicket {
   category   String @default("general")
   language   String @default("en")
 
-  resolution      String @default("")
-  escalationReason String @default("")
-  satisfactionRating Int? @default(0)
-  feedback         String @default("")
+  resolution      String?
+  escalationReason String?
+  satisfactionRating Int?
+  feedback         String?
   tags             Json   @default("[]")
 
   resolvedAt DateTime?

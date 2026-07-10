@@ -27,7 +27,7 @@ export class RefundService {
         orderId: input.orderId,
         amount: input.amount,
         currency: "USD",
-        reason: input.reason ?? "",
+        reason: input.reason ?? undefined,
         initiatedBy: "system",
         fee: 0,
       },

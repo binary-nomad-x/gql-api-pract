@@ -1,5 +1,5 @@
 import { faker } from "@faker-js/faker";
-import type { SeedContext, SeedCounts, InvoiceSeed } from "./types.js";
+import type { SeedContext, SeedCounts } from "./types.js";
 
 export async function seedInvoices(
   ctx: SeedContext,
@@ -15,7 +15,14 @@ export async function seedInvoices(
     },
   });
 
-  const data: InvoiceSeed[] = [];
+  const data: {
+    orderId: string; invoiceNumber: string; amount: number;
+    subtotal: number; taxAmount: number; discountAmount: number;
+    totalAmount: number; currency: string; status: string;
+    notes: string; billingAddress: string; shippingAddress: string;
+    pdfUrl: string; items: object[];
+    dueDate: Date; paidAt: Date | null; sentAt: Date | null;
+  }[] = [];
 
   for (let i = 0; i < orders.length; i++) {
     const order = orders[i];
@@ -32,10 +39,10 @@ export async function seedInvoices(
       totalAmount: order.totalAmount,
       currency: "USD",
       status: isPaid ? "PAID" : isCancelled ? "CANCELLED" : "PENDING",
-      notes: Math.random() > 0.8 ? faker.lorem.sentence() : "",
+      notes: Math.random() > 0.7 ? faker.lorem.sentence() : "",
       billingAddress: faker.location.streetAddress(),
-      shippingAddress: order.shippingAddress,
-      pdfUrl: `https://invoices.example.com/INV-${String(i + 1).padStart(6, "0")}.pdf`,
+      shippingAddress: order.shippingAddress || faker.location.streetAddress(),
+      pdfUrl: "",
       items: [
         { description: "Order items", quantity: 1, unitPrice: order.subtotal },
         { description: "Tax", quantity: 1, unitPrice: order.taxAmount },
@@ -47,6 +54,12 @@ export async function seedInvoices(
     });
   }
 
-  await ctx.prisma.invoice.createMany({ data });
+  await ctx.prisma.invoice.createMany({
+    data: data.map((inv) => ({
+      ...inv,
+      notes: inv.notes || null,
+      pdfUrl: null,
+    })),
+  });
   counts.invoices += data.length;
 }

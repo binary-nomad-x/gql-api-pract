@@ -87,7 +87,7 @@ export class OrderService {
         user: { connect: { id: userId! } },
         totalAmount,
         discountAmount,
-        shippingAddress: input.shippingAddress ?? "",
+        shippingAddress: input.shippingAddress ?? undefined,
         items: {
           create: input.items.map((item) => {
             const p = productMap.get(item.productId)!;

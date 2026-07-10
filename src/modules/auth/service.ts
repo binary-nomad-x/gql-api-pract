@@ -19,7 +19,7 @@ export class AuthService {
       data: {
         email: input.email,
         username: input.email.split("@")[0],
-        name: input.name ?? "",
+        name: input.name ?? undefined,
         password: await hashPassword(input.password),
       },
     });

@@ -20,14 +20,13 @@ export async function seedPosts(
       .toLowerCase()
       .replace(/[^a-z0-9]+/g, "-")
       .replace(/(^-|-$)/g, "") + `-${randomUUID().slice(0, 6)}`;
-    const content = faker.lorem.paragraphs({ min: 3, max: 8 });
 
     await ctx.prisma.post.create({
       data: {
         id,
         title,
         slug,
-        content,
+        content: faker.lorem.paragraphs({ min: 3, max: 8 }),
         excerpt: faker.lorem.sentences({ min: 1, max: 2 }),
         coverImage: faker.image.url(),
         readingTime: faker.number.int({ min: 2, max: 15 }),

@@ -118,7 +118,7 @@ export async function seedUsers(
       avatarUrl: faker.image.avatar(),
       bio: "Tech enthusiast and early adopter of new products.",
       phone: faker.phone.number(),
-      isVerified: false,
+      isVerified: true,
       lastLoginAt: faker.date.recent(),
       locale: "en-US",
       timezone: "America/New_York",
@@ -153,7 +153,7 @@ export async function seedUsers(
       role: faker.helpers.arrayElement(roles),
       password: passwordHash,
       avatarUrl: faker.image.avatar(),
-      bio: faker.lorem.sentence(),
+      bio: faker.lorem.sentence({ min: 5, max: 30 }),
       phone: faker.phone.number(),
       isVerified: faker.datatype.boolean({ probability: 0.7 }),
       lastLoginAt: faker.date.recent({ days: 30 }),
@@ -188,7 +188,7 @@ export async function seedUsers(
       ctx.prisma.profile.create({
         data: {
           userId: user.id,
-          bio: faker.lorem.sentence(),
+          bio: faker.lorem.sentence({ min: 5, max: 30 }),
           avatar: faker.image.avatar(),
           phone: faker.phone.number(),
           address: faker.location.streetAddress(),

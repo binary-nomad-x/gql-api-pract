@@ -1,7 +1,7 @@
 import type { Context } from "@gql-prisma-api/types/context.js";
 import type { Address as AddressModel } from "@prisma/client";
 import type { IdArg } from "@gql-prisma-api/types/graphql.js";
-import type { CreateAddressInput, UpdateAddressInput } from "./inputs.js";
+import type { CreateAddressInput, UpdateAddressInput } from "@gql-prisma-api/modules/address/inputs.js";
 
 export const Address = {
   user: (parent: AddressModel, _args: unknown, ctx: Context) =>

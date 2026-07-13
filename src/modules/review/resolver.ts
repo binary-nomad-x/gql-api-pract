@@ -1,6 +1,6 @@
 import type { Context } from "@gql-prisma-api/types/context.js";
 import type { Review as ReviewModel } from "@prisma/client";
-import type { CreateReviewInput } from "./inputs.js";
+import type { CreateReviewInput } from "@gql-prisma-api/modules/review/inputs.js";
 
 export const Review = {
   product: (parent: ReviewModel, _args: unknown, ctx: Context) =>

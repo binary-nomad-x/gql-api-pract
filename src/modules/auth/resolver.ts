@@ -1,5 +1,5 @@
 import type { Context } from "@gql-prisma-api/types/context.js";
-import type { CreateUserInput } from "./inputs.js";
+import type { CreateUserInput } from "@gql-prisma-api/modules/auth/inputs.js";
 
 export const Mutation = {
   signup: (

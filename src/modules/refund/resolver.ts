@@ -1,6 +1,6 @@
 import type { Context } from "@gql-prisma-api/types/context.js";
 import type { Refund as RefundModel } from "@prisma/client";
-import type { CreateRefundInput, RefundFilterInput } from "./inputs.js";
+import type { CreateRefundInput, RefundFilterInput } from "@gql-prisma-api/modules/refund/inputs.js";
 
 export const Refund = {
   payment: (parent: RefundModel, _args: unknown, ctx: Context) =>

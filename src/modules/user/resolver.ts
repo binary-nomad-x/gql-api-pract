@@ -1,7 +1,7 @@
 import type { Context } from "@gql-prisma-api/types/context.js";
 import type { User as UserModel } from "@prisma/client";
 import type { IdArg } from "@gql-prisma-api/types/graphql.js";
-import type { UpdateUserInput, UpdateProfileInput } from "./inputs.js";
+import type { UpdateUserInput, UpdateProfileInput } from "@gql-prisma-api/modules/user/inputs.js";
 
 export const User = {
   profile: (parent: UserModel, _args: unknown, ctx: Context) =>

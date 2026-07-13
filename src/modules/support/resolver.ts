@@ -3,7 +3,7 @@ import type {
   CreateTicketInput,
   TicketFilterInput,
   AddTicketReplyInput,
-} from "./inputs.js";
+} from "@gql-prisma-api/modules/support/inputs.js";
 import {
   resolveSupportTicketUser,
   resolveSupportTicketReplies,

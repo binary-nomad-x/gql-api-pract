@@ -1,5 +1,5 @@
 import { Novu } from "@novu/node";
-import { logger } from "./logger.js";
+import { logger } from "@gql-prisma-api/utils/logger.js";
 
 const novuApiKey = process.env.NOVU_API_SECRET_KEY;
 

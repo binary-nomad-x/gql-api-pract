@@ -3,7 +3,7 @@ import type {
   CreateTicketInput,
   TicketFilterInput,
   AddTicketReplyInput,
-} from "./inputs.js";
+} from "@gql-prisma-api/modules/support/inputs.js";
 import { requireAuth } from "@gql-prisma-api/utils/errors.js";
 import { triggerNovuWorkflow } from "@gql-prisma-api/utils/novu.js";
 import { logger } from "@gql-prisma-api/utils/logger.js";

@@ -1,6 +1,6 @@
 import type { Context } from "@gql-prisma-api/types/context.js";
 import type { Cart as CartModel, CartItem as CartItemModel } from "@prisma/client";
-import type { AddToCartInput, UpdateCartItemInput } from "./inputs.js";
+import type { AddToCartInput, UpdateCartItemInput } from "@gql-prisma-api/modules/cart/inputs.js";
 
 export const Cart = {
   user: (parent: CartModel, _args: unknown, ctx: Context) =>

@@ -1,5 +1,5 @@
 import type { PrismaClient } from "@prisma/client";
-import type { CreateDiscountInput, UpdateDiscountInput } from "./inputs.js";
+import type { CreateDiscountInput, UpdateDiscountInput } from "@gql-prisma-api/modules/discount/inputs.js";
 import { requireAuth } from "@gql-prisma-api/utils/errors.js";
 import {
   toDiscountCreate,

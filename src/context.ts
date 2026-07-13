@@ -1,9 +1,9 @@
 import { PrismaClient } from "@prisma/client";
 import { PrismaPg } from "@prisma/adapter-pg";
 import type { IncomingMessage } from "http";
-import { verifyToken } from "./utils/auth.js";
-import type { Context } from "./types/context.js";
-import { Services } from "./lib/Services.js";
+import { verifyToken } from "@gql-prisma-api/utils/auth.js";
+import type { Context } from "@gql-prisma-api/types/context.js";
+import { Services } from "@gql-prisma-api/lib/Services.js";
 
 const adapter = new PrismaPg({ connectionString: process.env.DATABASE_URL });
 const prisma = new PrismaClient({ adapter });

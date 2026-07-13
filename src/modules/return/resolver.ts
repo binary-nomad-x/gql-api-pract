@@ -1,6 +1,6 @@
 import type { Context } from "@gql-prisma-api/types/context.js";
 import type { ReturnRequest as ReturnRequestModel } from "@prisma/client";
-import type { CreateReturnInput, ReturnFilterInput } from "./inputs.js";
+import type { CreateReturnInput, ReturnFilterInput } from "@gql-prisma-api/modules/return/inputs.js";
 
 export const Query = {
   myReturns: (_parent: unknown, args: ReturnFilterInput, ctx: Context) =>

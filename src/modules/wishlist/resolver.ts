@@ -3,7 +3,7 @@ import type { Wishlist as WishlistModel, WishlistItem as WishlistItemModel } fro
 import type {
   CreateWishlistInput,
   AddToWishlistInput,
-} from "./inputs.js";
+} from "@gql-prisma-api/modules/wishlist/inputs.js";
 
 export const Wishlist = {
   user: (parent: WishlistModel, _args: unknown, ctx: Context) =>

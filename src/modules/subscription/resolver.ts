@@ -1,7 +1,7 @@
 import type { Context } from "@gql-prisma-api/types/context.js";
 import type { Subscription as SubscriptionModel } from "@prisma/client";
-import type { SubscriptionPlan } from "./types/index.js";
-import type { TrialEndingInput } from "./service.js";
+import type { SubscriptionPlan } from "@gql-prisma-api/modules/subscription/types/index.js";
+import type { TrialEndingInput } from "@gql-prisma-api/modules/subscription/service.js";
 
 export const Subscription = {
   user: (parent: SubscriptionModel, _args: unknown, ctx: Context) =>

@@ -1,6 +1,6 @@
 import type { Context } from "@gql-prisma-api/types/context.js";
 import type { Payment as PaymentModel } from "@prisma/client";
-import type { ProcessPaymentInput, PaymentFilterInput } from "./inputs.js";
+import type { ProcessPaymentInput, PaymentFilterInput } from "@gql-prisma-api/modules/payment/inputs.js";
 
 export const Payment = {
   order: (parent: PaymentModel, _args: unknown, ctx: Context) =>

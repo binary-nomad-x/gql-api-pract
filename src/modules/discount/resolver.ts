@@ -1,6 +1,6 @@
 import type { Context } from "@gql-prisma-api/types/context.js";
 import type { Discount as DiscountModel } from "@prisma/client";
-import type { CreateDiscountInput, UpdateDiscountInput } from "./inputs.js";
+import type { CreateDiscountInput, UpdateDiscountInput } from "@gql-prisma-api/modules/discount/inputs.js";
 
 export const Discount = {
   product: (parent: DiscountModel, _args: unknown, ctx: Context) =>

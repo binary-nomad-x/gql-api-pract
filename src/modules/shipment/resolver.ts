@@ -1,6 +1,6 @@
 import type { Context } from "@gql-prisma-api/types/context.js";
 import type { Shipment as ShipmentModel } from "@prisma/client";
-import type { CreateShipmentInput } from "./inputs.js";
+import type { CreateShipmentInput } from "@gql-prisma-api/modules/shipment/inputs.js";
 
 export const Shipment = {
   order: (parent: ShipmentModel, _args: unknown, ctx: Context) =>

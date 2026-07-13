@@ -1,6 +1,6 @@
 import type { Context } from "@gql-prisma-api/types/context.js";
 import type { Invoice as InvoiceModel } from "@prisma/client";
-import type { CreateInvoiceInput, InvoiceFilterInput } from "./inputs.js";
+import type { CreateInvoiceInput, InvoiceFilterInput } from "@gql-prisma-api/modules/invoice/inputs.js";
 
 export const Query = {
   myInvoices: (_parent: unknown, args: InvoiceFilterInput, ctx: Context) =>

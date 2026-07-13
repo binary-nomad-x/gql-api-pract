@@ -1,6 +1,6 @@
 import type { Context } from "@gql-prisma-api/types/context.js";
 import type { Coupon as CouponModel } from "@prisma/client";
-import type { CreateCouponInput } from "./inputs.js";
+import type { CreateCouponInput } from "@gql-prisma-api/modules/coupon/inputs.js";
 
 export const Coupon = {
   orders: (parent: CouponModel, _args: unknown, ctx: Context) =>

@@ -9,6 +9,7 @@ import { typeDefs } from "./schema/typeDefs.js";
 import { resolvers } from "./modules/index.js";
 import { logger } from "./utils/logger.js";
 import { ApolloServerPluginGraphiQL } from "./plugins/graphiql.js";
+import "./workers/email.worker.js";
 
 const PORT = Number(process.env.PORT) || 4000;
 

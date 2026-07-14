@@ -21,10 +21,7 @@ export class NotificationService {
     return true;
   }
 
-  getMyNotifications(
-    userId: string,
-    args: { limit?: number; offset?: number },
-  ) {
+  getMyNotifications(userId: string, args: { limit?: number; offset?: number }) {
     return this.core.notification.findMany({
       where: { userId },
       take: args.limit ?? 20,

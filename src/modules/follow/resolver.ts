@@ -4,18 +4,14 @@ import type { UserIdArg } from "@gql-prisma-api/types/graphql.js";
 import { requireAuth } from "@gql-prisma-api/utils/errors.js";
 
 export const Follow = {
-  follower: (parent: FollowModel, _args: unknown, ctx: Context) =>
-    ctx.services.follow.resolveFollowFollower(parent.followerId),
-  following: (parent: FollowModel, _args: unknown, ctx: Context) =>
-    ctx.services.follow.resolveFollowFollowing(parent.followingId),
+  follower: (parent: FollowModel, _args: unknown, ctx: Context) => ctx.services.follow.resolveFollowFollower(parent.followerId),
+  following: (parent: FollowModel, _args: unknown, ctx: Context) => ctx.services.follow.resolveFollowFollowing(parent.followingId),
 };
 
 export const Query = {
-  followers: (_parent: unknown, { userId }: UserIdArg, ctx: Context) =>
-    ctx.services.follow.getFollowers(userId),
+  followers: (_parent: unknown, { userId }: UserIdArg, ctx: Context) => ctx.services.follow.getFollowers(userId),
 
-  following: (_parent: unknown, { userId }: UserIdArg, ctx: Context) =>
-    ctx.services.follow.getFollowing(userId),
+  following: (_parent: unknown, { userId }: UserIdArg, ctx: Context) => ctx.services.follow.getFollowing(userId),
 };
 
 export const Mutation = {

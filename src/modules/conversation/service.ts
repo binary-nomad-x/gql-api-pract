@@ -10,11 +10,7 @@ export class ConversationService {
     });
   }
 
-  resolveConversationMessages(
-    conversationId: string,
-    limit?: number,
-    offset?: number,
-  ) {
+  resolveConversationMessages(conversationId: string, limit?: number, offset?: number) {
     return this.core.message.findMany({
       where: { conversationId },
       orderBy: { createdAt: "asc" },
@@ -50,13 +46,8 @@ export class ConversationService {
     return this.core.user.findUnique({ where: { id: senderId } });
   }
 
-  async startConversation(
-    userId: string,
-    targetUserId: string,
-    title?: string,
-  ) {
-    if (targetUserId === userId)
-      throw new Error("Cannot start conversation with yourself");
+  async startConversation(userId: string, targetUserId: string, title?: string) {
+    if (targetUserId === userId) throw new Error("Cannot start conversation with yourself");
     const target = await this.core.user.findUnique({
       where: { id: targetUserId },
     });
@@ -67,10 +58,7 @@ export class ConversationService {
         title,
         participants: {
           createMany: {
-            data: [
-              { userId: userId!, lastReadAt: new Date() },
-              { userId: targetUserId },
-            ],
+            data: [{ userId: userId!, lastReadAt: new Date() }, { userId: targetUserId }],
           },
         },
       },
@@ -133,12 +121,7 @@ export class ConversationService {
     });
   }
 
-  getConversationMessages(
-    userId: string,
-    conversationId: string,
-    limit?: number,
-    offset?: number,
-  ) {
+  getConversationMessages(userId: string, conversationId: string, limit?: number, offset?: number) {
     return this.core.message.findMany({
       where: {
         conversationId,

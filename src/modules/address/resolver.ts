@@ -5,8 +5,7 @@ import type { CreateAddressInput, UpdateAddressInput } from "@gql-prisma-api/mod
 import { requireAuth } from "@gql-prisma-api/utils/errors.js";
 
 export const Address = {
-  user: (parent: AddressModel, _args: unknown, ctx: Context) =>
-    ctx.services.address.resolveAddressUser(parent.userId),
+  user: (parent: AddressModel, _args: unknown, ctx: Context) => ctx.services.address.resolveAddressUser(parent.userId),
 };
 
 export const Query = {

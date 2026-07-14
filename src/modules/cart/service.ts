@@ -38,10 +38,7 @@ export class CartService {
     return cart;
   }
 
-  async addToCart(
-    userId: string,
-    input: AddToCartInput,
-  ) {
+  async addToCart(userId: string, input: AddToCartInput) {
     const cart = await this.getOrCreateCart(userId);
     const existing = await this.core.cartItem.findUnique({
       where: { cartId_productId: { cartId: cart.id, productId: input.productId } },
@@ -59,10 +56,7 @@ export class CartService {
     return this.core.cart.findUnique({ where: { id: cart.id } });
   }
 
-  async updateCartItem(
-    userId: string,
-    input: UpdateCartItemInput,
-  ) {
+  async updateCartItem(userId: string, input: UpdateCartItemInput) {
     const cart = await this.getOrCreateCart(userId);
     const item = await this.core.cartItem.findUnique({
       where: { cartId_productId: { cartId: cart.id, productId: input.productId } },
@@ -72,10 +66,7 @@ export class CartService {
     return this.core.cart.findUnique({ where: { id: cart.id } });
   }
 
-  async removeFromCart(
-    userId: string,
-    productId: string,
-  ) {
+  async removeFromCart(userId: string, productId: string) {
     const cart = await this.getOrCreateCart(userId);
     const item = await this.core.cartItem.findUnique({
       where: { cartId_productId: { cartId: cart.id, productId } },
@@ -84,9 +75,7 @@ export class CartService {
     return this.core.cart.findUnique({ where: { id: cart.id } });
   }
 
-  async clearCart(
-    userId: string,
-  ) {
+  async clearCart(userId: string) {
     const cart = await this.getOrCreateCart(userId);
     await this.core.cartItem.deleteMany({ where: { cartId: cart.id } });
     return cart;

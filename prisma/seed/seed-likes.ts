@@ -3,12 +3,7 @@ import type { SeedContext, SeedCounts, LikeSeed } from "./types.js";
 
 const LIKE_TYPES = ["LIKE", "LOVE", "HAHA", "WOW", "SAD", "ANGRY"];
 
-export async function seedLikes(
-  ctx: SeedContext,
-  counts: SeedCounts,
-  userIds: string[],
-  postIds: string[],
-): Promise<void> {
+export async function seedLikes(ctx: SeedContext, counts: SeedCounts, userIds: string[], postIds: string[]): Promise<void> {
   const seen = new Set<string>();
   const data: LikeSeed[] = [];
 

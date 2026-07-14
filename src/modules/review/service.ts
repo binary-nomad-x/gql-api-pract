@@ -15,8 +15,7 @@ export class ReviewService {
   }
 
   async createReview(userId: string, input: CreateReviewInput) {
-    if (input.rating < 1 || input.rating > 5)
-      throw new Error("Rating must be between 1 and 5");
+    if (input.rating < 1 || input.rating > 5) throw new Error("Rating must be between 1 and 5");
 
     const product = await this.core.product.findUnique({
       where: { id: input.productId },

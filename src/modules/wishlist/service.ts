@@ -1,8 +1,5 @@
 import type { PrismaClient } from "@prisma/client";
-import type {
-  CreateWishlistInput,
-  AddToWishlistInput,
-} from "@gql-prisma-api/modules/wishlist/inputs.js";
+import type { CreateWishlistInput, AddToWishlistInput } from "@gql-prisma-api/modules/wishlist/inputs.js";
 
 export class WishlistService {
   constructor(private readonly core: PrismaClient) {}
@@ -67,11 +64,7 @@ export class WishlistService {
     return this.core.wishlist.findUnique({ where: { id: input.wishlistId } });
   }
 
-  async removeFromWishlist(
-    userId: string,
-    wishlistId: string,
-    productId: string,
-  ) {
+  async removeFromWishlist(userId: string, wishlistId: string, productId: string) {
     const item = await this.core.wishlistItem.findUnique({
       where: { wishlistId_productId: { wishlistId, productId } },
     });

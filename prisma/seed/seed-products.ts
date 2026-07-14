@@ -2,34 +2,31 @@ import { faker } from "@faker-js/faker";
 import type { SeedContext, SeedCounts } from "./types.js";
 import { randomUUID } from "node:crypto";
 
-export async function seedProducts(
-  ctx: SeedContext,
-  counts: SeedCounts,
-  userIds: string[],
-  categoryIds: string[],
-  count: number,
-): Promise<string[]> {
+export async function seedProducts(ctx: SeedContext, counts: SeedCounts, userIds: string[], categoryIds: string[], count: number): Promise<string[]> {
   const productIds = Array.from({ length: count }, () => randomUUID());
 
   const productData = productIds.map((id) => {
     const name = faker.commerce.productName();
     const price = parseFloat(faker.commerce.price({ min: 5, max: 500 }));
     const brand = faker.helpers.arrayElement([
-      "TechPro", "HomeEssentials", "SportMax", "StyleCraft",
-      "EcoGoods", "ProGear", "SmartBuy", "LuxeLiving",
+      "TechPro",
+      "HomeEssentials",
+      "SportMax",
+      "StyleCraft",
+      "EcoGoods",
+      "ProGear",
+      "SmartBuy",
+      "LuxeLiving",
     ]);
-    const color = faker.helpers.arrayElement([
-      "Black", "White", "Red", "Blue", "Green", "Silver",
-      "Gold", "Gray", "Navy", "Beige", "Brown",
-    ]);
+    const color = faker.helpers.arrayElement(["Black", "White", "Red", "Blue", "Green", "Silver", "Gold", "Gray", "Navy", "Beige", "Brown"]);
     const warrantyInfo = faker.helpers.arrayElement([
-      "1 Year Limited Warranty", "2 Year Extended Warranty",
-      "Lifetime Warranty", "90 Day Warranty", "No Warranty",
+      "1 Year Limited Warranty",
+      "2 Year Extended Warranty",
+      "Lifetime Warranty",
+      "90 Day Warranty",
+      "No Warranty",
     ]);
-    const returnPolicy = faker.helpers.arrayElement([
-      "30 Day Return Policy", "60 Day Return Policy",
-      "90 Day Return Policy", "No Returns Accepted",
-    ]);
+    const returnPolicy = faker.helpers.arrayElement(["30 Day Return Policy", "60 Day Return Policy", "90 Day Return Policy", "No Returns Accepted"]);
     return {
       id,
       name,
@@ -53,10 +50,7 @@ export async function seedProducts(
       metaTitle: name,
       metaDescription: faker.lorem.sentence(),
       attributes: {
-        material: faker.helpers.arrayElement([
-          "Cotton", "Polyester", "Leather", "Metal", "Plastic",
-          "Wood", "Glass", "Ceramic", "Stainless Steel",
-        ]),
+        material: faker.helpers.arrayElement(["Cotton", "Polyester", "Leather", "Metal", "Plastic", "Wood", "Glass", "Ceramic", "Stainless Steel"]),
         origin: faker.helpers.arrayElement(["USA", "China", "Germany", "Japan", "India"]),
         warrantyMonths: faker.number.int({ min: 0, max: 36 }),
       },

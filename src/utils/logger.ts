@@ -1,15 +1,7 @@
 import * as fs from "node:fs";
 import * as path from "node:path";
 
-export type LogLevel =
-  | "debug"
-  | "info"
-  | "notice"
-  | "warning"
-  | "error"
-  | "critical"
-  | "alert"
-  | "emergency";
+export type LogLevel = "debug" | "info" | "notice" | "warning" | "error" | "critical" | "alert" | "emergency";
 
 const LEVEL_PRIORITY: Record<LogLevel, number> = {
   debug: 0,

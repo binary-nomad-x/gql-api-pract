@@ -129,9 +129,7 @@ export class BlogService {
     const post = await this.core.post.findUnique({ where: { id } });
     if (!post) throw new Error("Post not found");
     requireOwner(post.authorId, userId);
-    const data: Prisma.PostUpdateInput = clean(
-      input as unknown as Record<string, unknown>,
-    ) as Prisma.PostUpdateInput;
+    const data: Prisma.PostUpdateInput = clean(input as unknown as Record<string, unknown>) as Prisma.PostUpdateInput;
     return this.core.post.update({ where: { id }, data });
   }
 
@@ -241,15 +239,11 @@ export class BlogService {
 
     if (args.search) {
       conditions.push({
-        OR: [
-          { title: { contains: args.search, mode: "insensitive" } },
-          { content: { contains: args.search, mode: "insensitive" } },
-        ],
+        OR: [{ title: { contains: args.search, mode: "insensitive" } }, { content: { contains: args.search, mode: "insensitive" } }],
       });
     }
 
-    const where: Prisma.PostWhereInput =
-      conditions.length > 0 ? { AND: conditions } : {};
+    const where: Prisma.PostWhereInput = conditions.length > 0 ? { AND: conditions } : {};
 
     return this.core.post.findMany({
       where,

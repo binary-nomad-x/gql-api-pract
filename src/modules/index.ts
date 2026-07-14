@@ -24,7 +24,13 @@ import { Discount, Query as DiscountQuery, Mutation as DiscountMutation } from "
 import { Invoice, Query as InvoiceQuery, Mutation as InvoiceMutation } from "@gql-prisma-api/modules/invoice/resolver.js";
 import { ReturnRequest, Query as ReturnQuery, Mutation as ReturnMutation } from "@gql-prisma-api/modules/return/resolver.js";
 import { SupportTicket, TicketReply, Query as SupportQuery, Mutation as SupportMutation } from "@gql-prisma-api/modules/support/resolver.js";
-import { Conversation, ConversationParticipant, Message, Query as ConversationQuery, Mutation as ConversationMutation } from "@gql-prisma-api/modules/conversation/resolver.js";
+import {
+  Conversation,
+  ConversationParticipant,
+  Message,
+  Query as ConversationQuery,
+  Mutation as ConversationMutation,
+} from "@gql-prisma-api/modules/conversation/resolver.js";
 
 export const resolvers = {
   Query: {

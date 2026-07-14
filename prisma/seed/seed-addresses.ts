@@ -1,11 +1,7 @@
 import { faker } from "@faker-js/faker";
 import type { SeedContext, SeedCounts } from "./types.js";
 
-export async function seedAddresses(
-  ctx: SeedContext,
-  counts: SeedCounts,
-  userIds: string[],
-): Promise<void> {
+export async function seedAddresses(ctx: SeedContext, counts: SeedCounts, userIds: string[]): Promise<void> {
   const data: {
     userId: string;
     label: string;
@@ -38,14 +34,10 @@ export async function seedAddresses(
         zip: faker.location.zipCode(),
         country: "US",
         phone: faker.phone.number(),
-        deliveryInstructions: Math.random() > 0.5
-          ? faker.helpers.arrayElement([
-              "Leave at front door",
-              "Ring bell twice",
-              "Call upon arrival",
-              "Leave with concierge",
-            ])
-          : null,
+        deliveryInstructions:
+          Math.random() > 0.5
+            ? faker.helpers.arrayElement(["Leave at front door", "Ring bell twice", "Call upon arrival", "Leave with concierge"])
+            : null,
         latitude: parseFloat(faker.location.latitude()),
         longitude: parseFloat(faker.location.longitude()),
         isDefault: i === 0,
@@ -56,8 +48,6 @@ export async function seedAddresses(
     }
   }
 
-  await ctx.prisma.$transaction(
-    data.map((d) => ctx.prisma.address.create({ data: d })),
-  );
+  await ctx.prisma.$transaction(data.map((d) => ctx.prisma.address.create({ data: d })));
   counts.addresses += data.length;
 }

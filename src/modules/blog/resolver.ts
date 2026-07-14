@@ -5,36 +5,23 @@ import type { CreatePostInput, UpdatePostInput, CreateCommentInput, CreateCatego
 import { requireAuth } from "@gql-prisma-api/utils/errors.js";
 
 export const Post = {
-  author: (parent: PostModel, _args: unknown, ctx: Context) =>
-    ctx.services.blog.resolvePostAuthor(parent.authorId),
-  tags: (parent: PostModel, _args: unknown, ctx: Context) =>
-    ctx.services.blog.resolvePostTags(parent.id),
-  categories: (parent: PostModel, _args: unknown, ctx: Context) =>
-    ctx.services.blog.resolvePostCategories(parent.id),
-  comments: (parent: PostModel, _args: unknown, ctx: Context) =>
-    ctx.services.blog.resolvePostComments(parent.id),
-  likes: (parent: PostModel, _args: unknown, ctx: Context) =>
-    ctx.services.blog.resolvePostLikes(parent.id),
-  savedBy: (parent: PostModel, _args: unknown, ctx: Context) =>
-    ctx.services.blog.resolvePostSavedBy(parent.id),
-  views: (parent: PostModel, _args: unknown, ctx: Context) =>
-    ctx.services.blog.resolvePostViews(parent.id),
-  likeCount: (parent: PostModel, _args: unknown, ctx: Context) =>
-    ctx.services.blog.resolvePostLikeCount(parent.id),
-  commentCount: (parent: PostModel, _args: unknown, ctx: Context) =>
-    ctx.services.blog.resolvePostCommentCount(parent.id),
-  viewCount: (parent: PostModel, _args: unknown, ctx: Context) =>
-    ctx.services.blog.resolvePostViewCount(parent.id),
-  saveCount: (parent: PostModel, _args: unknown, ctx: Context) =>
-    ctx.services.blog.resolvePostSaveCount(parent.id),
+  author: (parent: PostModel, _args: unknown, ctx: Context) => ctx.services.blog.resolvePostAuthor(parent.authorId),
+  tags: (parent: PostModel, _args: unknown, ctx: Context) => ctx.services.blog.resolvePostTags(parent.id),
+  categories: (parent: PostModel, _args: unknown, ctx: Context) => ctx.services.blog.resolvePostCategories(parent.id),
+  comments: (parent: PostModel, _args: unknown, ctx: Context) => ctx.services.blog.resolvePostComments(parent.id),
+  likes: (parent: PostModel, _args: unknown, ctx: Context) => ctx.services.blog.resolvePostLikes(parent.id),
+  savedBy: (parent: PostModel, _args: unknown, ctx: Context) => ctx.services.blog.resolvePostSavedBy(parent.id),
+  views: (parent: PostModel, _args: unknown, ctx: Context) => ctx.services.blog.resolvePostViews(parent.id),
+  likeCount: (parent: PostModel, _args: unknown, ctx: Context) => ctx.services.blog.resolvePostLikeCount(parent.id),
+  commentCount: (parent: PostModel, _args: unknown, ctx: Context) => ctx.services.blog.resolvePostCommentCount(parent.id),
+  viewCount: (parent: PostModel, _args: unknown, ctx: Context) => ctx.services.blog.resolvePostViewCount(parent.id),
+  saveCount: (parent: PostModel, _args: unknown, ctx: Context) => ctx.services.blog.resolvePostSaveCount(parent.id),
 };
 
 export const Query = {
-  posts: (_parent: unknown, args: PostFilterArgs, ctx: Context) =>
-    ctx.services.blog.getPosts(args),
+  posts: (_parent: unknown, args: PostFilterArgs, ctx: Context) => ctx.services.blog.getPosts(args),
 
-  post: (_parent: unknown, { id }: IdArg, ctx: Context) =>
-    ctx.services.blog.getPost(id),
+  post: (_parent: unknown, { id }: IdArg, ctx: Context) => ctx.services.blog.getPost(id),
 };
 
 export const Mutation = {
@@ -63,11 +50,9 @@ export const Mutation = {
     return ctx.services.blog.unpublishPost(ctx.userId, id);
   },
 
-  createTag: (_parent: unknown, { name }: { name: string }, ctx: Context) =>
-    ctx.services.blog.createTag(name),
+  createTag: (_parent: unknown, { name }: { name: string }, ctx: Context) => ctx.services.blog.createTag(name),
 
-  createCategory: (_parent: unknown, { input }: { input: CreateCategoryInput }, ctx: Context) =>
-    ctx.services.blog.createCategory(input),
+  createCategory: (_parent: unknown, { input }: { input: CreateCategoryInput }, ctx: Context) => ctx.services.blog.createCategory(input),
 
   createComment: (_parent: unknown, { input }: { input: CreateCommentInput }, ctx: Context) => {
     requireAuth(ctx.userId);
@@ -86,17 +71,12 @@ export const Mutation = {
 };
 
 export const Tag = {
-  postCount: (parent: TagModel, _args: unknown, ctx: Context) =>
-    ctx.services.blog.resolveTagPostCount(parent.id),
+  postCount: (parent: TagModel, _args: unknown, ctx: Context) => ctx.services.blog.resolveTagPostCount(parent.id),
 };
 
 export const Category = {
-  posts: (parent: CategoryModel, _args: unknown, ctx: Context) =>
-    ctx.services.blog.resolveCategoryPosts(parent.id),
-  products: (parent: CategoryModel, _args: unknown, ctx: Context) =>
-    ctx.services.blog.resolveCategoryProducts(parent.id),
-  postCount: (parent: CategoryModel, _args: unknown, ctx: Context) =>
-    ctx.services.blog.resolveCategoryPostCount(parent.id),
-  productCount: (parent: CategoryModel, _args: unknown, ctx: Context) =>
-    ctx.services.blog.resolveCategoryProductCount(parent.id),
+  posts: (parent: CategoryModel, _args: unknown, ctx: Context) => ctx.services.blog.resolveCategoryPosts(parent.id),
+  products: (parent: CategoryModel, _args: unknown, ctx: Context) => ctx.services.blog.resolveCategoryProducts(parent.id),
+  postCount: (parent: CategoryModel, _args: unknown, ctx: Context) => ctx.services.blog.resolveCategoryPostCount(parent.id),
+  productCount: (parent: CategoryModel, _args: unknown, ctx: Context) => ctx.services.blog.resolveCategoryProductCount(parent.id),
 };

@@ -1,12 +1,6 @@
 import type { PrismaClient } from "@prisma/client";
-import type {
-  CreateDiscountInput,
-  UpdateDiscountInput,
-} from "@gql-prisma-api/modules/discount/inputs.js";
-import {
-  toDiscountCreate,
-  toDiscountUpdate,
-} from "@gql-prisma-api/lib/core.js";
+import type { CreateDiscountInput, UpdateDiscountInput } from "@gql-prisma-api/modules/discount/inputs.js";
+import { toDiscountCreate, toDiscountUpdate } from "@gql-prisma-api/lib/core.js";
 
 export class DiscountService {
   constructor(private readonly core: PrismaClient) {}

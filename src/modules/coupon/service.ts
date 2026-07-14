@@ -12,9 +12,7 @@ export class CouponService {
 
   // --- Existing business logic functions ---
   async createCoupon(userId: string, input: CreateCouponInput) {
-    const data: Prisma.CouponCreateInput = clean(
-      input as unknown as Record<string, unknown>,
-    ) as Prisma.CouponCreateInput;
+    const data: Prisma.CouponCreateInput = clean(input as unknown as Record<string, unknown>) as Prisma.CouponCreateInput;
     return this.core.coupon.create({ data });
   }
 

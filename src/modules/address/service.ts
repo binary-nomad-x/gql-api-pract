@@ -1,8 +1,5 @@
 import type { Prisma, PrismaClient } from "@prisma/client";
-import type {
-  CreateAddressInput,
-  UpdateAddressInput,
-} from "@gql-prisma-api/modules/address/inputs.js";
+import type { CreateAddressInput, UpdateAddressInput } from "@gql-prisma-api/modules/address/inputs.js";
 import { clean } from "@gql-prisma-api/lib/core.js";
 
 export class AddressService {

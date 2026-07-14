@@ -62,9 +62,7 @@ httpServer.on("request", (req, res) => {
         const httpGraphQLRequest = {
           method: req.method!.toUpperCase(),
           headers,
-          search: req.url?.includes("?")
-            ? req.url.slice(req.url.indexOf("?"))
-            : "",
+          search: req.url?.includes("?") ? req.url.slice(req.url.indexOf("?")) : "",
           body: "body" in req ? (req as any).body : undefined,
         };
 
@@ -93,9 +91,7 @@ httpServer.on("request", (req, res) => {
       } catch (error) {
         logger.error("Request handler error", { error: String(error) });
         res.statusCode = 500;
-        res.end(
-          JSON.stringify({ errors: [{ message: "Internal server error" }] }),
-        );
+        res.end(JSON.stringify({ errors: [{ message: "Internal server error" }] }));
       }
     });
   });

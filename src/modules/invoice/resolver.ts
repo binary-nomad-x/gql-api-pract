@@ -1,9 +1,6 @@
 import type { Context } from "@gql-prisma-api/types/context.js";
 import type { Invoice as InvoiceModel } from "@prisma/client";
-import type {
-  CreateInvoiceInput,
-  InvoiceFilterInput,
-} from "@gql-prisma-api/modules/invoice/inputs.js";
+import type { CreateInvoiceInput, InvoiceFilterInput } from "@gql-prisma-api/modules/invoice/inputs.js";
 import { requireAuth } from "@gql-prisma-api/utils/errors.js";
 
 export const Query = {
@@ -18,11 +15,7 @@ export const Query = {
 };
 
 export const Mutation = {
-  createInvoice: (
-    _parent: unknown,
-    { input }: { input: CreateInvoiceInput },
-    ctx: Context,
-  ) => {
+  createInvoice: (_parent: unknown, { input }: { input: CreateInvoiceInput }, ctx: Context) => {
     requireAuth(ctx.userId);
     return ctx.services.invoice.createInvoice(ctx.userId, input);
   },
@@ -37,6 +30,5 @@ export const Mutation = {
 };
 
 export const Invoice = {
-  order: (parent: InvoiceModel, _args: unknown, ctx: Context) =>
-    ctx.services.invoice.resolveInvoiceOrder(parent.orderId),
+  order: (parent: InvoiceModel, _args: unknown, ctx: Context) => ctx.services.invoice.resolveInvoiceOrder(parent.orderId),
 };

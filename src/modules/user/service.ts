@@ -1,8 +1,5 @@
 import type { Prisma, PrismaClient } from "@prisma/client";
-import type {
-  UpdateUserInput,
-  UpdateProfileInput,
-} from "@gql-prisma-api/modules/user/inputs.js";
+import type { UpdateUserInput, UpdateProfileInput } from "@gql-prisma-api/modules/user/inputs.js";
 import { hashPassword } from "@gql-prisma-api/utils/auth.js";
 import { requireOwner } from "@gql-prisma-api/utils/errors.js";
 import { clean } from "@gql-prisma-api/lib/core.js";
@@ -57,10 +54,7 @@ export class UserService {
     return this.core.postView.findMany({ where: { userId } });
   }
 
-  async updateUser(
-    userId: string,
-    args: { id: string; input: UpdateUserInput },
-  ) {
+  async updateUser(userId: string, args: { id: string; input: UpdateUserInput }) {
     requireOwner(args.id, userId);
     const data: Prisma.UserUpdateInput = {};
     const { name, email, password } = args.input;
@@ -106,9 +100,7 @@ export class UserService {
   }
 
   async updateProfile(userId: string, input: UpdateProfileInput) {
-    const data: Prisma.ProfileUpdateInput = clean(
-      input as unknown as Record<string, unknown>,
-    ) as Prisma.ProfileUpdateInput;
+    const data: Prisma.ProfileUpdateInput = clean(input as unknown as Record<string, unknown>) as Prisma.ProfileUpdateInput;
     return this.core.profile.upsert({
       where: { userId },
       update: data,

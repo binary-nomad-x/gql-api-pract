@@ -50,10 +50,7 @@ export class SubscriptionService {
     return updated;
   }
 
-  async triggerTrialEndingNotification(
-    userId: string,
-    input: TrialEndingInput,
-  ): Promise<boolean> {
+  async triggerTrialEndingNotification(userId: string, input: TrialEndingInput): Promise<boolean> {
     await triggerNovu(userId, {
       subscription: {
         plan: { name: input.planName },

@@ -2,11 +2,7 @@ import { faker } from "@faker-js/faker";
 import bcrypt from "bcryptjs";
 import type { SeedContext, SeedCounts } from "./types.js";
 
-export async function seedUsers(
-  ctx: SeedContext,
-  counts: SeedCounts,
-  count: number,
-): Promise<string[]> {
+export async function seedUsers(ctx: SeedContext, counts: SeedCounts, count: number): Promise<string[]> {
   const password = "password123";
   const passwordHash = bcrypt.hashSync(password, 10);
 
@@ -159,8 +155,12 @@ export async function seedUsers(
       lastLoginAt: faker.date.recent({ days: 30 }),
       locale: faker.helpers.arrayElement(["en-US", "en-GB", "es-ES", "fr-FR", "de-DE"]),
       timezone: faker.helpers.arrayElement([
-        "America/New_York", "America/Chicago", "America/Denver",
-        "America/Los_Angeles", "Europe/London", "Europe/Berlin",
+        "America/New_York",
+        "America/Chicago",
+        "America/Denver",
+        "America/Los_Angeles",
+        "Europe/London",
+        "Europe/Berlin",
       ]),
       metadata: {
         signupSource: faker.helpers.arrayElement(["web", "mobile", "referral"]),
@@ -198,9 +198,7 @@ export async function seedUsers(
           occupation: faker.person.jobTitle(),
           company: faker.company.name(),
           website: faker.internet.url(),
-          education: faker.helpers.arrayElement([
-            "High School", "Bachelor's", "Master's", "PhD", "Associate's",
-          ]),
+          education: faker.helpers.arrayElement(["High School", "Bachelor's", "Master's", "PhD", "Associate's"]),
           newsletter: faker.datatype.boolean({ probability: 0.8 }),
           marketingOptIn: faker.datatype.boolean({ probability: 0.6 }),
         },

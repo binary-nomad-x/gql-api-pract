@@ -1,8 +1,5 @@
 import type { Prisma, PrismaClient } from "@prisma/client";
-import type {
-  CreateReturnInput,
-  ReturnFilterInput,
-} from "@gql-prisma-api/modules/return/inputs.js";
+import type { CreateReturnInput, ReturnFilterInput } from "@gql-prisma-api/modules/return/inputs.js";
 import { triggerNovuWorkflow } from "@gql-prisma-api/utils/novu.js";
 import { logger } from "@gql-prisma-api/utils/logger.js";
 
@@ -53,8 +50,7 @@ export class ReturnService {
     });
     if (!orderItem) throw new Error("Order item not found");
     if (orderItem.order.userId !== userId) throw new Error("Unauthorized");
-    if (input.quantity > orderItem.quantity)
-      throw new Error("Return quantity exceeds ordered quantity");
+    if (input.quantity > orderItem.quantity) throw new Error("Return quantity exceeds ordered quantity");
 
     const record = await this.core.returnRequest.create({
       data: {

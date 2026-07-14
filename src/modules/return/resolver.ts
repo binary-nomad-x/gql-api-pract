@@ -1,9 +1,6 @@
 import type { Context } from "@gql-prisma-api/types/context.js";
 import type { ReturnRequest as ReturnRequestModel } from "@prisma/client";
-import type {
-  CreateReturnInput,
-  ReturnFilterInput,
-} from "@gql-prisma-api/modules/return/inputs.js";
+import type { CreateReturnInput, ReturnFilterInput } from "@gql-prisma-api/modules/return/inputs.js";
 import { requireAuth } from "@gql-prisma-api/utils/errors.js";
 
 export const Query = {
@@ -18,11 +15,7 @@ export const Query = {
 };
 
 export const Mutation = {
-  createReturn: (
-    _parent: unknown,
-    { input }: { input: CreateReturnInput },
-    ctx: Context,
-  ) => {
+  createReturn: (_parent: unknown, { input }: { input: CreateReturnInput }, ctx: Context) => {
     requireAuth(ctx.userId);
     return ctx.services.return.createReturn(ctx.userId, input);
   },
@@ -37,8 +30,6 @@ export const Mutation = {
 };
 
 export const ReturnRequest = {
-  orderItem: (parent: ReturnRequestModel, _args: unknown, ctx: Context) =>
-    ctx.services.return.resolveReturnRequestOrderItem(parent.orderItemId),
-  user: (parent: ReturnRequestModel, _args: unknown, ctx: Context) =>
-    ctx.services.return.resolveReturnRequestUser(parent.userId),
+  orderItem: (parent: ReturnRequestModel, _args: unknown, ctx: Context) => ctx.services.return.resolveReturnRequestOrderItem(parent.orderItemId),
+  user: (parent: ReturnRequestModel, _args: unknown, ctx: Context) => ctx.services.return.resolveReturnRequestUser(parent.userId),
 };

@@ -1,11 +1,7 @@
 import { faker } from "@faker-js/faker";
 import type { SeedContext, SeedCounts, FollowSeed } from "./types.js";
 
-export async function seedFollows(
-  ctx: SeedContext,
-  counts: SeedCounts,
-  userIds: string[],
-): Promise<void> {
+export async function seedFollows(ctx: SeedContext, counts: SeedCounts, userIds: string[]): Promise<void> {
   const seen = new Set<string>();
   // Pre-compute follow relationships to determine mutuals
   const allPairs: { followerId: string; followingId: string }[] = [];

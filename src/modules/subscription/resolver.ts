@@ -5,8 +5,7 @@ import type { TrialEndingInput } from "@gql-prisma-api/modules/subscription/serv
 import { requireAuth } from "@gql-prisma-api/utils/errors.js";
 
 export const Subscription = {
-  user: (parent: SubscriptionModel, _args: unknown, ctx: Context) =>
-    ctx.services.subscription.resolveSubscriptionUser(parent.userId),
+  user: (parent: SubscriptionModel, _args: unknown, ctx: Context) => ctx.services.subscription.resolveSubscriptionUser(parent.userId),
 };
 
 export const Query = {
@@ -22,11 +21,7 @@ export const Query = {
 };
 
 export const Mutation = {
-  createSubscription: (
-    _parent: unknown,
-    { plan }: { plan: SubscriptionPlan },
-    ctx: Context,
-  ) => {
+  createSubscription: (_parent: unknown, { plan }: { plan: SubscriptionPlan }, ctx: Context) => {
     requireAuth(ctx.userId);
     return ctx.services.subscription.createSubscription(ctx.userId, plan);
   },
@@ -36,15 +31,8 @@ export const Mutation = {
     return ctx.services.subscription.cancelSubscription(ctx.userId);
   },
 
-  triggerTrialEndingNotification: (
-    _parent: unknown,
-    { input }: { input: TrialEndingInput },
-    ctx: Context,
-  ) => {
+  triggerTrialEndingNotification: (_parent: unknown, { input }: { input: TrialEndingInput }, ctx: Context) => {
     requireAuth(ctx.userId);
-    return ctx.services.subscription.triggerTrialEndingNotification(
-      ctx.userId,
-      input,
-    );
+    return ctx.services.subscription.triggerTrialEndingNotification(ctx.userId, input);
   },
 };

@@ -6,12 +6,7 @@ const BROWSERS = ["Chrome", "Firefox", "Safari", "Edge", "Opera"];
 const COUNTRIES = ["US", "GB", "CA", "DE", "FR", "AU", "IN", "JP"];
 const CITIES = ["New York", "London", "Toronto", "Berlin", "Paris", "Sydney", "Mumbai", "Tokyo"];
 
-export async function seedPostViews(
-  ctx: SeedContext,
-  counts: SeedCounts,
-  postIds: string[],
-  userIds: string[],
-): Promise<void> {
+export async function seedPostViews(ctx: SeedContext, counts: SeedCounts, postIds: string[], userIds: string[]): Promise<void> {
   const data: PostViewSeed[] = [];
 
   for (const postId of postIds) {
@@ -23,8 +18,13 @@ export async function seedPostViews(
         userId: faker.helpers.arrayElement(userIds),
         ip: faker.internet.ip(),
         referrer: faker.helpers.arrayElement([
-          "https://google.com", "https://facebook.com", "https://twitter.com",
-          "https://reddit.com", "https://linkedin.com", "https://bing.com", null,
+          "https://google.com",
+          "https://facebook.com",
+          "https://twitter.com",
+          "https://reddit.com",
+          "https://linkedin.com",
+          "https://bing.com",
+          null,
         ]),
         userAgent: faker.internet.userAgent(),
         country,

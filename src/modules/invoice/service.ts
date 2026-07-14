@@ -1,8 +1,5 @@
 import type { Prisma, PrismaClient } from "@prisma/client";
-import type {
-  CreateInvoiceInput,
-  InvoiceFilterInput,
-} from "@gql-prisma-api/modules/invoice/inputs.js";
+import type { CreateInvoiceInput, InvoiceFilterInput } from "@gql-prisma-api/modules/invoice/inputs.js";
 import { triggerNovuWorkflow } from "@gql-prisma-api/utils/novu.js";
 import { logger } from "@gql-prisma-api/utils/logger.js";
 
@@ -114,8 +111,7 @@ export class InvoiceService {
   async cancelInvoice(userId: string, id: string) {
     const invoice = await this.core.invoice.findUnique({ where: { id } });
     if (!invoice) throw new Error("Invoice not found");
-    if (invoice.status === "PAID")
-      throw new Error("Cannot cancel a paid invoice");
+    if (invoice.status === "PAID") throw new Error("Cannot cancel a paid invoice");
 
     const updated = await this.core.invoice.update({
       where: { id },

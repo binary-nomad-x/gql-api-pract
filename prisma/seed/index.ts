@@ -61,11 +61,7 @@ async function main(): Promise<void> {
 
   // Phase 1 — Independent tables
   console.log("[1/8] Users, Tags, Categories...");
-  const [userIds, tagIds, categoryIds] = await Promise.all([
-    seedUsers(ctx, counts, USER_COUNT),
-    seedTags(ctx, counts),
-    seedCategories(ctx, counts),
-  ]);
+  const [userIds, tagIds, categoryIds] = await Promise.all([seedUsers(ctx, counts, USER_COUNT), seedTags(ctx, counts), seedCategories(ctx, counts)]);
 
   // Phase 2 — Content tables (depend on users, tags, categories)
   console.log("[2/8] Posts, Products...");
@@ -95,26 +91,13 @@ async function main(): Promise<void> {
   // Phase 5 — Commerce (coupons, orders, payments, shipments, refunds)
   console.log("[5/8] Coupons, Orders, Payments, Shipments, Refunds...");
   const couponIds = await seedCoupons(ctx, counts);
-  const orderIds = await seedOrders(
-    ctx,
-    counts,
-    userIds,
-    productIds,
-    couponIds,
-  );
-  await Promise.all([
-    seedPayments(ctx, counts, orderIds),
-    seedShipments(ctx, counts, orderIds),
-  ]);
+  const orderIds = await seedOrders(ctx, counts, userIds, productIds, couponIds);
+  await Promise.all([seedPayments(ctx, counts, orderIds), seedShipments(ctx, counts, orderIds)]);
   await seedRefunds(ctx, counts, orderIds);
 
   // Phase 6 — Discounts, Notifications, Subscriptions
   console.log("[6/8] Discounts, Notifications, Subscriptions...");
-  await Promise.all([
-    seedDiscounts(ctx, counts, productIds),
-    seedNotifications(ctx, counts, userIds),
-    seedSubscriptions(ctx, counts, userIds),
-  ]);
+  await Promise.all([seedDiscounts(ctx, counts, productIds), seedNotifications(ctx, counts, userIds), seedSubscriptions(ctx, counts, userIds)]);
 
   // Phase 7 — Saved posts, Post views, Conversations
   console.log("[7/8] Saved Posts, Post Views, Conversations...");
@@ -126,11 +109,7 @@ async function main(): Promise<void> {
 
   // Phase 8 — Invoices, Returns, Support Tickets
   console.log("[8/8] Invoices, Returns, Support Tickets...");
-  await Promise.all([
-    seedInvoices(ctx, counts, orderIds),
-    seedReturns(ctx, counts, userIds, orderIds),
-    seedTickets(ctx, counts, userIds),
-  ]);
+  await Promise.all([seedInvoices(ctx, counts, orderIds), seedReturns(ctx, counts, userIds, orderIds), seedTickets(ctx, counts, userIds)]);
 
   // Summary
   printElapsed(start);

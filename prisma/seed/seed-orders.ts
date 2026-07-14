@@ -2,14 +2,7 @@ import { faker } from "@faker-js/faker";
 import type { SeedContext, SeedCounts } from "./types.js";
 import { randomUUID } from "node:crypto";
 
-const ORDER_STATUSES = [
-  "PENDING",
-  "CONFIRMED",
-  "PROCESSING",
-  "SHIPPED",
-  "DELIVERED",
-  "CANCELLED",
-];
+const ORDER_STATUSES = ["PENDING", "CONFIRMED", "PROCESSING", "SHIPPED", "DELIVERED", "CANCELLED"];
 
 export async function seedOrders(
   ctx: SeedContext,
@@ -24,9 +17,7 @@ export async function seedOrders(
   });
 
   const productMap = new Map(products.map((p) => [p.id, p]));
-  const orderIds = Array.from({ length: Math.floor(userIds.length * 4) }, () =>
-    randomUUID(),
-  );
+  const orderIds = Array.from({ length: Math.floor(userIds.length * 4) }, () => randomUUID());
 
   const orderData: {
     id: string;
@@ -70,7 +61,7 @@ export async function seedOrders(
     const couponId = useCoupon ? faker.helpers.arrayElement(couponIds) : null;
     const isCancelled = status === "CANCELLED";
     const shippingAmount = parseFloat(faker.commerce.price({ min: 5, max: 25 }));
-    const taxRate = faker.helpers.arrayElement([0.05, 0.07, 0.08, 0.10, 0.0]);
+    const taxRate = faker.helpers.arrayElement([0.05, 0.07, 0.08, 0.1, 0.0]);
 
     orderData.push({
       id: orderId,
@@ -92,10 +83,9 @@ export async function seedOrders(
       estimatedDelivery: faker.date.future(),
       deliveredAt: status === "DELIVERED" ? faker.date.past() : null,
       cancelledAt: isCancelled ? faker.date.past() : null,
-      cancelReason: isCancelled ? faker.helpers.arrayElement([
-        "Changed mind", "Found better price", "Ordered by mistake",
-        "Shipping too slow", "Duplicate order",
-      ]) : null,
+      cancelReason: isCancelled
+        ? faker.helpers.arrayElement(["Changed mind", "Found better price", "Ordered by mistake", "Shipping too slow", "Duplicate order"])
+        : null,
     });
 
     const itemCount = faker.number.int({ min: 1, max: 5 });

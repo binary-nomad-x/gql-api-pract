@@ -1,9 +1,13 @@
 import type { Context } from "@gql-prisma-api/types/context.js";
-import type { Wishlist as WishlistModel, WishlistItem as WishlistItemModel } from "@prisma/client";
+import type {
+  Wishlist as WishlistModel,
+  WishlistItem as WishlistItemModel,
+} from "@prisma/client";
 import type {
   CreateWishlistInput,
   AddToWishlistInput,
 } from "@gql-prisma-api/modules/wishlist/inputs.js";
+import { requireAuth } from "@gql-prisma-api/utils/errors.js";
 
 export const Wishlist = {
   user: (parent: WishlistModel, _args: unknown, ctx: Context) =>
@@ -22,11 +26,15 @@ export const WishlistItem = {
 };
 
 export const Query = {
-  myWishlists: (_parent: unknown, _args: unknown, ctx: Context) =>
-    ctx.services.wishlist.getMyWishlists(ctx.userId),
+  myWishlists: (_parent: unknown, _args: unknown, ctx: Context) => {
+    requireAuth(ctx.userId);
+    return ctx.services.wishlist.getMyWishlists(ctx.userId);
+  },
 
-  wishlist: (_parent: unknown, { id }: { id: string }, ctx: Context) =>
-    ctx.services.wishlist.getWishlist(ctx.userId, id),
+  wishlist: (_parent: unknown, { id }: { id: string }, ctx: Context) => {
+    requireAuth(ctx.userId);
+    return ctx.services.wishlist.getWishlist(ctx.userId, id);
+  },
 };
 
 export const Mutation = {
@@ -34,21 +42,35 @@ export const Mutation = {
     _parent: unknown,
     { input }: { input: CreateWishlistInput },
     ctx: Context,
-  ) => ctx.services.wishlist.createWishlist(ctx.userId, input),
+  ) => {
+    requireAuth(ctx.userId);
+    return ctx.services.wishlist.createWishlist(ctx.userId, input);
+  },
 
   addToWishlist: (
     _parent: unknown,
     { input }: { input: AddToWishlistInput },
     ctx: Context,
-  ) => ctx.services.wishlist.addToWishlist(ctx.userId, input),
+  ) => {
+    requireAuth(ctx.userId);
+    return ctx.services.wishlist.addToWishlist(ctx.userId, input);
+  },
 
   removeFromWishlist: (
     _parent: unknown,
     args: { wishlistId: string; productId: string },
     ctx: Context,
-  ) =>
-    ctx.services.wishlist.removeFromWishlist(ctx.userId, args.wishlistId, args.productId),
+  ) => {
+    requireAuth(ctx.userId);
+    return ctx.services.wishlist.removeFromWishlist(
+      ctx.userId,
+      args.wishlistId,
+      args.productId,
+    );
+  },
 
-  deleteWishlist: (_parent: unknown, { id }: { id: string }, ctx: Context) =>
-    ctx.services.wishlist.deleteWishlist(ctx.userId, id),
+  deleteWishlist: (_parent: unknown, { id }: { id: string }, ctx: Context) => {
+    requireAuth(ctx.userId);
+    return ctx.services.wishlist.deleteWishlist(ctx.userId, id);
+  },
 };

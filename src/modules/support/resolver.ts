@@ -10,6 +10,7 @@ import {
   resolveTicketReplyTicket,
   resolveTicketReplyUser,
 } from "@gql-prisma-api/helpers/resolve.js";
+import { requireAuth } from "@gql-prisma-api/utils/errors.js";
 
 export const SupportTicket = {
   user: (parent: Record<string, unknown>, _args: unknown, _ctx: Context) =>
@@ -26,15 +27,20 @@ export const TicketReply = {
 };
 
 export const Query = {
-  myTickets: (_: unknown, args: TicketFilterInput, ctx: Context) =>
-    ctx.services.support.findMyTickets(ctx.userId, args),
-  ticket: (_: unknown, args: { id: string }, ctx: Context) =>
-    ctx.services.support.findTicketById(ctx.userId, args.id),
+  myTickets: (_: unknown, args: TicketFilterInput, ctx: Context) => {
+    requireAuth(ctx.userId);
+    return ctx.services.support.findMyTickets(ctx.userId, args);
+  },
+  ticket: (_: unknown, args: { id: string }, ctx: Context) => {
+    requireAuth(ctx.userId);
+    return ctx.services.support.findTicketById(ctx.userId, args.id);
+  },
   ticketReplies: async (
     _: unknown,
     args: { ticketId: string },
     ctx: Context,
   ) => {
+    requireAuth(ctx.userId);
     const ticket = await ctx.services.support.findTicketById(
       ctx.userId,
       args.ticketId,
@@ -48,14 +54,24 @@ export const Mutation = {
     _: unknown,
     args: { input: CreateTicketInput },
     ctx: Context,
-  ) => ctx.services.support.createTicket(ctx.userId, args.input),
+  ) => {
+    requireAuth(ctx.userId);
+    return ctx.services.support.createTicket(ctx.userId, args.input);
+  },
   addTicketReply: (
     _: unknown,
     args: { input: AddTicketReplyInput },
     ctx: Context,
-  ) => ctx.services.support.addTicketReply(ctx.userId, args.input),
-  resolveTicket: (_: unknown, args: { id: string }, ctx: Context) =>
-    ctx.services.support.resolveTicket(ctx.userId, args.id),
-  closeTicket: (_: unknown, args: { id: string }, ctx: Context) =>
-    ctx.services.support.closeTicket(ctx.userId, args.id),
+  ) => {
+    requireAuth(ctx.userId);
+    return ctx.services.support.addTicketReply(ctx.userId, args.input);
+  },
+  resolveTicket: (_: unknown, args: { id: string }, ctx: Context) => {
+    requireAuth(ctx.userId);
+    return ctx.services.support.resolveTicket(ctx.userId, args.id);
+  },
+  closeTicket: (_: unknown, args: { id: string }, ctx: Context) => {
+    requireAuth(ctx.userId);
+    return ctx.services.support.closeTicket(ctx.userId, args.id);
+  },
 };

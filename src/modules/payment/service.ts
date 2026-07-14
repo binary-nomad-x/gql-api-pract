@@ -1,6 +1,9 @@
 import type { Prisma, PrismaClient } from "@prisma/client";
-import type { ProcessPaymentInput, PaymentFilterInput } from "@gql-prisma-api/modules/payment/inputs.js";
-import { requireAuth, requireOwner } from "@gql-prisma-api/utils/errors.js";
+import type {
+  ProcessPaymentInput,
+  PaymentFilterInput,
+} from "@gql-prisma-api/modules/payment/inputs.js";
+import { requireOwner } from "@gql-prisma-api/utils/errors.js";
 import { triggerNovuWorkflow } from "@gql-prisma-api/utils/novu.js";
 
 export class PaymentService {
@@ -13,12 +16,10 @@ export class PaymentService {
     return this.core.refund.findMany({ where: { paymentId } });
   }
 
-  async processPayment(
-    userId: string | undefined,
-    input: ProcessPaymentInput,
-  ) {
-    requireAuth(userId);
-    const order = await this.core.order.findUnique({ where: { id: input.orderId } });
+  async processPayment(userId: string, input: ProcessPaymentInput) {
+    const order = await this.core.order.findUnique({
+      where: { id: input.orderId },
+    });
     if (!order) throw new Error("Order not found");
     requireOwner(order.userId, userId);
 
@@ -38,7 +39,7 @@ export class PaymentService {
       },
     });
 
-    await triggerNovuWorkflow(userId!, "payment-processed", {
+    await triggerNovuWorkflow(userId, "payment-processed", {
       orderId: input.orderId,
       paymentId: payment.id,
       amount: order.totalAmount,
@@ -47,12 +48,8 @@ export class PaymentService {
     return payment;
   }
 
-  async getMyPayments(
-    userId: string | undefined,
-    args: PaymentFilterInput,
-  ) {
-    requireAuth(userId);
-    const conditions: Prisma.PaymentWhereInput[] = [{ order: { userId: userId! } }];
+  async getMyPayments(userId: string, args: PaymentFilterInput) {
+    const conditions: Prisma.PaymentWhereInput[] = [{ order: { userId } }];
 
     if (args.status) {
       conditions.push({ status: args.status });
@@ -68,13 +65,9 @@ export class PaymentService {
     });
   }
 
-  async getPayment(
-    userId: string | undefined,
-    id: string,
-  ) {
-    requireAuth(userId);
+  async getPayment(userId: string, id: string) {
     return this.core.payment.findFirst({
-      where: { id, order: { userId: userId! } },
+      where: { id, order: { userId } },
     });
   }
 }

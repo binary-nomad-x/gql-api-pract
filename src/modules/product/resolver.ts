@@ -1,6 +1,11 @@
+import { requireAuth } from "@gql-prisma-api/utils/errors.js";
 import type { Context } from "@gql-prisma-api/types/context.js";
 import type { Product as ProductModel } from "@prisma/client";
-import type { CreateProductInput, UpdateProductInput, ProductFilterInput } from "@gql-prisma-api/modules/product/inputs.js";
+import type {
+  CreateProductInput,
+  UpdateProductInput,
+  ProductFilterInput,
+} from "@gql-prisma-api/modules/product/inputs.js";
 
 export const Product = {
   seller: (parent: ProductModel, _args: unknown, ctx: Context) =>
@@ -37,14 +42,26 @@ export const Mutation = {
     _parent: unknown,
     { input }: { input: CreateProductInput },
     ctx: Context,
-  ) => ctx.services.product.createProduct(ctx.userId, input),
+  ) => {
+    requireAuth(ctx.userId);
+    return ctx.services.product.createProduct(ctx.userId, input);
+  },
 
   updateProduct: async (
     _parent: unknown,
     { id, input }: { id: string; input: UpdateProductInput },
     ctx: Context,
-  ) => ctx.services.product.updateProduct(ctx.userId, id, input),
+  ) => {
+    requireAuth(ctx.userId);
+    return ctx.services.product.updateProduct(ctx.userId, id, input);
+  },
 
-  deleteProduct: async (_parent: unknown, { id }: { id: string }, ctx: Context) =>
-    ctx.services.product.deleteProduct(ctx.userId, id),
+  deleteProduct: async (
+    _parent: unknown,
+    { id }: { id: string },
+    ctx: Context,
+  ) => {
+    requireAuth(ctx.userId);
+    return ctx.services.product.deleteProduct(ctx.userId, id);
+  },
 };

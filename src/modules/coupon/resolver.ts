@@ -1,3 +1,4 @@
+import { requireAuth } from "@gql-prisma-api/utils/errors.js";
 import type { Context } from "@gql-prisma-api/types/context.js";
 import type { Coupon as CouponModel } from "@prisma/client";
 import type { CreateCouponInput } from "@gql-prisma-api/modules/coupon/inputs.js";
@@ -13,6 +14,12 @@ export const Query = {
 };
 
 export const Mutation = {
-  createCoupon: (_parent: unknown, { input }: { input: CreateCouponInput }, ctx: Context) =>
-    ctx.services.coupon.createCoupon(ctx.userId, input),
+  createCoupon: (
+    _parent: unknown,
+    { input }: { input: CreateCouponInput },
+    ctx: Context,
+  ) => {
+    requireAuth(ctx.userId);
+    return ctx.services.coupon.createCoupon(ctx.userId, input);
+  },
 };

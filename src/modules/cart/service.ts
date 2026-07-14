@@ -1,6 +1,5 @@
 import type { Product, PrismaClient } from "@prisma/client";
 import type { AddToCartInput, UpdateCartItemInput } from "@gql-prisma-api/modules/cart/inputs.js";
-import { requireAuth } from "@gql-prisma-api/utils/errors.js";
 
 export class CartService {
   constructor(private readonly core: PrismaClient) {}
@@ -40,11 +39,10 @@ export class CartService {
   }
 
   async addToCart(
-    userId: string | undefined,
+    userId: string,
     input: AddToCartInput,
   ) {
-    requireAuth(userId);
-    const cart = await this.getOrCreateCart(userId!);
+    const cart = await this.getOrCreateCart(userId);
     const existing = await this.core.cartItem.findUnique({
       where: { cartId_productId: { cartId: cart.id, productId: input.productId } },
     });
@@ -62,11 +60,10 @@ export class CartService {
   }
 
   async updateCartItem(
-    userId: string | undefined,
+    userId: string,
     input: UpdateCartItemInput,
   ) {
-    requireAuth(userId);
-    const cart = await this.getOrCreateCart(userId!);
+    const cart = await this.getOrCreateCart(userId);
     const item = await this.core.cartItem.findUnique({
       where: { cartId_productId: { cartId: cart.id, productId: input.productId } },
     });
@@ -76,11 +73,10 @@ export class CartService {
   }
 
   async removeFromCart(
-    userId: string | undefined,
+    userId: string,
     productId: string,
   ) {
-    requireAuth(userId);
-    const cart = await this.getOrCreateCart(userId!);
+    const cart = await this.getOrCreateCart(userId);
     const item = await this.core.cartItem.findUnique({
       where: { cartId_productId: { cartId: cart.id, productId } },
     });
@@ -89,16 +85,14 @@ export class CartService {
   }
 
   async clearCart(
-    userId: string | undefined,
+    userId: string,
   ) {
-    requireAuth(userId);
-    const cart = await this.getOrCreateCart(userId!);
+    const cart = await this.getOrCreateCart(userId);
     await this.core.cartItem.deleteMany({ where: { cartId: cart.id } });
     return cart;
   }
 
-  async getMyCart(userId: string | undefined) {
-    requireAuth(userId);
-    return this.core.cart.findUnique({ where: { userId: userId! } });
+  async getMyCart(userId: string) {
+    return this.core.cart.findUnique({ where: { userId } });
   }
 }

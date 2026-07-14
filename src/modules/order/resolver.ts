@@ -1,6 +1,13 @@
 import type { Context } from "@gql-prisma-api/types/context.js";
-import type { Order as OrderModel, OrderItem as OrderItemModel } from "@prisma/client";
-import type { PlaceOrderInput, OrderFilterInput } from "@gql-prisma-api/modules/order/inputs.js";
+import type {
+  Order as OrderModel,
+  OrderItem as OrderItemModel,
+} from "@prisma/client";
+import type {
+  PlaceOrderInput,
+  OrderFilterInput,
+} from "@gql-prisma-api/modules/order/inputs.js";
+import { requireAuth } from "@gql-prisma-api/utils/errors.js";
 
 export const Order = {
   user: (parent: OrderModel, _args: unknown, ctx: Context) =>
@@ -27,17 +34,24 @@ export const OrderItem = {
 };
 
 export const Query = {
-  myOrders: async (
+  myOrders: async (_parent: unknown, args: OrderFilterInput, ctx: Context) => {
+    requireAuth(ctx.userId);
+    return ctx.services.order.getMyOrders(ctx.userId, args);
+  },
+
+  order: async (_parent: unknown, { id }: { id: string }, ctx: Context) => {
+    requireAuth(ctx.userId);
+    return ctx.services.order.getOrder(ctx.userId, id);
+  },
+
+  orderShipments: (
     _parent: unknown,
-    args: OrderFilterInput,
+    { orderId }: { orderId: string },
     ctx: Context,
-  ) => ctx.services.order.getMyOrders(ctx.userId, args),
-
-  order: async (_parent: unknown, { id }: { id: string }, ctx: Context) =>
-    ctx.services.order.getOrder(ctx.userId, id),
-
-  orderShipments: (_parent: unknown, { orderId }: { orderId: string }, ctx: Context) =>
-    ctx.prisma.shipment.findMany({ where: { orderId } }),
+  ) => {
+    requireAuth(ctx.userId);
+    return ctx.prisma.shipment.findMany({ where: { orderId } });
+  },
 };
 
 export const Mutation = {
@@ -45,14 +59,26 @@ export const Mutation = {
     _parent: unknown,
     { input }: { input: PlaceOrderInput },
     ctx: Context,
-  ) => ctx.services.order.placeOrder(ctx.userId, input),
+  ) => {
+    requireAuth(ctx.userId);
+    return ctx.services.order.placeOrder(ctx.userId, input);
+  },
 
-  cancelOrder: async (_parent: unknown, { id }: { id: string }, ctx: Context) =>
-    ctx.services.order.cancelOrder(ctx.userId, id),
+  cancelOrder: async (
+    _parent: unknown,
+    { id }: { id: string },
+    ctx: Context,
+  ) => {
+    requireAuth(ctx.userId);
+    return ctx.services.order.cancelOrder(ctx.userId, id);
+  },
 
   updateOrderStatus: async (
     _parent: unknown,
     { id, status }: { id: string; status: string },
     ctx: Context,
-  ) => ctx.services.order.updateOrderStatus(ctx.userId, id, status),
+  ) => {
+    requireAuth(ctx.userId);
+    return ctx.services.order.updateOrderStatus(ctx.userId, id, status);
+  },
 };

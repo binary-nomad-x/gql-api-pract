@@ -10,10 +10,7 @@ export class PostViewService {
     return userId ? this.core.user.findUnique({ where: { id: userId } }) : null;
   }
 
-  recordPostView(
-    postId: string,
-    userId?: string,
-  ) {
+  recordPostView(postId: string, userId?: string) {
     return this.core.postView.create({ data: { postId, userId } });
   }
 }

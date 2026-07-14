@@ -1,6 +1,8 @@
 import type { Prisma, PrismaClient } from "@prisma/client";
-import type { CreateAddressInput, UpdateAddressInput } from "@gql-prisma-api/modules/address/inputs.js";
-import { requireAuth } from "@gql-prisma-api/utils/errors.js";
+import type {
+  CreateAddressInput,
+  UpdateAddressInput,
+} from "@gql-prisma-api/modules/address/inputs.js";
 import { clean } from "@gql-prisma-api/lib/core.js";
 
 export class AddressService {
@@ -12,9 +14,8 @@ export class AddressService {
   }
 
   // --- Existing business logic functions ---
-  async createAddress(userId: string | undefined, input: CreateAddressInput) {
-  requireAuth(userId);
-  const data: Prisma.AddressCreateInput = clean({
+  async createAddress(userId: string, input: CreateAddressInput) {
+    const data: Prisma.AddressCreateInput = clean({
       ...input,
       userId: userId!,
       country: input.country ?? "US",
@@ -23,13 +24,7 @@ export class AddressService {
     return this.core.address.create({ data });
   }
 
-  async updateAddress(
-    userId: string | undefined,
-    id: string,
-    input: UpdateAddressInput,
-  ) {
-    requireAuth(userId);
-
+  async updateAddress(userId: string, id: string, input: UpdateAddressInput) {
     const addr = await this.core.address.findFirst({
       where: { id, userId: userId! },
     });
@@ -48,8 +43,7 @@ export class AddressService {
     });
   }
 
-  async deleteAddress(userId: string | undefined, id: string) {
-    requireAuth(userId);
+  async deleteAddress(userId: string, id: string) {
     const addr = await this.core.address.findFirst({
       where: { id, userId: userId! },
     });
@@ -58,8 +52,7 @@ export class AddressService {
     return true;
   }
 
-  async setDefaultAddress(userId: string | undefined, id: string) {
-    requireAuth(userId);
+  async setDefaultAddress(userId: string, id: string) {
     await this.core.address.updateMany({
       where: { userId: userId!, isDefault: true },
       data: { isDefault: false },
@@ -70,13 +63,11 @@ export class AddressService {
     });
   }
 
-  getMyAddresses(userId: string | undefined) {
-    requireAuth(userId);
+  getMyAddresses(userId: string) {
     return this.core.address.findMany({ where: { userId: userId! } });
   }
 
-  async getAddress(userId: string | undefined, id: string) {
-    requireAuth(userId);
+  async getAddress(userId: string, id: string) {
     return this.core.address.findFirst({ where: { id, userId: userId! } });
   }
 }

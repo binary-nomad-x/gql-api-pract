@@ -9,6 +9,9 @@ export const PostView = {
 };
 
 export const Mutation = {
-  recordPostView: (_parent: unknown, { postId }: { postId: string }, ctx: Context) =>
-    ctx.services.postView.recordPostView(postId, ctx.userId),
+  recordPostView: (
+    _parent: unknown,
+    { postId }: { postId: string },
+    ctx: Context,
+  ) => ctx.services.postView.recordPostView(postId, ctx.userId),
 };

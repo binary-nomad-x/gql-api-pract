@@ -1,6 +1,12 @@
 import type { Prisma, PrismaClient } from "@prisma/client";
-import type { CreatePostInput, UpdatePostInput, CreateCommentInput, CreateCategoryInput, PostFilterInput } from "@gql-prisma-api/modules/blog/inputs.js";
-import { requireAuth, requireOwner } from "@gql-prisma-api/utils/errors.js";
+import type {
+  CreatePostInput,
+  UpdatePostInput,
+  CreateCommentInput,
+  CreateCategoryInput,
+  PostFilterInput,
+} from "@gql-prisma-api/modules/blog/inputs.js";
+import { requireOwner } from "@gql-prisma-api/utils/errors.js";
 import { triggerNovuWorkflow } from "@gql-prisma-api/utils/novu.js";
 import { logger } from "@gql-prisma-api/utils/logger.js";
 import { clean } from "@gql-prisma-api/lib/core.js";
@@ -14,11 +20,15 @@ export class BlogService {
   }
 
   resolvePostTags(postId: string) {
-    return this.core.tag.findMany({ where: { posts: { some: { id: postId } } } });
+    return this.core.tag.findMany({
+      where: { posts: { some: { id: postId } } },
+    });
   }
 
   resolvePostCategories(postId: string) {
-    return this.core.category.findMany({ where: { posts: { some: { id: postId } } } });
+    return this.core.category.findMany({
+      where: { posts: { some: { id: postId } } },
+    });
   }
 
   resolvePostComments(postId: string) {
@@ -58,7 +68,9 @@ export class BlogService {
   }
 
   resolveCategoryPosts(categoryId: string) {
-    return this.core.post.findMany({ where: { categories: { some: { id: categoryId } } } });
+    return this.core.post.findMany({
+      where: { categories: { some: { id: categoryId } } },
+    });
   }
 
   resolveCategoryProducts(categoryId: string) {
@@ -66,7 +78,9 @@ export class BlogService {
   }
 
   resolveCategoryPostCount(categoryId: string) {
-    return this.core.post.count({ where: { categories: { some: { id: categoryId } } } });
+    return this.core.post.count({
+      where: { categories: { some: { id: categoryId } } },
+    });
   }
 
   resolveCategoryProductCount(categoryId: string) {
@@ -74,27 +88,32 @@ export class BlogService {
   }
 
   // --- Existing business logic functions ---
-  async createPost(
-    userId: string | undefined,
-    input: CreatePostInput,
-  ) {
-    requireAuth(userId);
-    const slug = input.title
-      .toLowerCase()
-      .replace(/[^a-z0-9]+/g, "-")
-      .replace(/(^-|-$)/g, "")
-      .slice(0, 80) + "-" + Date.now().toString(36);
+  async createPost(userId: string, input: CreatePostInput) {
+    const slug =
+      input.title
+        .toLowerCase()
+        .replace(/[^a-z0-9]+/g, "-")
+        .replace(/(^-|-$)/g, "")
+        .slice(0, 80) +
+      "-" +
+      Date.now().toString(36);
     const post = await this.core.post.create({
       data: {
         title: input.title,
         slug,
         content: input.content ?? undefined,
         published: input.published ?? false,
-        authorId: userId!,
+        authorId: userId,
         tags: {
           connectOrCreate: (input.tags ?? []).map((t: string) => ({
             where: { name: t },
-            create: { name: t, slug: t.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "") },
+            create: {
+              name: t,
+              slug: t
+                .toLowerCase()
+                .replace(/[^a-z0-9]+/g, "-")
+                .replace(/(^-|-$)/g, ""),
+            },
           })),
         },
         categories: {
@@ -102,26 +121,21 @@ export class BlogService {
         },
       },
     });
-    logger.info("Post created", { postId: post.id, authorId: userId! });
+    logger.info("Post created", { postId: post.id, authorId: userId });
     return post;
   }
 
-  async updatePost(
-    userId: string | undefined,
-    id: string,
-    input: UpdatePostInput,
-  ) {
+  async updatePost(userId: string, id: string, input: UpdatePostInput) {
     const post = await this.core.post.findUnique({ where: { id } });
     if (!post) throw new Error("Post not found");
     requireOwner(post.authorId, userId);
-    const data: Prisma.PostUpdateInput = clean(input as unknown as Record<string, unknown>) as Prisma.PostUpdateInput;
+    const data: Prisma.PostUpdateInput = clean(
+      input as unknown as Record<string, unknown>,
+    ) as Prisma.PostUpdateInput;
     return this.core.post.update({ where: { id }, data });
   }
 
-  async deletePost(
-    userId: string | undefined,
-    id: string,
-  ) {
+  async deletePost(userId: string, id: string) {
     const post = await this.core.post.findUnique({ where: { id } });
     if (!post) throw new Error("Post not found");
     requireOwner(post.authorId, userId);
@@ -130,22 +144,22 @@ export class BlogService {
     return true;
   }
 
-  async publishPost(
-    userId: string | undefined,
-    id: string,
-  ) {
+  async publishPost(userId: string, id: string) {
     const post = await this.core.post.findUnique({ where: { id } });
     if (!post) throw new Error("Post not found");
     requireOwner(post.authorId, userId);
-    const updated = await this.core.post.update({ where: { id }, data: { published: true } });
-    await triggerNovuWorkflow(post.authorId, "post-published", { postId: id, postTitle: updated.title });
+    const updated = await this.core.post.update({
+      where: { id },
+      data: { published: true },
+    });
+    await triggerNovuWorkflow(post.authorId, "post-published", {
+      postId: id,
+      postTitle: updated.title,
+    });
     return updated;
   }
 
-  async unpublishPost(
-    userId: string | undefined,
-    id: string,
-  ) {
+  async unpublishPost(userId: string, id: string) {
     const post = await this.core.post.findUnique({ where: { id } });
     if (!post) throw new Error("Post not found");
     requireOwner(post.authorId, userId);
@@ -153,40 +167,53 @@ export class BlogService {
   }
 
   createTag(name: string) {
-    const slug = name.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "");
-    return this.core.tag.upsert({ where: { name }, update: {}, create: { name, slug } });
+    const slug = name
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, "-")
+      .replace(/(^-|-$)/g, "");
+    return this.core.tag.upsert({
+      where: { name },
+      update: {},
+      create: { name, slug },
+    });
   }
 
   createCategory(input: CreateCategoryInput) {
     return this.core.category.upsert({
       where: { slug: input.slug },
       update: { name: input.name, description: input.description ?? undefined },
-      create: { name: input.name, slug: input.slug, description: input.description ?? undefined },
+      create: {
+        name: input.name,
+        slug: input.slug,
+        description: input.description ?? undefined,
+      },
     });
   }
 
-  async createComment(
-    userId: string | undefined,
-    input: CreateCommentInput,
-  ) {
-    requireAuth(userId);
-    const post = await this.core.post.findUnique({ where: { id: input.postId } });
+  async createComment(userId: string, input: CreateCommentInput) {
+    const post = await this.core.post.findUnique({
+      where: { id: input.postId },
+    });
     if (!post) throw new Error("Post not found");
     const comment = await this.core.comment.create({
-      data: { content: input.content, authorId: userId!, postId: input.postId },
+      data: { content: input.content, authorId: userId, postId: input.postId },
     });
     if (post.authorId !== userId) {
-      await triggerNovuWorkflow(post.authorId, "comment-on-post", { postId: input.postId, commentId: comment.id, commenterId: userId! });
+      await triggerNovuWorkflow(post.authorId, "comment-on-post", {
+        postId: input.postId,
+        commentId: comment.id,
+        commenterId: userId,
+      });
     }
-    logger.info("Comment created", { commentId: comment.id, postId: input.postId, authorId: userId! });
+    logger.info("Comment created", {
+      commentId: comment.id,
+      postId: input.postId,
+      authorId: userId,
+    });
     return comment;
   }
 
-  async deleteComment(
-    userId: string | undefined,
-    id: string,
-  ) {
-    requireAuth(userId);
+  async deleteComment(userId: string, id: string) {
     const comment = await this.core.comment.findUnique({ where: { id } });
     if (!comment) throw new Error("Comment not found");
     requireOwner(comment.authorId, userId);
@@ -194,24 +221,18 @@ export class BlogService {
     return true;
   }
 
-  async toggleLike(
-    userId: string | undefined,
-    postId: string,
-  ) {
-    requireAuth(userId);
+  async toggleLike(userId: string, postId: string) {
     const existing = await this.core.like.findUnique({
-      where: { userId_postId: { userId: userId!, postId } },
+      where: { userId_postId: { userId, postId } },
     });
     if (existing) {
       await this.core.like.delete({ where: { id: existing.id } });
       return existing;
     }
-    return this.core.like.create({ data: { userId: userId!, postId } });
+    return this.core.like.create({ data: { userId, postId } });
   }
 
-  getPosts(
-    args: PostFilterInput,
-  ) {
+  getPosts(args: PostFilterInput) {
     const conditions: Prisma.PostWhereInput[] = [];
 
     if (args.published !== undefined) {
@@ -227,7 +248,8 @@ export class BlogService {
       });
     }
 
-    const where: Prisma.PostWhereInput = conditions.length > 0 ? { AND: conditions } : {};
+    const where: Prisma.PostWhereInput =
+      conditions.length > 0 ? { AND: conditions } : {};
 
     return this.core.post.findMany({
       where,

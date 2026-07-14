@@ -1,7 +1,11 @@
 import type { Context } from "@gql-prisma-api/types/context.js";
 import type { User as UserModel } from "@prisma/client";
 import type { IdArg } from "@gql-prisma-api/types/graphql.js";
-import type { UpdateUserInput, UpdateProfileInput } from "@gql-prisma-api/modules/user/inputs.js";
+import type {
+  UpdateUserInput,
+  UpdateProfileInput,
+} from "@gql-prisma-api/modules/user/inputs.js";
+import { requireAuth } from "@gql-prisma-api/utils/errors.js";
 
 export const User = {
   profile: (parent: UserModel, _args: unknown, ctx: Context) =>
@@ -50,12 +54,16 @@ export const Mutation = {
     _parent: unknown,
     args: { id: string; input: UpdateUserInput },
     ctx: Context,
-  ) => ctx.services.user.updateUser(ctx.userId, args),
-  deleteUser: (_parent: unknown, { id }: IdArg, ctx: Context) =>
-    ctx.services.user.deleteUser(ctx.userId, id),
-  updateProfile: (
-    _parent: unknown,
-    args: UpdateProfileInput,
-    ctx: Context,
-  ) => ctx.services.user.updateProfile(ctx.userId, args),
+  ) => {
+    requireAuth(ctx.userId);
+    return ctx.services.user.updateUser(ctx.userId, args);
+  },
+  deleteUser: (_parent: unknown, { id }: IdArg, ctx: Context) => {
+    requireAuth(ctx.userId);
+    return ctx.services.user.deleteUser(ctx.userId, id);
+  },
+  updateProfile: (_parent: unknown, args: UpdateProfileInput, ctx: Context) => {
+    requireAuth(ctx.userId);
+    return ctx.services.user.updateProfile(ctx.userId, args);
+  },
 };

@@ -1,6 +1,5 @@
 import type { Prisma, PrismaClient } from "@prisma/client";
-import type { CreateCouponInput } from "./inputs.js";
-import { requireAuth } from "@gql-prisma-api/utils/errors.js";
+import type { CreateCouponInput } from "@gql-prisma-api/modules/coupon/inputs.js";
 import { clean } from "@gql-prisma-api/lib/core.js";
 
 export class CouponService {
@@ -12,11 +11,7 @@ export class CouponService {
   }
 
   // --- Existing business logic functions ---
-  async createCoupon(
-    userId: string | undefined,
-    input: CreateCouponInput,
-  ) {
-    requireAuth(userId);
+  async createCoupon(userId: string, input: CreateCouponInput) {
     const data: Prisma.CouponCreateInput = clean(input as unknown as Record<string, unknown>) as Prisma.CouponCreateInput;
     return this.core.coupon.create({ data });
   }

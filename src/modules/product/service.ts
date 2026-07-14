@@ -1,6 +1,6 @@
 import type { Prisma, PrismaClient } from "@prisma/client";
-import type { CreateProductInput, UpdateProductInput, ProductFilterInput } from "./inputs.js";
-import { requireAuth, requireOwner } from "@gql-prisma-api/utils/errors.js";
+import type { CreateProductInput, UpdateProductInput, ProductFilterInput } from "@gql-prisma-api/modules/product/inputs.js";
+import { requireOwner } from "@gql-prisma-api/utils/errors.js";
 import { clean } from "@gql-prisma-api/lib/core.js";
 
 export class ProductService {
@@ -44,26 +44,18 @@ export class ProductService {
     return agg._avg.rating;
   }
 
-  async createProduct(
-    userId: string | undefined,
-    input: CreateProductInput,
-  ) {
-    requireAuth(userId);
+  async createProduct(userId: string, input: CreateProductInput) {
     const { categorySlug, ...data } = input;
     const createData: Prisma.ProductCreateInput = clean({
       ...data,
       stock: input.stock ?? 0,
-      sellerId: userId!,
+      sellerId: userId,
       category: categorySlug ? { connect: { slug: categorySlug } } : undefined,
     }) as unknown as Prisma.ProductCreateInput;
     return this.core.product.create({ data: createData });
   }
 
-  async updateProduct(
-    userId: string | undefined,
-    id: string,
-    input: UpdateProductInput,
-  ) {
+  async updateProduct(userId: string, id: string, input: UpdateProductInput) {
     const product = await this.core.product.findUnique({ where: { id } });
     if (!product) throw new Error("Product not found");
     requireOwner(product.sellerId, userId);
@@ -72,19 +64,14 @@ export class ProductService {
       ...data,
       ...(categorySlug !== undefined
         ? {
-            category: categorySlug
-              ? { connect: { slug: categorySlug } }
-              : { disconnect: true },
+            category: categorySlug ? { connect: { slug: categorySlug } } : { disconnect: true },
           }
         : {}),
     }) as unknown as Prisma.ProductUpdateInput;
     return this.core.product.update({ where: { id }, data: updateData });
   }
 
-  async deleteProduct(
-    userId: string | undefined,
-    id: string,
-  ) {
+  async deleteProduct(userId: string, id: string) {
     const product = await this.core.product.findUnique({ where: { id } });
     if (!product) throw new Error("Product not found");
     requireOwner(product.sellerId, userId);
@@ -101,10 +88,7 @@ export class ProductService {
 
     if (args.search) {
       conditions.push({
-        OR: [
-          { name: { contains: args.search, mode: "insensitive" } },
-          { description: { contains: args.search, mode: "insensitive" } },
-        ],
+        OR: [{ name: { contains: args.search, mode: "insensitive" } }, { description: { contains: args.search, mode: "insensitive" } }],
       });
     }
 

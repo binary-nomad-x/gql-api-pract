@@ -5,17 +5,23 @@ const TYPES = ["info", "warning", "success", "error", "promotion", "reminder"] a
 const CHANNELS = ["in-app", "email", "sms", "push"];
 const CATEGORIES = ["general", "order", "promotion", "account", "system"];
 
-export async function seedNotifications(
-  ctx: SeedContext,
-  counts: SeedCounts,
-  userIds: string[],
-): Promise<void> {
+export async function seedNotifications(ctx: SeedContext, counts: SeedCounts, userIds: string[]): Promise<void> {
   const data: {
-    userId: string; type: string; title: string; message: string;
-    link: string; actionUrl: string | null; imageUrl: string | null;
-    channel: string; category: string; isRead: boolean;
-    readAt: Date | null; seenAt: Date | null;
-    deliveredAt: Date | null; expiresAt: Date | null; metadata: object;
+    userId: string;
+    type: string;
+    title: string;
+    message: string;
+    link: string;
+    actionUrl: string | null;
+    imageUrl: string | null;
+    channel: string;
+    category: string;
+    isRead: boolean;
+    readAt: Date | null;
+    seenAt: Date | null;
+    deliveredAt: Date | null;
+    expiresAt: Date | null;
+    metadata: object;
   }[] = [];
 
   for (const userId of userIds) {
@@ -25,7 +31,8 @@ export async function seedNotifications(
       const isRead = Math.random() > 0.4;
 
       data.push({
-        userId, type,
+        userId,
+        type,
         title: faker.lorem.sentence({ min: 3, max: 8 }),
         message: faker.lorem.sentences({ min: 1, max: 2 }),
         link: faker.internet.url(),

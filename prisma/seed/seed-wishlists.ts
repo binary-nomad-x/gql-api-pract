@@ -2,12 +2,7 @@ import { faker } from "@faker-js/faker";
 import type { SeedContext, SeedCounts } from "./types.js";
 import { randomUUID } from "node:crypto";
 
-export async function seedWishlists(
-  ctx: SeedContext,
-  counts: SeedCounts,
-  userIds: string[],
-  productIds: string[],
-): Promise<void> {
+export async function seedWishlists(ctx: SeedContext, counts: SeedCounts, userIds: string[], productIds: string[]): Promise<void> {
   for (const userId of userIds) {
     const wishlistCount = faker.number.int({ min: 1, max: 3 });
     for (let w = 0; w < wishlistCount; w++) {

@@ -16,10 +16,11 @@ export async function seedPosts(
     const id = postIds[i];
     const published = Math.random() > 0.15;
     const title = faker.lorem.sentence({ min: 4, max: 10 }).slice(0, 100);
-    const slug = title
-      .toLowerCase()
-      .replace(/[^a-z0-9]+/g, "-")
-      .replace(/(^-|-$)/g, "") + `-${randomUUID().slice(0, 6)}`;
+    const slug =
+      title
+        .toLowerCase()
+        .replace(/[^a-z0-9]+/g, "-")
+        .replace(/(^-|-$)/g, "") + `-${randomUUID().slice(0, 6)}`;
 
     await ctx.prisma.post.create({
       data: {
@@ -41,14 +42,10 @@ export async function seedPosts(
         commentCount: 0,
         authorId: faker.helpers.arrayElement(userIds),
         tags: {
-          connect: faker.helpers
-            .arrayElements(tagIds, { min: 1, max: 5 })
-            .map((id) => ({ id })),
+          connect: faker.helpers.arrayElements(tagIds, { min: 1, max: 5 }).map((id) => ({ id })),
         },
         categories: {
-          connect: faker.helpers
-            .arrayElements(categoryIds, { min: 1, max: 3 })
-            .map((id) => ({ id })),
+          connect: faker.helpers.arrayElements(categoryIds, { min: 1, max: 3 }).map((id) => ({ id })),
         },
       },
     });

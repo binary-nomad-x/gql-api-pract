@@ -1,17 +1,11 @@
 import type { Prisma, PrismaClient } from "@prisma/client";
-import type {
-  CreateTicketInput,
-  TicketFilterInput,
-  AddTicketReplyInput,
-} from "./inputs.js";
-import { requireAuth } from "@gql-prisma-api/utils/errors.js";
+import type { CreateTicketInput, TicketFilterInput, AddTicketReplyInput } from "@gql-prisma-api/modules/support/inputs.js";
 import { triggerNovuWorkflow } from "@gql-prisma-api/utils/novu.js";
 import { logger } from "@gql-prisma-api/utils/logger.js";
 
 export class SupportService {
   constructor(private readonly core: PrismaClient) {}
-  async findMyTickets(userId: string | undefined, filter?: TicketFilterInput) {
-    requireAuth(userId);
+  async findMyTickets(userId: string, filter?: TicketFilterInput) {
     const conditions: Prisma.SupportTicketWhereInput[] = [{ userId }];
 
     if (filter?.status) {
@@ -31,8 +25,7 @@ export class SupportService {
     });
   }
 
-  async findTicketById(userId: string | undefined, id: string) {
-    requireAuth(userId);
+  async findTicketById(userId: string, id: string) {
     const ticket = await this.core.supportTicket.findUnique({
       where: { id },
       include: {
@@ -43,8 +36,7 @@ export class SupportService {
     return ticket;
   }
 
-  async createTicket(userId: string | undefined, input: CreateTicketInput) {
-    requireAuth(userId);
+  async createTicket(userId: string, input: CreateTicketInput) {
     const ticket = await this.core.supportTicket.create({
       data: {
         userId,
@@ -73,8 +65,7 @@ export class SupportService {
     return ticket;
   }
 
-  async addTicketReply(userId: string | undefined, input: AddTicketReplyInput) {
-    requireAuth(userId);
+  async addTicketReply(userId: string, input: AddTicketReplyInput) {
     const ticket = await this.core.supportTicket.findUnique({
       where: { id: input.ticketId },
     });
@@ -106,8 +97,7 @@ export class SupportService {
     return reply;
   }
 
-  async resolveTicket(userId: string | undefined, id: string) {
-    requireAuth(userId);
+  async resolveTicket(userId: string, id: string) {
     const ticket = await this.core.supportTicket.findUnique({ where: { id } });
     if (!ticket) throw new Error("Ticket not found");
 
@@ -122,8 +112,7 @@ export class SupportService {
     return updated;
   }
 
-  async closeTicket(userId: string | undefined, id: string) {
-    requireAuth(userId);
+  async closeTicket(userId: string, id: string) {
     const ticket = await this.core.supportTicket.findUnique({ where: { id } });
     if (!ticket) throw new Error("Ticket not found");
 

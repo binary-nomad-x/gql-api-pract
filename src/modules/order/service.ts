@@ -1,6 +1,6 @@
 import type { Prisma, PrismaClient } from "@prisma/client";
-import type { PlaceOrderInput, OrderFilterInput } from "./inputs.js";
-import { requireAuth, requireOwner } from "@gql-prisma-api/utils/errors.js";
+import type { PlaceOrderInput, OrderFilterInput } from "@gql-prisma-api/modules/order/inputs.js";
+import { requireOwner } from "@gql-prisma-api/utils/errors.js";
 import { triggerNovuWorkflow } from "@gql-prisma-api/utils/novu.js";
 import { logger } from "@gql-prisma-api/utils/logger.js";
 
@@ -27,9 +27,7 @@ export class OrderService {
   }
 
   resolveOrderCoupon(couponId: string | null) {
-    return couponId
-      ? this.core.coupon.findUnique({ where: { id: couponId } })
-      : null;
+    return couponId ? this.core.coupon.findUnique({ where: { id: couponId } }) : null;
   }
 
   resolveOrderItemCount(orderId: string) {
@@ -44,12 +42,7 @@ export class OrderService {
     return this.core.product.findUnique({ where: { id: productId } });
   }
 
-  async placeOrder(
-    userId: string | undefined,
-    input: PlaceOrderInput,
-  ) {
-    requireAuth(userId);
-
+  async placeOrder(userId: string, input: PlaceOrderInput) {
     const products = await this.core.product.findMany({
       where: { id: { in: input.items.map((i) => i.productId) } },
     });
@@ -60,8 +53,7 @@ export class OrderService {
       const p = productMap.get(item.productId);
       if (!p) throw new Error(`Product ${item.productId} not found`);
       if (!p.isActive) throw new Error(`${p.name} is inactive`);
-      if (p.stock < item.quantity)
-        throw new Error(`Insufficient stock for ${p.name}`);
+      if (p.stock < item.quantity) throw new Error(`Insufficient stock for ${p.name}`);
       totalAmount += p.price * item.quantity;
     }
 
@@ -70,21 +62,14 @@ export class OrderService {
       const coupon = await this.core.coupon.findUnique({
         where: { code: input.couponCode },
       });
-      if (
-        coupon?.isActive &&
-        coupon.usedCount < coupon.maxUses &&
-        totalAmount >= coupon.minPurchase
-      ) {
-        discountAmount =
-          coupon.discountAmount > 0
-            ? coupon.discountAmount
-            : totalAmount * (coupon.discountPercent / 100);
+      if (coupon?.isActive && coupon.usedCount < coupon.maxUses && totalAmount >= coupon.minPurchase) {
+        discountAmount = coupon.discountAmount > 0 ? coupon.discountAmount : totalAmount * (coupon.discountPercent / 100);
       }
     }
 
     const order = await this.core.$transaction(async (tx: Prisma.TransactionClient) => {
       const orderData: Prisma.OrderCreateInput = {
-        user: { connect: { id: userId! } },
+        user: { connect: { id: userId } },
         totalAmount,
         discountAmount,
         shippingAddress: input.shippingAddress ?? undefined,
@@ -131,21 +116,22 @@ export class OrderService {
       return o;
     });
 
-    await triggerNovuWorkflow(userId!, "order-placed", {
+    await triggerNovuWorkflow(userId, "order-placed", {
       orderId: order.id,
       totalAmount,
       itemCount: input.items.length,
     });
 
-    logger.info("Order placed", { orderId: order.id, userId: userId!, totalAmount, itemCount: input.items.length });
+    logger.info("Order placed", {
+      orderId: order.id,
+      userId,
+      totalAmount,
+      itemCount: input.items.length,
+    });
     return order;
   }
 
-  async cancelOrder(
-    userId: string | undefined,
-    id: string,
-  ) {
-    requireAuth(userId);
+  async cancelOrder(userId: string, id: string) {
     const order = await this.core.order.findUnique({
       where: { id },
       include: { items: true },
@@ -170,30 +156,21 @@ export class OrderService {
       return o;
     });
 
-    await triggerNovuWorkflow(userId!, "order-cancelled", { orderId: id });
+    await triggerNovuWorkflow(userId, "order-cancelled", { orderId: id });
 
-    logger.info("Order cancelled", { orderId: id, userId: userId! });
+    logger.info("Order cancelled", { orderId: id, userId });
     return updated;
   }
 
-  async updateOrderStatus(
-    userId: string | undefined,
-    id: string,
-    status: string,
-  ) {
-    requireAuth(userId);
+  async updateOrderStatus(userId: string, id: string, status: string) {
     const order = await this.core.order.findUnique({ where: { id } });
     if (!order) throw new Error("Order not found");
     requireOwner(order.userId, userId);
     return this.core.order.update({ where: { id }, data: { status } });
   }
 
-  async getMyOrders(
-    userId: string | undefined,
-    args: OrderFilterInput,
-  ) {
-    requireAuth(userId);
-    const conditions: Prisma.OrderWhereInput[] = [{ userId: userId! }];
+  async getMyOrders(userId: string, args: OrderFilterInput) {
+    const conditions: Prisma.OrderWhereInput[] = [{ userId }];
 
     if (args.status) {
       conditions.push({ status: args.status });
@@ -209,11 +186,7 @@ export class OrderService {
     });
   }
 
-  async getOrder(
-    userId: string | undefined,
-    id: string,
-  ) {
-    requireAuth(userId);
-    return this.core.order.findFirst({ where: { id, userId: userId! } });
+  async getOrder(userId: string, id: string) {
+    return this.core.order.findFirst({ where: { id, userId } });
   }
 }

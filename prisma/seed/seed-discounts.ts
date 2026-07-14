@@ -3,11 +3,7 @@ import type { SeedContext, SeedCounts, DiscountSeed } from "./types.js";
 
 const DISCOUNT_TYPES = ["PERCENTAGE", "FIXED"];
 
-export async function seedDiscounts(
-  ctx: SeedContext,
-  counts: SeedCounts,
-  productIds: string[],
-): Promise<void> {
+export async function seedDiscounts(ctx: SeedContext, counts: SeedCounts, productIds: string[]): Promise<void> {
   const data: DiscountSeed[] = [];
 
   for (const productId of productIds) {
@@ -25,9 +21,7 @@ export async function seedDiscounts(
       description: faker.lorem.sentence(),
       type,
       value:
-        type === "PERCENTAGE"
-          ? faker.helpers.arrayElement([10, 15, 20, 25, 30, 40, 50, 60])
-          : parseFloat(faker.commerce.price({ min: 5, max: 100 })),
+        type === "PERCENTAGE" ? faker.helpers.arrayElement([10, 15, 20, 25, 30, 40, 50, 60]) : parseFloat(faker.commerce.price({ min: 5, max: 100 })),
       minQuantity: faker.number.int({ min: 0, max: 3 }),
       maxQuantity: faker.number.int({ min: 5, max: 50 }),
       minimumOrderAmount: parseFloat(faker.commerce.price({ min: 0, max: 100 })),

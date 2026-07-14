@@ -3,12 +3,7 @@ import type { SeedContext, SeedCounts, SavedPostSeed } from "./types.js";
 
 const FOLDERS = ["Default", "Read Later", "Favorites", "Archive", "Learning", "Inspiration"];
 
-export async function seedSavedPosts(
-  ctx: SeedContext,
-  counts: SeedCounts,
-  userIds: string[],
-  postIds: string[],
-): Promise<void> {
+export async function seedSavedPosts(ctx: SeedContext, counts: SeedCounts, userIds: string[], postIds: string[]): Promise<void> {
   const seen = new Set<string>();
   const data: SavedPostSeed[] = [];
 

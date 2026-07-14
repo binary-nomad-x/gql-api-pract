@@ -1,6 +1,5 @@
 import type { Prisma, PrismaClient } from "@prisma/client";
-import type { CreateReturnInput, ReturnFilterInput } from "./inputs.js";
-import { requireAuth } from "@gql-prisma-api/utils/errors.js";
+import type { CreateReturnInput, ReturnFilterInput } from "@gql-prisma-api/modules/return/inputs.js";
 import { triggerNovuWorkflow } from "@gql-prisma-api/utils/novu.js";
 import { logger } from "@gql-prisma-api/utils/logger.js";
 
@@ -14,11 +13,7 @@ export class ReturnService {
     return this.core.user.findUnique({ where: { id: userId } });
   }
 
-  async findMyReturns(
-    userId: string | undefined,
-    filter?: ReturnFilterInput,
-  ) {
-    requireAuth(userId);
+  async findMyReturns(userId: string, filter?: ReturnFilterInput) {
     const conditions: Prisma.ReturnRequestWhereInput[] = [{ userId }];
 
     if (filter?.status) {
@@ -32,15 +27,14 @@ export class ReturnService {
       orderBy: { requestedAt: "desc" },
       take: filter?.limit ?? 20,
       skip: filter?.offset ?? 0,
-      include: { orderItem: { include: { product: true, order: true } }, user: true },
+      include: {
+        orderItem: { include: { product: true, order: true } },
+        user: true,
+      },
     });
   }
 
-  async findReturnById(
-    userId: string | undefined,
-    id: string,
-  ) {
-    requireAuth(userId);
+  async findReturnById(userId: string, id: string) {
     const record = await this.core.returnRequest.findUnique({
       where: { id },
       include: { orderItem: { include: { product: true, order: true } } },
@@ -49,11 +43,7 @@ export class ReturnService {
     return record;
   }
 
-  async createReturn(
-    userId: string | undefined,
-    input: CreateReturnInput,
-  ) {
-    requireAuth(userId);
+  async createReturn(userId: string, input: CreateReturnInput) {
     const orderItem = await this.core.orderItem.findUnique({
       where: { id: input.orderItemId },
       include: { order: { include: { user: true } }, product: true },
@@ -81,19 +71,24 @@ export class ReturnService {
       },
     });
 
-    await triggerNovuWorkflow(userId!, "return-requested", { returnId: record.id, reason: input.reason });
-    logger.info("Return request created", { returnId: record.id, orderItemId: input.orderItemId, userId });
+    await triggerNovuWorkflow(userId!, "return-requested", {
+      returnId: record.id,
+      reason: input.reason,
+    });
+    logger.info("Return request created", {
+      returnId: record.id,
+      orderItemId: input.orderItemId,
+      userId,
+    });
     return record;
   }
 
-  async approveReturn(
-    userId: string | undefined,
-    id: string,
-  ) {
-    requireAuth(userId);
+  async approveReturn(userId: string, id: string) {
     const record = await this.core.returnRequest.findUnique({
       where: { id },
-      include: { orderItem: { include: { order: { include: { user: true } } } } },
+      include: {
+        orderItem: { include: { order: { include: { user: true } } } },
+      },
     });
     if (!record) throw new Error("Return request not found");
 
@@ -112,19 +107,19 @@ export class ReturnService {
       },
     });
 
-    await triggerNovuWorkflow(userId!, "return-approved", { returnId: record.id });
+    await triggerNovuWorkflow(userId!, "return-approved", {
+      returnId: record.id,
+    });
     logger.info("Return approved", { returnId: id, userId });
     return updated;
   }
 
-  async rejectReturn(
-    userId: string | undefined,
-    id: string,
-  ) {
-    requireAuth(userId);
+  async rejectReturn(userId: string, id: string) {
     const record = await this.core.returnRequest.findUnique({
       where: { id },
-      include: { orderItem: { include: { order: { include: { user: true } } } } },
+      include: {
+        orderItem: { include: { order: { include: { user: true } } } },
+      },
     });
     if (!record) throw new Error("Return request not found");
 
@@ -143,7 +138,9 @@ export class ReturnService {
       },
     });
 
-    await triggerNovuWorkflow(userId!, "return-rejected", { returnId: record.id });
+    await triggerNovuWorkflow(userId!, "return-rejected", {
+      returnId: record.id,
+    });
     logger.info("Return rejected", { returnId: id, userId });
     return updated;
   }

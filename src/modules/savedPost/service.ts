@@ -1,8 +1,7 @@
 import type { PrismaClient } from "@prisma/client";
-import { requireAuth } from "@gql-prisma-api/utils/errors.js";
 
 export class SavedPostService {
-  constructor(private readonly core: PrismaClient) { }
+  constructor(private readonly core: PrismaClient) {}
 
   resolveSavedPostUser(userId: string) {
     return this.core.user.findUnique({ where: { id: userId } });
@@ -12,32 +11,22 @@ export class SavedPostService {
     return this.core.post.findUnique({ where: { id: postId } });
   }
 
-  async toggleSavePost(
-    userId: string | undefined,
-    postId: string,
-  ) {
-
-    requireAuth(userId);
+  async toggleSavePost(userId: string, postId: string) {
     const existing = await this.core.savedPost.findUnique({
-      where: { userId_postId: { userId: userId!, postId } },
+      where: { userId_postId: { userId, postId } },
     });
 
     if (existing) {
       await this.core.savedPost.delete({ where: { id: existing.id } });
       return existing;
     }
-    
-    return this.core.savedPost.create({ data: { userId: userId!, postId } });
 
+    return this.core.savedPost.create({ data: { userId: userId!, postId } });
   }
 
-  getMySavedPosts(
-    userId: string | undefined,
-    args: { limit?: number; offset?: number },
-  ) {
-    requireAuth(userId);
+  getMySavedPosts(userId: string, args: { limit?: number; offset?: number }) {
     return this.core.savedPost.findMany({
-      where: { userId: userId! },
+      where: { userId },
       take: args.limit ?? 20,
       skip: args.offset ?? 0,
       orderBy: { createdAt: "desc" },

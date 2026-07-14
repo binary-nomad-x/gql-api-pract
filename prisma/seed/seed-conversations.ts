@@ -1,12 +1,7 @@
 import { faker } from "@faker-js/faker";
 import type { SeedContext, SeedCounts, MessageSeed } from "./types.js";
 
-export async function seedConversations(
-  ctx: SeedContext,
-  counts: SeedCounts,
-  userIds: string[],
-): Promise<void> {
-
+export async function seedConversations(ctx: SeedContext, counts: SeedCounts, userIds: string[]): Promise<void> {
   const conversationCount = Math.floor(userIds.length * 0.6);
   const usedPairs = new Set<string>();
 

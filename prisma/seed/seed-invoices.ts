@@ -1,27 +1,38 @@
 import { faker } from "@faker-js/faker";
 import type { SeedContext, SeedCounts } from "./types.js";
 
-export async function seedInvoices(
-  ctx: SeedContext,
-  counts: SeedCounts,
-  orderIds: string[],
-): Promise<void> {
-
+export async function seedInvoices(ctx: SeedContext, counts: SeedCounts, orderIds: string[]): Promise<void> {
   const orders = await ctx.prisma.order.findMany({
     where: { id: { in: orderIds } },
     select: {
-      id: true, totalAmount: true, subtotal: true, taxAmount: true,
-      discountAmount: true, status: true, shippingAddress: true,
+      id: true,
+      totalAmount: true,
+      subtotal: true,
+      taxAmount: true,
+      discountAmount: true,
+      status: true,
+      shippingAddress: true,
     },
   });
 
   const data: {
-    orderId: string; invoiceNumber: string; amount: number;
-    subtotal: number; taxAmount: number; discountAmount: number;
-    totalAmount: number; currency: string; status: string;
-    notes: string | null; billingAddress: string; shippingAddress: string;
-    pdfUrl: string | null; items: object[];
-    dueDate: Date; paidAt: Date | null; sentAt: Date | null;
+    orderId: string;
+    invoiceNumber: string;
+    amount: number;
+    subtotal: number;
+    taxAmount: number;
+    discountAmount: number;
+    totalAmount: number;
+    currency: string;
+    status: string;
+    notes: string | null;
+    billingAddress: string;
+    shippingAddress: string;
+    pdfUrl: string | null;
+    items: object[];
+    dueDate: Date;
+    paidAt: Date | null;
+    sentAt: Date | null;
   }[] = [];
 
   for (let i = 0; i < orders.length; i++) {

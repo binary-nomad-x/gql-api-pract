@@ -4,11 +4,12 @@ import { ApolloServer, HeaderMap } from "@apollo/server";
 import { ApolloServerPluginDrainHttpServer } from "@apollo/server/plugin/drainHttpServer";
 import cors from "cors";
 import bodyParser from "body-parser";
-import { createContext } from "./context.js";
-import { typeDefs } from "./schema/typeDefs.js";
-import { resolvers } from "./modules/index.js";
-import { logger } from "./utils/logger.js";
-import { ApolloServerPluginGraphiQL } from "./plugins/graphiql.js";
+import { createContext } from "@gql-prisma-api/context.js";
+import { typeDefs } from "@gql-prisma-api/schema/typeDefs.js";
+import { resolvers } from "@gql-prisma-api/modules/index.js";
+import { logger } from "@gql-prisma-api/utils/logger.js";
+import { ApolloServerPluginGraphiQL } from "@gql-prisma-api/plugins/graphiql.js";
+import "@gql-prisma-api/workers/email.worker.js";
 
 const PORT = Number(process.env.PORT) || 4000;
 
@@ -107,7 +108,10 @@ httpServer.listen(PORT, () => {
 });
 
 process.on("uncaughtException", (err) => {
-  logger.critical("Uncaught exception", { message: err.message, stack: err.stack });
+  logger.critical("Uncaught exception", {
+    message: err.message,
+    stack: err.stack,
+  });
   process.exit(1);
 });
 

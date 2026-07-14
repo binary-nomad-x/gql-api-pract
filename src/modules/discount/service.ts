@@ -1,10 +1,6 @@
 import type { PrismaClient } from "@prisma/client";
-import type { CreateDiscountInput, UpdateDiscountInput } from "./inputs.js";
-import { requireAuth } from "@gql-prisma-api/utils/errors.js";
-import {
-  toDiscountCreate,
-  toDiscountUpdate,
-} from "@gql-prisma-api/lib/core.js";
+import type { CreateDiscountInput, UpdateDiscountInput } from "@gql-prisma-api/modules/discount/inputs.js";
+import { toDiscountCreate, toDiscountUpdate } from "@gql-prisma-api/lib/core.js";
 
 export class DiscountService {
   constructor(private readonly core: PrismaClient) {}
@@ -15,8 +11,7 @@ export class DiscountService {
   }
 
   // --- Existing business logic functions ---
-  async createDiscount(userId: string | undefined, input: CreateDiscountInput) {
-    requireAuth(userId);
+  async createDiscount(userId: string, input: CreateDiscountInput) {
     const product = await this.core.product.findUnique({
       where: { id: input.productId },
     });
@@ -24,20 +19,14 @@ export class DiscountService {
     return this.core.discount.create({ data: toDiscountCreate(input) });
   }
 
-  async updateDiscount(
-    userId: string | undefined,
-    id: string,
-    input: UpdateDiscountInput,
-  ) {
-    requireAuth(userId);
+  async updateDiscount(userId: string, id: string, input: UpdateDiscountInput) {
     return this.core.discount.update({
       where: { id },
       data: toDiscountUpdate(input),
     });
   }
 
-  async deleteDiscount(userId: string | undefined, id: string) {
-    requireAuth(userId);
+  async deleteDiscount(userId: string, id: string) {
     await this.core.discount.delete({ where: { id } });
     return true;
   }

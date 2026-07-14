@@ -1,6 +1,6 @@
 import type { Prisma, PrismaClient } from "@prisma/client";
-import type { CreateRefundInput, RefundFilterInput } from "./inputs.js";
-import { requireAuth, requireOwner } from "@gql-prisma-api/utils/errors.js";
+import type { CreateRefundInput, RefundFilterInput } from "@gql-prisma-api/modules/refund/inputs.js";
+import { requireOwner } from "@gql-prisma-api/utils/errors.js";
 import { triggerNovuWorkflow } from "@gql-prisma-api/utils/novu.js";
 
 export class RefundService {
@@ -13,12 +13,10 @@ export class RefundService {
     return this.core.order.findUnique({ where: { id: orderId } });
   }
 
-  async createRefund(
-    userId: string | undefined,
-    input: CreateRefundInput,
-  ) {
-    requireAuth(userId);
-    const order = await this.core.order.findUnique({ where: { id: input.orderId } });
+  async createRefund(userId: string, input: CreateRefundInput) {
+    const order = await this.core.order.findUnique({
+      where: { id: input.orderId },
+    });
     if (!order) throw new Error("Order not found");
     requireOwner(order.userId, userId);
     return this.core.refund.create({
@@ -34,12 +32,7 @@ export class RefundService {
     });
   }
 
-  async updateRefundStatus(
-    userId: string | undefined,
-    id: string,
-    status: string,
-  ) {
-    requireAuth(userId);
+  async updateRefundStatus(userId: string, id: string, status: string) {
     const refund = await this.core.refund.findUnique({
       where: { id },
       include: { payment: true, order: true },
@@ -64,7 +57,7 @@ export class RefundService {
         });
       }
 
-      await triggerNovuWorkflow(userId!, "refund-processed", {
+      await triggerNovuWorkflow(userId, "refund-processed", {
         refundId: id,
         orderId: refund.orderId,
         amount: updated.amount,
@@ -74,12 +67,8 @@ export class RefundService {
     return updated;
   }
 
-  async getMyRefunds(
-    userId: string | undefined,
-    args: RefundFilterInput,
-  ) {
-    requireAuth(userId);
-    const conditions: Prisma.RefundWhereInput[] = [{ order: { userId: userId! } }];
+  async getMyRefunds(userId: string, args: RefundFilterInput) {
+    const conditions: Prisma.RefundWhereInput[] = [{ order: { userId } }];
 
     if (args.status) {
       conditions.push({ status: args.status });
@@ -95,11 +84,7 @@ export class RefundService {
     });
   }
 
-  async getRefund(
-    userId: string | undefined,
-    id: string,
-  ) {
-    requireAuth(userId);
-    return this.core.refund.findFirst({ where: { id, order: { userId: userId! } } });
+  async getRefund(userId: string, id: string) {
+    return this.core.refund.findFirst({ where: { id, order: { userId } } });
   }
 }

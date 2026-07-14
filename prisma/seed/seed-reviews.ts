@@ -7,7 +7,9 @@ export async function seedReviews(ctx: SeedContext, counts: SeedCounts, userIds:
   const data: ReviewSeed[] = [];
 
   for (const productId of productIds) {
+
     const n = Math.floor(Math.random() * 10) + 2;
+
     for (let i = 0; i < n; i++) {
       const userId = faker.helpers.arrayElement(userIds);
       const key = `${userId}:${productId}`;
@@ -32,6 +34,7 @@ export async function seedReviews(ctx: SeedContext, counts: SeedCounts, userIds:
         productId,
         userId,
       });
+
     }
   }
 

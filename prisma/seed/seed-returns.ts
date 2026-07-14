@@ -2,6 +2,7 @@ import { faker } from "@faker-js/faker";
 import type { SeedContext, SeedCounts } from "./types.js";
 
 export async function seedReturns(ctx: SeedContext, counts: SeedCounts, userIds: string[], orderIds: string[]): Promise<void> {
+
   const orderItems = await ctx.prisma.orderItem.findMany({
     where: { order: { id: { in: orderIds }, status: "DELIVERED" } },
     select: { id: true, orderId: true, productId: true, quantity: true },

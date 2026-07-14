@@ -32,8 +32,8 @@ export async function seedSubscriptions(ctx: SeedContext, counts: SeedCounts, us
     const startDate = faker.date.past();
     const isActive = Math.random() > 0.15;
     const nextBilling = faker.date.future();
-    const currentPeriodStart = faker.date.past({ days: 30 });
-    const currentPeriodEnd = faker.date.future({ days: 30 });
+    const currentPeriodStart = faker.date.past({ years: 1 });
+    const currentPeriodEnd = faker.date.future({ years: 2 });
 
     data.push({
       userId,
@@ -42,7 +42,7 @@ export async function seedSubscriptions(ctx: SeedContext, counts: SeedCounts, us
       startDate,
       endDate: isActive ? faker.date.future() : faker.date.past(),
       trialStartDate: plan !== "FREE" ? faker.date.past({ years: 1 }) : null,
-      trialEndDate: plan !== "FREE" ? faker.date.past({ days: 14 }) : null,
+      trialEndDate: plan !== "FREE" ? faker.date.past({ years: 1 }) : null,
       autoRenew: isActive && Math.random() > 0.3,
       billingCycle: plan === "FREE" ? "monthly" : faker.helpers.arrayElement(BILLING_CYCLES),
       paymentMethod: plan === "FREE" ? null : faker.helpers.arrayElement(PAYMENT_METHODS),

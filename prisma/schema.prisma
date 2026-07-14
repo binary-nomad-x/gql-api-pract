@@ -919,3 +919,51 @@ model TicketReply {
   @@index([userId])
   @@map("ticket_replies")
 }
+
+// ==================== Novu Workflow Metadata ====================
+model NovuWorkflow {
+  id          String   @id @default(cuid())
+  workflowId  String   @unique
+  name        String
+  description String?
+  status      String   @default("DRAFT")
+  tags        String[]
+  active      Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@map("novu_workflows")
+}
+
+// ==================== Novu Variable Groups ====================
+model NovuVariableGroup {
+  id          String   @id @default(cuid())
+  name        String
+  description String?
+  sortOrder   Int      @default(0)
+  variables   NovuVariable[]
+  createdAt   DateTime @default(now())
+
+  @@map("novu_variable_groups")
+}
+
+// ==================== Novu Variable Registry ====================
+model NovuVariable {
+  id              String            @id @default(cuid())
+  groupId         String
+  group           NovuVariableGroup @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  key             String
+  type            String            @default("STRING")
+  label           String?
+  description     String?
+  exampleValue    String?
+  required        Boolean           @default(false)
+  defaultValue    String?
+  validationRules Json?
+  aliases         String[]
+  createdAt       DateTime          @default(now())
+  updatedAt       DateTime          @updatedAt
+
+  @@unique([groupId, key])
+  @@map("novu_variables")
+}

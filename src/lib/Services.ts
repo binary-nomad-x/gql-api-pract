@@ -1,4 +1,6 @@
 import type { PrismaClient } from "@prisma/client";
+import { novu as novuClient } from "@gql-prisma-api/utils/novu.js";
+import { NovuService } from "@gql-prisma-api/modules/novu/service.js";
 import { AddressService } from "@gql-prisma-api/modules/address/service.js";
 import { AuthService } from "@gql-prisma-api/modules/auth/service.js";
 import { BlogService } from "@gql-prisma-api/modules/blog/service.js";
@@ -36,6 +38,7 @@ export class Services {
   readonly follow: FollowService;
   readonly invoice: InvoiceService;
   readonly notification: NotificationService;
+  readonly novu: NovuService;
   readonly order: OrderService;
   readonly payment: PaymentService;
   readonly postView: PostViewService;
@@ -63,6 +66,7 @@ export class Services {
     this.follow = new FollowService(prisma);
     this.invoice = new InvoiceService(prisma);
     this.notification = new NotificationService(prisma);
+    this.novu = new NovuService(prisma, novuClient);
     this.order = new OrderService(prisma);
     this.payment = new PaymentService(prisma);
     this.postView = new PostViewService(prisma);

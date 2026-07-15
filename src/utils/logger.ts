@@ -1,15 +1,7 @@
 import * as fs from "node:fs";
 import * as path from "node:path";
 
-export type LogLevel =
-  | "debug"
-  | "info"
-  | "notice"
-  | "warning"
-  | "error"
-  | "critical"
-  | "alert"
-  | "emergency";
+export type LogLevel = "debug" | "info" | "notice" | "warning" | "error" | "critical" | "alert" | "emergency";
 
 const LEVEL_PRIORITY: Record<LogLevel, number> = {
   debug: 0,
@@ -71,24 +63,31 @@ class Logger {
   debug(message: string, meta?: unknown): void {
     this.log("debug", message, meta);
   }
+
   info(message: string, meta?: unknown): void {
     this.log("info", message, meta);
   }
+
   notice(message: string, meta?: unknown): void {
     this.log("notice", message, meta);
   }
+
   warning(message: string, meta?: unknown): void {
     this.log("warning", message, meta);
   }
+
   error(message: string, meta?: unknown): void {
     this.log("error", message, meta);
   }
+
   critical(message: string, meta?: unknown): void {
     this.log("critical", message, meta);
   }
+
   alert(message: string, meta?: unknown): void {
     this.log("alert", message, meta);
   }
+
   emergency(message: string, meta?: unknown): void {
     this.log("emergency", message, meta);
   }

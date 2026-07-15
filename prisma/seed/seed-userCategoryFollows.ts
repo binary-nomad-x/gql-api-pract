@@ -1,12 +1,7 @@
 import { faker } from "@faker-js/faker";
 import type { SeedContext, SeedCounts } from "./types.js";
 
-export async function seedUserCategoryFollows(
-  ctx: SeedContext,
-  counts: SeedCounts,
-  userIds: string[],
-  categoryIds: string[],
-): Promise<void> {
+export async function seedUserCategoryFollows(ctx: SeedContext, counts: SeedCounts, userIds: string[], categoryIds: string[]): Promise<void> {
   const seen = new Set<string>();
   const data: { userId: string; categoryId: string; notifyOnNew: boolean }[] = [];
 

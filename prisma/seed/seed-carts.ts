@@ -1,12 +1,7 @@
 import { faker } from "@faker-js/faker";
 import type { SeedContext, SeedCounts, CartItemSeed } from "./types.js";
 
-export async function seedCarts(
-  ctx: SeedContext,
-  counts: SeedCounts,
-  userIds: string[],
-  productIds: string[],
-): Promise<void> {
+export async function seedCarts(ctx: SeedContext, counts: SeedCounts, userIds: string[], productIds: string[]): Promise<void> {
   const products = await ctx.prisma.product.findMany({
     where: { id: { in: productIds } },
     select: { id: true, price: true },
@@ -20,9 +15,7 @@ export async function seedCarts(
         subtotal: 0,
         total: 0,
         currency: "USD",
-        couponCode: faker.datatype.boolean({ probability: 0.2 })
-          ? faker.string.alphanumeric({ length: 10, casing: "upper" })
-          : null,
+        couponCode: faker.datatype.boolean({ probability: 0.2 }) ? faker.string.alphanumeric({ length: 10, casing: "upper" }) : null,
         discountAmount: 0,
         sessionId: faker.string.alphanumeric(24),
         expiresAt: faker.date.future({ years: 1 }),
@@ -59,7 +52,7 @@ export async function seedCarts(
         data: items,
         skipDuplicates: true,
       });
-      
+
       counts.cartItems += items.length;
 
       await ctx.prisma.cart.update({

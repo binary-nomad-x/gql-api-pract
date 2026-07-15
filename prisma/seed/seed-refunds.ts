@@ -1,11 +1,7 @@
 import { faker } from "@faker-js/faker";
 import type { SeedContext, SeedCounts } from "./types.js";
 
-export async function seedRefunds(
-  ctx: SeedContext,
-  counts: SeedCounts,
-  orderIds: string[],
-): Promise<void> {
+export async function seedRefunds(ctx: SeedContext, counts: SeedCounts, orderIds: string[]): Promise<void> {
   const orders = await ctx.prisma.order.findMany({
     where: { id: { in: orderIds }, status: { in: ["DELIVERED", "CANCELLED"] } },
     select: { id: true },
@@ -20,21 +16,31 @@ export async function seedRefunds(
   });
 
   const data: {
-    paymentId: string; orderId: string; amount: number;
-    currency: string; reason: string; reasonDescription: string;
-    status: string; initiatedBy: string; fee: number;
+    paymentId: string;
+    orderId: string;
+    amount: number;
+    currency: string;
+    reason: string;
+    reasonDescription: string;
+    status: string;
+    initiatedBy: string;
+    fee: number;
   }[] = [];
 
   for (const payment of payments) {
-    const refundAmount = parseFloat(
-      (payment.amount * (Math.random() > 0.5 ? 1 : faker.number.float({ min: 0.3, max: 0.8 }))).toFixed(2),
-    );
+    const refundAmount = parseFloat((payment.amount * (Math.random() > 0.5 ? 1 : faker.number.float({ min: 0.3, max: 0.8 }))).toFixed(2));
     data.push({
-      paymentId: payment.id, orderId: payment.orderId,
-      amount: refundAmount, currency: "USD",
+      paymentId: payment.id,
+      orderId: payment.orderId,
+      amount: refundAmount,
+      currency: "USD",
       reason: faker.helpers.arrayElement([
-        "Defective product", "Wrong item shipped", "Not as described",
-        "Customer changed mind", "Duplicate order", "Quality issue",
+        "Defective product",
+        "Wrong item shipped",
+        "Not as described",
+        "Customer changed mind",
+        "Duplicate order",
+        "Quality issue",
       ]),
       reasonDescription: faker.lorem.sentence(),
       status: Math.random() > 0.15 ? "COMPLETED" : "PENDING",

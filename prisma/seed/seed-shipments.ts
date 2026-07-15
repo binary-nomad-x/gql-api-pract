@@ -4,11 +4,7 @@ import type { SeedContext, SeedCounts, ShipmentSeed } from "./types.js";
 const CARRIERS = ["UPS", "FedEx", "USPS", "DHL", "Amazon Logistics"];
 const METHODS = ["standard", "expedited", "overnight", "two-day", "economy"];
 
-export async function seedShipments(
-  ctx: SeedContext,
-  counts: SeedCounts,
-  orderIds: string[],
-): Promise<void> {
+export async function seedShipments(ctx: SeedContext, counts: SeedCounts, orderIds: string[]): Promise<void> {
   const orders = await ctx.prisma.order.findMany({
     where: {
       id: { in: orderIds },

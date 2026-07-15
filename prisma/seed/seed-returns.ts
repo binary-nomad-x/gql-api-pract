@@ -1,12 +1,7 @@
 import { faker } from "@faker-js/faker";
 import type { SeedContext, SeedCounts } from "./types.js";
 
-export async function seedReturns(
-  ctx: SeedContext,
-  counts: SeedCounts,
-  userIds: string[],
-  orderIds: string[],
-): Promise<void> {
+export async function seedReturns(ctx: SeedContext, counts: SeedCounts, userIds: string[], orderIds: string[]): Promise<void> {
   const orderItems = await ctx.prisma.orderItem.findMany({
     where: { order: { id: { in: orderIds }, status: "DELIVERED" } },
     select: { id: true, orderId: true, productId: true, quantity: true },
@@ -18,12 +13,21 @@ export async function seedReturns(
   const returnItems = orderItems.filter(() => Math.random() > 0.8);
 
   const data: {
-    orderItemId: string; userId: string; reason: string;
-    reasonDescription: string; resolution: string; refundAmount: number;
-    returnLabelUrl: string; condition: string; status: string;
-    quantity: number; images: object[];
-    resolvedAt: Date | null; pickedUpAt: Date | null;
-    deliveredBackAt: Date | null; inspectedAt: Date | null;
+    orderItemId: string;
+    userId: string;
+    reason: string;
+    reasonDescription: string;
+    resolution: string;
+    refundAmount: number;
+    returnLabelUrl: string;
+    condition: string;
+    status: string;
+    quantity: number;
+    images?: string[] | object[];
+    resolvedAt: Date | null;
+    pickedUpAt: Date | null;
+    deliveredBackAt: Date | null;
+    inspectedAt: Date | null;
   }[] = [];
 
   for (const item of returnItems) {
@@ -31,8 +35,12 @@ export async function seedReturns(
       orderItemId: item.id,
       userId: faker.helpers.arrayElement(userIds),
       reason: faker.helpers.arrayElement([
-        "Defective product", "Wrong size", "Not as described",
-        "Changed mind", "Quality issue", "Damaged in shipping",
+        "Defective product",
+        "Wrong size",
+        "Not as described",
+        "Changed mind",
+        "Quality issue",
+        "Damaged in shipping",
       ]),
       reasonDescription: faker.lorem.sentences({ min: 1, max: 2 }),
       resolution: faker.helpers.arrayElement(["refund", "replacement", "store_credit"]),

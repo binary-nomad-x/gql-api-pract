@@ -1,5 +1,4 @@
 import type { PrismaClient } from "@prisma/client";
-import { requireAuth } from "@gql-prisma-api/utils/errors.js";
 import { logger } from "@gql-prisma-api/utils/logger.js";
 
 export class ConversationService {
@@ -47,15 +46,11 @@ export class ConversationService {
     return this.core.user.findUnique({ where: { id: senderId } });
   }
 
-  async startConversation(
-    userId: string | undefined,
-    targetUserId: string,
-    title?: string,
-  ) {
-    requireAuth(userId);
-    if (targetUserId === userId)
-      throw new Error("Cannot start conversation with yourself");
-    const target = await this.core.user.findUnique({ where: { id: targetUserId } });
+  async startConversation(userId: string, targetUserId: string, title?: string) {
+    if (targetUserId === userId) throw new Error("Cannot start conversation with yourself");
+    const target = await this.core.user.findUnique({
+      where: { id: targetUserId },
+    });
     if (!target) throw new Error("User not found");
 
     const conv = await this.core.conversation.create({
@@ -63,10 +58,7 @@ export class ConversationService {
         title,
         participants: {
           createMany: {
-            data: [
-              { userId: userId!, lastReadAt: new Date() },
-              { userId: targetUserId },
-            ],
+            data: [{ userId: userId!, lastReadAt: new Date() }, { userId: targetUserId }],
           },
         },
       },
@@ -81,14 +73,9 @@ export class ConversationService {
     return conv;
   }
 
-  async sendMessage(
-    userId: string | undefined,
-    conversationId: string,
-    content: string,
-  ) {
-    requireAuth(userId);
+  async sendMessage(userId: string, conversationId: string, content: string) {
     const participant = await this.core.conversationParticipant.findUnique({
-      where: { conversationId_userId: { conversationId, userId: userId! } },
+      where: { conversationId_userId: { conversationId, userId } },
     });
 
     if (!participant) throw new Error("Not a participant of this conversation");
@@ -111,46 +98,34 @@ export class ConversationService {
     return message;
   }
 
-  async markConversationRead(
-    userId: string | undefined,
-    conversationId: string,
-  ) {
-    requireAuth(userId);
+  async markConversationRead(userId: string, conversationId: string) {
     await this.core.conversationParticipant.updateMany({
-      where: { conversationId, userId: userId! },
+      where: { conversationId, userId },
       data: { lastReadAt: new Date() },
     });
     return true;
   }
 
-  getMyConversations(userId: string | undefined) {
-    requireAuth(userId);
+  getMyConversations(userId: string) {
     return this.core.conversation.findMany({
-      where: { participants: { some: { userId: userId! } } },
+      where: { participants: { some: { userId } } },
       include: { participants: { include: { user: true } } },
       orderBy: { updatedAt: "desc" },
     });
   }
 
-  async getConversation(userId: string | undefined, id: string) {
-    requireAuth(userId);
+  async getConversation(userId: string, id: string) {
     return this.core.conversation.findFirst({
-      where: { id, participants: { some: { userId: userId! } } },
+      where: { id, participants: { some: { userId } } },
       include: { participants: { include: { user: true } } },
     });
   }
 
-  getConversationMessages(
-    userId: string | undefined,
-    conversationId: string,
-    limit?: number,
-    offset?: number,
-  ) {
-    requireAuth(userId);
+  getConversationMessages(userId: string, conversationId: string, limit?: number, offset?: number) {
     return this.core.message.findMany({
       where: {
         conversationId,
-        conversation: { participants: { some: { userId: userId! } } },
+        conversation: { participants: { some: { userId } } },
       },
       orderBy: { createdAt: "asc" },
       take: limit ?? 50,

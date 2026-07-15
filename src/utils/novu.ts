@@ -1,5 +1,5 @@
 import { Novu } from "@novu/node";
-import { logger } from "./logger.js";
+import { logger } from "@gql-prisma-api/utils/logger.js";
 
 const novuApiKey = process.env.NOVU_API_SECRET_KEY;
 
@@ -34,11 +34,7 @@ export type NovuEventName =
   | "ticket-resolved"
   | "trial-ending";
 
-export async function triggerNovuWorkflow(
-  userId: string,
-  eventName: NovuEventName,
-  payload: Record<string, unknown> = {},
-): Promise<void> {
+export async function triggerNovuWorkflow(userId: string, eventName: NovuEventName, payload: Record<string, unknown> = {}): Promise<void> {
   if (!novu) {
     logger.debug("Novu trigger skipped — novu client is null", {
       eventName,
@@ -96,25 +92,14 @@ export interface TrialEndingPayload {
   };
 }
 
-export async function triggerTrialEndingNotification(
-  userId: string,
-  payload: TrialEndingPayload,
-): Promise<void> {
+export async function triggerTrialEndingNotification(userId: string, payload: TrialEndingPayload): Promise<void> {
   logger.debug("Trial ending notification delegated to triggerNovuWorkflow", {
     userId,
   });
-  return triggerNovuWorkflow(
-    userId,
-    "trial-ending",
-    payload as unknown as Record<string, unknown>,
-  );
+  return triggerNovuWorkflow(userId, "trial-ending", payload as unknown as Record<string, unknown>);
 }
 
-export async function createNovuSubscriber(
-  userId: string,
-  email: string,
-  name?: string,
-): Promise<void> {
+export async function createNovuSubscriber(userId: string, email: string, name?: string): Promise<void> {
   if (!novu) {
     logger.debug("Novu subscriber identify skipped — novu client is null", {
       userId,

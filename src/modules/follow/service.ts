@@ -1,5 +1,4 @@
 import type { PrismaClient } from "@prisma/client";
-import { requireAuth } from "@gql-prisma-api/utils/errors.js";
 import { triggerNovuWorkflow } from "@gql-prisma-api/utils/novu.js";
 
 export class FollowService {
@@ -12,15 +11,16 @@ export class FollowService {
     return this.core.user.findUnique({ where: { id: followingId } });
   }
 
-  async toggleFollow(
-    userId: string | undefined,
-    targetUserId: string,
-  ) {
-    requireAuth(userId);
+  async toggleFollow(userId: string, targetUserId: string) {
     if (targetUserId === userId) throw new Error("Cannot follow yourself");
 
     const existing = await this.core.follow.findUnique({
-      where: { followerId_followingId: { followerId: userId!, followingId: targetUserId } },
+      where: {
+        followerId_followingId: {
+          followerId: userId,
+          followingId: targetUserId,
+        },
+      },
     });
 
     if (existing) {
@@ -28,18 +28,28 @@ export class FollowService {
       return existing;
     }
 
-    const follow = await this.core.follow.create({ data: { followerId: userId!, followingId: targetUserId } });
+    const follow = await this.core.follow.create({
+      data: { followerId: userId, followingId: targetUserId },
+    });
 
-    await triggerNovuWorkflow(targetUserId, "new-follower", { followerId: userId! });
+    await triggerNovuWorkflow(targetUserId, "new-follower", {
+      followerId: userId,
+    });
 
     return follow;
   }
 
   getFollowers(userId: string) {
-    return this.core.follow.findMany({ where: { followingId: userId }, include: { follower: true } });
+    return this.core.follow.findMany({
+      where: { followingId: userId },
+      include: { follower: true },
+    });
   }
 
   getFollowing(userId: string) {
-    return this.core.follow.findMany({ where: { followerId: userId }, include: { following: true } });
+    return this.core.follow.findMany({
+      where: { followerId: userId },
+      include: { following: true },
+    });
   }
 }

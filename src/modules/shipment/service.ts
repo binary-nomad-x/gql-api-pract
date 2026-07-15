@@ -1,28 +1,19 @@
 import type { PrismaClient } from "@prisma/client";
-import type { CreateShipmentInput } from "./inputs.js";
-import { requireAuth } from "@gql-prisma-api/utils/errors.js";
+import type { CreateShipmentInput } from "@gql-prisma-api/modules/shipment/inputs.js";
 import { triggerNovuWorkflow } from "@gql-prisma-api/utils/novu.js";
 
 export class ShipmentService {
   constructor(private readonly core: PrismaClient) {}
+
   resolveShipmentOrder(orderId: string) {
     return this.core.order.findUnique({ where: { id: orderId } });
   }
 
-  async createShipment(
-    userId: string | undefined,
-    input: CreateShipmentInput,
-  ) {
-    requireAuth(userId);
+  async createShipment(userId: string, input: CreateShipmentInput) {
     return this.core.shipment.create({ data: input });
   }
 
-  async updateShipmentStatus(
-    userId: string | undefined,
-    id: string,
-    status: string,
-  ) {
-    requireAuth(userId);
+  async updateShipmentStatus(userId: string, id: string, status: string) {
     const shipment = await this.core.shipment.update({
       where: { id },
       data: { status },
@@ -43,13 +34,9 @@ export class ShipmentService {
     return shipment;
   }
 
-  async getOrderShipments(
-    userId: string | undefined,
-    orderId: string,
-  ) {
-    requireAuth(userId);
+  async getOrderShipments(userId: string, orderId: string) {
     return this.core.shipment.findMany({
-      where: { orderId, order: { userId: userId! } },
+      where: { orderId, order: { userId } },
     });
   }
 }

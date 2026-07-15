@@ -34,10 +34,7 @@ export function requireAuth(userId?: string): asserts userId is string {
   if (!userId) throw new AuthError();
 }
 
-export function requireOwner(
-  ownerId: string,
-  userId?: string,
-): void {
+export function requireOwner(ownerId: string, userId?: string): void {
   if (!userId || ownerId !== userId) {
     throw new ForbiddenError();
   }

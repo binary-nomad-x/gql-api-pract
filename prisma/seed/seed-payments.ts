@@ -4,11 +4,7 @@ import type { SeedContext, SeedCounts } from "./types.js";
 const PAYMENT_METHODS = ["credit_card", "debit_card", "paypal", "stripe", "apple_pay", "google_pay"];
 const GATEWAYS = ["stripe", "paypal", "square", "adyen"];
 
-export async function seedPayments(
-  ctx: SeedContext,
-  counts: SeedCounts,
-  orderIds: string[],
-): Promise<void> {
+export async function seedPayments(ctx: SeedContext, counts: SeedCounts, orderIds: string[]): Promise<void> {
   const orders = await ctx.prisma.order.findMany({
     where: { id: { in: orderIds } },
     select: { id: true, totalAmount: true, status: true },
@@ -40,7 +36,7 @@ export async function seedPayments(
     const isCompleted = order.status !== "CANCELLED";
     const method = faker.helpers.arrayElement(PAYMENT_METHODS);
     const gateway = faker.helpers.arrayElement(GATEWAYS);
-    const fee = parseFloat((amount * 0.029 + 0.30).toFixed(2));
+    const fee = parseFloat((amount * 0.029 + 0.3).toFixed(2));
 
     data.push({
       orderId: order.id,

@@ -224,11 +224,28 @@ export interface PaymentSeed {
   transactionId: string;
 }
 
+export interface UserSeed {
+  email: string;
+  username: string;
+  name: string;
+  age: number;
+  role: string;
+  password: string;
+  avatarUrl: string;
+  bio: string;
+  phone: string;
+  isVerified: boolean;
+  lastLoginAt: Date;
+  locale: string;
+  timezone: string;
+  metadata: Record<string, unknown>;
+}
+
 export interface PostViewSeed {
   postId: string;
   userId: string;
   ip: string;
-  referrer: string;
+  referrer?: string | null;
   userAgent: string;
   country: string;
   city: string;
@@ -298,7 +315,7 @@ export interface ShipmentSeed {
   status: string;
   shippingMethod: string;
   originAddress: string;
-  destinationAddress: string;
+  destinationAddress?: string | null;
   weight: number;
   length: number;
   width: number;
@@ -344,13 +361,40 @@ export interface TicketReplySeed {
 
 export function createEmptyCounts(): SeedCounts {
   return {
-    users: 0, profiles: 0, addresses: 0, tags: 0, categories: 0,
-    posts: 0, comments: 0, likes: 0, follows: 0, notifications: 0,
-    savedPosts: 0, postViews: 0, products: 0, productImages: 0,
-    reviews: 0, wishlists: 0, wishlistItems: 0, carts: 0, cartItems: 0,
-    coupons: 0, orders: 0, orderItems: 0, payments: 0, shipments: 0,
-    refunds: 0, discounts: 0, subscriptions: 0, conversations: 0,
-    participants: 0, messages: 0, invoices: 0, returns: 0, tickets: 0,
-    ticketReplies: 0, userCategoryFollows: 0,
+    users: 0,
+    profiles: 0,
+    addresses: 0,
+    tags: 0,
+    categories: 0,
+    posts: 0,
+    comments: 0,
+    likes: 0,
+    follows: 0,
+    notifications: 0,
+    savedPosts: 0,
+    postViews: 0,
+    products: 0,
+    productImages: 0,
+    reviews: 0,
+    wishlists: 0,
+    wishlistItems: 0,
+    carts: 0,
+    cartItems: 0,
+    coupons: 0,
+    orders: 0,
+    orderItems: 0,
+    payments: 0,
+    shipments: 0,
+    refunds: 0,
+    discounts: 0,
+    subscriptions: 0,
+    conversations: 0,
+    participants: 0,
+    messages: 0,
+    invoices: 0,
+    returns: 0,
+    tickets: 0,
+    ticketReplies: 0,
+    userCategoryFollows: 0,
   };
 }

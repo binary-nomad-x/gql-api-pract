@@ -1,8 +1,9 @@
 import type { Prisma, PrismaClient } from "@prisma/client";
-import type { UpdateUserInput, UpdateProfileInput } from "./inputs.js";
+import type { UpdateUserInput, UpdateProfileInput } from "@gql-prisma-api/modules/user/inputs.js";
 import { hashPassword } from "@gql-prisma-api/utils/auth.js";
-import { requireAuth, requireOwner } from "@gql-prisma-api/utils/errors.js";
+import { requireOwner } from "@gql-prisma-api/utils/errors.js";
 import { clean } from "@gql-prisma-api/lib/core.js";
+import { emailQueue } from "@gql-prisma-api/lib/queues/email.js";
 
 export class UserService {
   constructor(private readonly core: PrismaClient) {}
@@ -53,10 +54,7 @@ export class UserService {
     return this.core.postView.findMany({ where: { userId } });
   }
 
-  async updateUser(
-    userId: string | undefined,
-    args: { id: string; input: UpdateUserInput },
-  ) {
+  async updateUser(userId: string, args: { id: string; input: UpdateUserInput }) {
     requireOwner(args.id, userId);
     const data: Prisma.UserUpdateInput = {};
     const { name, email, password } = args.input;
@@ -66,27 +64,47 @@ export class UserService {
     return this.core.user.update({ where: { id: args.id }, data });
   }
 
-  async deleteUser(
-    userId: string | undefined,
-    id: string,
-  ) {
+  async deleteUser(userId: string, id: string) {
     requireOwner(id, userId);
-    await this.core.user.delete({ where: { id } });
+
+    const user = await this.core.user.findUnique({
+      where: {
+        id,
+      },
+    });
+
+    if (!user) {
+      throw new Error("User not found");
+    }
+
+    await this.core.user.delete({
+      where: {
+        id,
+      },
+    });
+
+    await emailQueue.add(
+      "user.deleted",
+      {
+        email: user.email,
+        name: user.name,
+      },
+      {
+        attempts: 3,
+        removeOnComplete: true,
+        removeOnFail: false,
+      },
+    );
+
     return true;
   }
 
-  async updateProfile(
-    userId: string | undefined,
-    input: UpdateProfileInput,
-  ) {
-    requireAuth(userId);
-    const data: Prisma.ProfileUpdateInput = clean(
-      input as unknown as Record<string, unknown>,
-    ) as Prisma.ProfileUpdateInput;
+  async updateProfile(userId: string, input: UpdateProfileInput) {
+    const data: Prisma.ProfileUpdateInput = clean(input as unknown as Record<string, unknown>) as Prisma.ProfileUpdateInput;
     return this.core.profile.upsert({
-      where: { userId: userId! },
+      where: { userId },
       update: data,
-      create: { userId: userId!, ...data } as Prisma.ProfileCreateInput,
+      create: { userId, ...data } as Prisma.ProfileCreateInput,
     });
   }
 

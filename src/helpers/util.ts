@@ -6,8 +6,7 @@ export function isEmpty(value: any): boolean {
   if (value == null) return true;
 
   // 2. Check for empty string, false, 0, "0"
-  if (value === "" || value === 0 || value === "0" || value === false)
-    return true;
+  if (value === "" || value === 0 || value === "0" || value === false) return true;
 
   // 3. Check for empty arrays
   if (Array.isArray(value) && value.length === 0) return true;

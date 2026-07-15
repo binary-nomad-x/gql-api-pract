@@ -125,6 +125,7 @@ model Address {
   createdAt            DateTime @default(now())
   updatedAt            DateTime @updatedAt
 
+  @@unique([userId, label])
   @@index([userId])
   @@map("addresses")
 }

@@ -3,7 +3,8 @@ import type { CreateAddressInput, UpdateAddressInput } from "@gql-prisma-api/mod
 import { clean } from "@gql-prisma-api/lib/core.js";
 
 export class AddressService {
-  constructor(private readonly core: PrismaClient) {}
+
+  constructor(private readonly core: PrismaClient) { }
 
   // --- Type-field resolver functions ---
   resolveAddressUser(userId: string) {

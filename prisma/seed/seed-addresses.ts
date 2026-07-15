@@ -38,8 +38,8 @@ export async function seedAddresses(ctx: SeedContext, counts: SeedCounts, userId
           Math.random() > 0.5
             ? faker.helpers.arrayElement(["Leave at front door", "Ring bell twice", "Call upon arrival", "Leave with concierge"])
             : null,
-        latitude: parseFloat(faker.location.latitude()),
-        longitude: parseFloat(faker.location.longitude()),
+        latitude: faker.location.latitude(),
+        longitude: faker.location.longitude(),
         isDefault: i === 0,
         isBilling: i === 0 || i === 1,
         contactName: faker.person.fullName(),

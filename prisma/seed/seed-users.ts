@@ -1,13 +1,13 @@
 import { faker } from "@faker-js/faker";
 import bcrypt from "bcryptjs";
-import type { SeedContext, SeedCounts } from "./types.js";
+import type { SeedContext, SeedCounts, UserSeed } from "./types.js";
 
 export async function seedUsers(ctx: SeedContext, counts: SeedCounts, count: number): Promise<string[]> {
   const password = "password123";
   const passwordHash = bcrypt.hashSync(password, 10);
 
   // Fixed test users
-  const userData = [
+  const userData: UserSeed[] = [
     {
       email: "admin@test.com",
       username: "sysadmin",

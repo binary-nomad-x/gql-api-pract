@@ -24,7 +24,7 @@ export async function seedReturns(ctx: SeedContext, counts: SeedCounts, userIds:
     condition: string;
     status: string;
     quantity: number;
-    images: object[];
+    images?: string[] | object[];
     resolvedAt: Date | null;
     pickedUpAt: Date | null;
     deliveredBackAt: Date | null;

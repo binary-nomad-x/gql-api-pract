@@ -18,6 +18,7 @@ import { Follow, Query as FollowQuery, Mutation as FollowMutation } from "@gql-p
 import { SavedPost, Query as SavedPostQuery, Mutation as SavedPostMutation } from "@gql-prisma-api/modules/savedPost/resolver.js";
 import { PostView, Mutation as PostViewMutation } from "@gql-prisma-api/modules/postView/resolver.js";
 import { ProductImage } from "@gql-prisma-api/modules/productImage/resolver.js";
+import { Query as NovuQuery, Mutation as NovuMutation } from "@gql-prisma-api/modules/novu/resolver.js";
 import { Query as StatsQuery } from "@gql-prisma-api/modules/stats/resolver.js";
 import { Subscription, Query as SubscriptionQuery, Mutation as SubscriptionMutation } from "@gql-prisma-api/modules/subscription/resolver.js";
 import { Discount, Query as DiscountQuery, Mutation as DiscountMutation } from "@gql-prisma-api/modules/discount/resolver.js";
@@ -56,6 +57,7 @@ export const resolvers = {
     ...ReturnQuery,
     ...SupportQuery,
     ...ConversationQuery,
+    ...NovuQuery,
   },
 
   Mutation: {
@@ -82,6 +84,7 @@ export const resolvers = {
     ...ReturnMutation,
     ...SupportMutation,
     ...ConversationMutation,
+    ...NovuMutation,
   },
 
   User: { ...User },

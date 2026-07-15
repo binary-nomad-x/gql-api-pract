@@ -1,0 +1,234 @@
+scalar JSON
+
+# ─── Enums ───────────────────────────────────────────────────────
+
+enum NovuVariableType {
+  STRING
+  NUMBER
+  BOOLEAN
+  DATE
+  OBJECT
+  ARRAY
+}
+
+enum NovuWorkflowStatus {
+  DRAFT
+  ACTIVE
+  ARCHIVED
+}
+
+# ─── Variable Registry Types ────────────────────────────────────
+
+type NovuVariable {
+  id: ID!
+  groupId: String!
+  key: String!
+  type: NovuVariableType!
+  label: String
+  description: String
+  exampleValue: String
+  required: Boolean!
+  defaultValue: String
+  validationRules: JSON
+  aliases: [String!]!
+  createdAt: DateTime!
+  updatedAt: DateTime!
+}
+
+type NovuVariableGroup {
+  id: ID!
+  name: String!
+  description: String
+  sortOrder: Int!
+  variables: [NovuVariable!]!
+  createdAt: DateTime!
+}
+
+# ─── Workflow Types ─────────────────────────────────────────────
+
+type NovuWorkflow {
+  id: ID!
+  workflowId: String!
+  name: String!
+  description: String
+  status: NovuWorkflowStatus!
+  tags: [String!]!
+  active: Boolean!
+  createdAt: DateTime!
+  updatedAt: DateTime!
+}
+
+type NovuWorkflowDef {
+  id: String!
+  name: String!
+  description: String
+  active: Boolean!
+  tags: [String!]!
+  createdAt: String!
+  updatedAt: String!
+  steps: [NovuWorkflowStep!]!
+  triggers: [NovuWorkflowTrigger!]!
+}
+
+type NovuWorkflowStep {
+  id: String!
+  name: String!
+  type: String!
+  subject: String
+  content: String
+}
+
+type NovuWorkflowTrigger {
+  type: String!
+  identifier: String!
+}
+
+type NovuTriggerResult {
+  acknowledged: Boolean!
+  status: String!
+  transactionId: String!
+}
+
+type PayloadSchema {
+  fields: JSON!
+}
+
+type PayloadValidationError {
+  path: String!
+  message: String!
+  code: String!
+}
+
+type PayloadValidationResult {
+  valid: Boolean!
+  errors: [PayloadValidationError!]!
+}
+
+type NovuSubscriber {
+  subscriberId: String!
+  email: String
+  firstName: String
+  lastName: String
+  phone: String
+  locale: String
+}
+
+# ─── Inputs ──────────────────────────────────────────────────────
+
+input CreateVariableGroupInput {
+  name: String!
+  description: String
+  sortOrder: Int
+}
+
+input UpdateVariableGroupInput {
+  name: String
+  description: String
+  sortOrder: Int
+}
+
+input CreateVariableInput {
+  groupId: String!
+  key: String!
+  type: NovuVariableType!
+  label: String
+  description: String
+  exampleValue: String
+  required: Boolean
+  defaultValue: String
+  validationRules: JSON
+  aliases: [String!]
+}
+
+input UpdateVariableInput {
+  key: String
+  type: NovuVariableType
+  label: String
+  description: String
+  exampleValue: String
+  required: Boolean
+  defaultValue: String
+  validationRules: JSON
+  aliases: [String!]
+}
+
+input TriggerWorkflowInput {
+  workflowId: String!
+  subscriberId: String!
+  payload: JSON!
+  overrides: JSON
+  tenant: String
+}
+
+input CreateNovuSubscriberInput {
+  subscriberId: String!
+  email: String
+  firstName: String
+  lastName: String
+  phone: String
+  locale: String
+  data: JSON
+}
+
+# ─── Query extensions ───────────────────────────────────────────
+
+extend type Query {
+  novuWorkflows(limit: Int, offset: Int): [NovuWorkflow!]!
+  novuWorkflow(id: ID!): NovuWorkflow
+  novuWorkflowDef(workflowId: String!): NovuWorkflowDef
+  novuWorkflowDefs: [NovuWorkflowDef!]!
+  novuVariableGroups: [NovuVariableGroup!]!
+  novuVariableGroup(id: ID!): NovuVariableGroup
+  novuVariables(groupId: ID!): [NovuVariable!]!
+  novuPayloadSchema(workflowId: String!): PayloadSchema
+  novuValidatePayload(
+    workflowId: String!
+    payload: JSON!
+  ): PayloadValidationResult!
+  novuBuildPayload(workflowId: String!): JSON!
+  novuPreviewPayload(workflowId: String!): JSON!
+  novuSubscriber(subscriberId: String!): NovuSubscriber
+}
+
+# ─── Mutation extensions ────────────────────────────────────────
+
+extend type Mutation {
+  # Workflow management
+  createNovuWorkflow(
+    name: String!
+    description: String
+    tags: [String!]
+  ): NovuWorkflow!
+
+  updateNovuWorkflow(
+    id: ID!
+    name: String
+    description: String
+    tags: [String!]
+    active: Boolean
+  ): NovuWorkflow!
+
+  deleteNovuWorkflow(id: ID!): Boolean!
+  archiveNovuWorkflow(id: ID!): NovuWorkflow!
+  publishNovuWorkflow(workflowId: String!): NovuWorkflowDef!
+  duplicateNovuWorkflow(id: ID!): NovuWorkflow!
+
+  # Variable management
+  createNovuVariableGroup(input: CreateVariableGroupInput!): NovuVariableGroup!
+  updateNovuVariableGroup(id: ID!, input: UpdateVariableGroupInput!): NovuVariableGroup!
+  deleteNovuVariableGroup(id: ID!): Boolean!
+  createNovuVariable(input: CreateVariableInput!): NovuVariable!
+  updateNovuVariable(id: ID!, input: UpdateVariableInput!): NovuVariable!
+  deleteNovuVariable(id: ID!): Boolean!
+
+  # Trigger
+  triggerNovuWorkflow(input: TriggerWorkflowInput!): NovuTriggerResult!
+
+  # Subscriber
+  createNovuSubscriber(input: CreateNovuSubscriberInput!): NovuSubscriber!
+  updateNovuSubscriber(subscriberId: String!, input: CreateNovuSubscriberInput!): NovuSubscriber!
+  deleteNovuSubscriber(subscriberId: String!): Boolean!
+
+  # Sync
+  syncNovuWorkflows: [NovuWorkflow!]!
+}

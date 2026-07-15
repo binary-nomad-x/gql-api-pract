@@ -14,7 +14,6 @@ import { clean } from "@gql-prisma-api/lib/core.js";
 export class BlogService {
   constructor(private readonly core: PrismaClient) {}
 
-  // --- Type-field resolver functions ---
   resolvePostAuthor(authorId: string) {
     return this.core.user.findUnique({ where: { id: authorId } });
   }
@@ -87,7 +86,6 @@ export class BlogService {
     return this.core.product.count({ where: { categoryId } });
   }
 
-  // --- Existing business logic functions ---
   async createPost(userId: string, input: CreatePostInput) {
     const slug =
       input.title
@@ -121,6 +119,7 @@ export class BlogService {
         },
       },
     });
+
     logger.info("Post created", { postId: post.id, authorId: userId });
     return post;
   }

@@ -224,11 +224,28 @@ export interface PaymentSeed {
   transactionId: string;
 }
 
+export interface UserSeed {
+  email: string;
+  username: string;
+  name: string;
+  age: number;
+  role: string;
+  password: string;
+  avatarUrl: string;
+  bio: string;
+  phone: string;
+  isVerified: boolean;
+  lastLoginAt: Date;
+  locale: string;
+  timezone: string;
+  metadata: Record<string, unknown>;
+}
+
 export interface PostViewSeed {
   postId: string;
   userId: string;
   ip: string;
-  referrer: string;
+  referrer?: string | null;
   userAgent: string;
   country: string;
   city: string;
@@ -298,7 +315,7 @@ export interface ShipmentSeed {
   status: string;
   shippingMethod: string;
   originAddress: string;
-  destinationAddress: string;
+  destinationAddress?: string | null;
   weight: number;
   length: number;
   width: number;

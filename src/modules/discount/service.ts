@@ -5,12 +5,10 @@ import { toDiscountCreate, toDiscountUpdate } from "@gql-prisma-api/lib/core.js"
 export class DiscountService {
   constructor(private readonly core: PrismaClient) {}
 
-  // --- Type-field resolver functions ---
   resolveDiscountProduct(productId: string) {
     return this.core.product.findUnique({ where: { id: productId } });
   }
 
-  // --- Existing business logic functions ---
   async createDiscount(userId: string, input: CreateDiscountInput) {
     const product = await this.core.product.findUnique({
       where: { id: input.productId },

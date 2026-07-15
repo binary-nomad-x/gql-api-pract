@@ -1,6 +1,5 @@
 import { faker } from "@faker-js/faker";
 import type { SeedContext, SeedCounts } from "./types.js";
-import { randomUUID } from "node:crypto";
 
 const ORDER_STATUSES = ["PENDING", "CONFIRMED", "PROCESSING", "SHIPPED", "DELIVERED", "CANCELLED"];
 
@@ -17,7 +16,7 @@ export async function seedOrders(
   });
 
   const productMap = new Map(products.map((p) => [p.id, p]));
-  const orderIds = Array.from({ length: Math.floor(userIds.length * 4) }, () => randomUUID());
+  const orderIds = Array.from({ length: Math.floor(userIds.length * 4) }, () => crypto.randomUUID());
 
   const orderData: {
     id: string;
@@ -48,7 +47,7 @@ export async function seedOrders(
     unitPrice: number;
     productName: string;
     productSku: string;
-    productImage: string;
+    productImage?: string | null;
     discountAmount: number;
     taxAmount: number;
     totalPrice: number;

@@ -42,3 +42,6 @@ coverage/
 
 # zed Editor
 .zed/
+
+# ai
+.opencode

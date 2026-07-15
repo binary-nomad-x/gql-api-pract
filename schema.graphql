@@ -395,7 +395,6 @@ extend type Mutation {
 }
 
 scalar JSON
-scalar DateTime
 
 # ─── Enums ───────────────────────────────────────────────────────
 

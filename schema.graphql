@@ -924,7 +924,7 @@ extend type Query {
   comment(id: ID!): Comment
   likes(postId: ID!): [Like!]!
   mySavedPosts(limit: Int, offset: Int): [SavedPost!]! @auth
-  getPostsByAuthorId(authorId: ID!) [Post!]! @auth
+  getPostsByAuthorId(authorId: ID!): [Post!]! @auth
 }
 
 extend type Mutation {

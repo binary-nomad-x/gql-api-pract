@@ -1,25 +1,45 @@
 # GraphQL Prisma API
 
-A full-featured **GraphQL API** combining a **blog platform** and **e-commerce system**, built with Apollo Server 5, Prisma 7, and PostgreSQL.
+A full-featured **GraphQL API** combining a **blog platform**, **e-commerce system**, and **Novu notification workflow management**, built with Apollo Server 5, Prisma 7, and PostgreSQL.
 
-**~90,000+ seed records** across **34 database models** — designed as a learning sandbox / starter for production-grade GraphQL APIs.
+**~90,000+ seed records** across **38 database models** — designed as a learning sandbox / starter for production-grade GraphQL APIs.
 
 ---
 
 ## Table of Contents
 
-- [Architecture](#architecture)
-- [Prerequisites](#prerequisites)
-- [Quick Start](#quick-start)
-- [Scripts](#scripts)
-- [Seed Data](#seed-data)
-- [Test Accounts](#test-accounts)
-- [API](#api)
-- [Enums](#enums)
-- [Project Structure](#project-structure)
-- [TODO](#todo)
-- [How to Improve This Project](#how-to-improve-this-project)
-- [Learning Resources](#learning-resources)
+- [GraphQL Prisma API](#graphql-prisma-api)
+  - [Table of Contents](#table-of-contents)
+  - [Architecture](#architecture)
+    - [Key Decisions](#key-decisions)
+  - [Prerequisites](#prerequisites)
+  - [Quick Start](#quick-start)
+    - [1. Install dependencies](#1-install-dependencies)
+    - [2. Configure environment](#2-configure-environment)
+    - [3. Setup database](#3-setup-database)
+    - [4. Start the server](#4-start-the-server)
+    - [5. Login](#5-login)
+  - [Test Accounts](#test-accounts)
+  - [Scripts](#scripts)
+  - [Seed Data](#seed-data)
+  - [Novu Workflow Management](#novu-workflow-management)
+    - [Features](#features)
+    - [GraphQL Endpoints](#graphql-endpoints)
+  - [API](#api)
+  - [Project Structure](#project-structure)
+  - [How to Improve This Project](#how-to-improve-this-project)
+    - [Code Quality](#code-quality)
+    - [Architecture](#architecture-1)
+    - [Features](#features-1)
+    - [DevOps](#devops)
+    - [Novu](#novu)
+  - [Learning Resources](#learning-resources)
+    - [GraphQL](#graphql)
+    - [Prisma](#prisma)
+    - [PostgreSQL](#postgresql)
+    - [TypeScript](#typescript)
+    - [Novu](#novu-1)
+    - [Project-specific](#project-specific)
 
 ---
 
@@ -28,16 +48,21 @@ A full-featured **GraphQL API** combining a **blog platform** and **e-commerce s
 ```
 src/
   index.ts             HTTP server + Apollo Server bootstrap
-  context.ts           Context factory (Prisma client + JWT auth)
+  context.ts           Context factory (Prisma + Services container)
   plugins/graphiql.ts  Custom GraphiQL sandbox landing page
-  schema/              GraphQL SDL files (18 files, domain-split)
+  schema/              GraphQL SDL files (19 files, domain-split)
+  lib/
+    Services.ts        Central DI container — instantiates all services
+    core.ts            Shared helpers: clean(), compact(), Prisma types
   modules/<domain>/    resolver.ts → service.ts → Prisma
-  utils/               Auth, errors, logger, Novu, clean
+  utils/               Auth, errors, logger, Novu client
   types/               Shared TypeScript types
 
 prisma/
-  schema.prisma        34 models, 8 enums
-  seed/                26 seed files, 8 orchestrated phases
+  schema.prisma        38 models
+  data/                Reusable fixed seed data (users, tags, coupons, categories)
+  seed/                30 seed files, 8 orchestrated phases
+  migrations/          38 migration files
 
 scripts/
   merge-schema.ts      Concatenates all .graphql files → schema.graphql
@@ -50,6 +75,8 @@ scripts/
 | **Schema-first**            | GraphQL schema in `.graphql` files per domain, merged at runtime      |
 | **`@auth` directive**       | Protects mutations/queries; JWT extracted from `Authorization` header |
 | **Thin resolvers**          | Business logic pushed to service layer                                |
+| **Services container**      | All services instantiated once in `Services` class, injected via ctx  |
+| **Constructor injection**   | Each service receives `core: PrismaClient` directly (no BaseService)  |
 | **Prisma 7 driver adapter** | Uses `@prisma/adapter-pg` with raw `pg` driver                        |
 | **Manual HTTP**             | No Express; raw `http.createServer()` with manual CORS + body parsing |
 | **No subscriptions**        | GraphQL subscriptions not yet implemented                             |
@@ -115,7 +142,7 @@ Open **http://localhost:4000** in your browser for the GraphQL sandbox.
 
 ```graphql
 mutation {
-  login(email: "alice@test.com", password: "password123") {
+  login(email: "admin@test.com", password: "password123") {
     token
     user {
       id
@@ -133,13 +160,14 @@ Seed accounts below.
 
 ## Test Accounts
 
-| Email            | Role      | Password      |
-| ---------------- | --------- | ------------- |
-| alice@test.com   | ADMIN     | `password123` |
-| bob@test.com     | USER      | `password123` |
-| charlie@test.com | USER      | `password123` |
-| diana@test.com   | MODERATOR | `password123` |
-| eve@test.com     | USER      | `password123` |
+| Email                | Role      | Password      |
+| -------------------- | --------- | ------------- |
+| `admin@test.com`     | ADMIN     | `password123` |
+| `admin2@test.com`    | ADMIN     | `password123` |
+| `moderator@test.com` | MODERATOR | `password123` |
+| `manager@test.com`   | MANAGER   | `password123` |
+| `seller@test.com`    | SELLER    | `password123` |
+| `customer@test.com`  | USER      | `password123` |
 
 ---
 
@@ -164,30 +192,66 @@ Seed accounts below.
 
 ## Seed Data
 
-| Table             | Records    | Table           | Records    |
-| ----------------- | ---------- | --------------- | ---------- |
-| Users             | 500        | Profiles        | 500        |
-| Categories        | 15         | Tags            | 20         |
-| Posts             | 500        | Comments        | 2,000      |
-| Likes             | ~3,000     | Products        | 5,000      |
-| Orders            | 5,000      | Order Items     | ~15,000    |
-| Payments          | ~4,000     | Refunds         | ~200       |
-| Reviews           | ~2,500     | Addresses       | ~1,000     |
-| Wishlists / Items | 100 / ~300 | Carts / Items   | 150 / ~400 |
-| Coupons           | 11         | Shipments       | ~500       |
-| Notifications     | ~3,500     | Follows         | 500        |
-| SavedPosts        | 500        | PostViews       | ~20,000    |
-| ProductImages     | ~12,000    | Subscriptions   | 500        |
-| Discounts         | 1,000      | Conversations   | 500        |
-| Messages          | ~20,000    | Invoices        | 5,000      |
-| Return Requests   | ~300       | Support Tickets | 100        |
-| Ticket Replies    | ~400       |                 |            |
+| Table             | Records  | Table           | Records  |
+| ----------------- | -------- | --------------- | -------- |
+| Users             | 65       | Profiles        | 65       |
+| Categories        | 15       | Tags            | 10       |
+| Posts             | 130      | Comments        | ~500     |
+| Likes             | ~1,000   | Products        | 130      |
+| Orders            | ~500     | Order Items     | ~1,500   |
+| Payments          | ~400     | Refunds         | ~50      |
+| Reviews           | ~500     | Addresses       | ~100     |
+| Wishlists / Items | 20 / ~50 | Carts / Items   | 30 / ~80 |
+| Coupons           | 10       | Shipments       | ~200     |
+| Notifications     | ~500     | Follows         | ~150     |
+| SavedPosts        | ~100     | PostViews       | ~5,000   |
+| ProductImages     | ~300     | Subscriptions   | 65       |
+| Discounts         | 130      | Conversations   | 30       |
+| Messages          | ~500     | Invoices        | 500      |
+| Return Requests   | ~50      | Support Tickets | 20       |
+| Ticket Replies    | ~80      |                 |          |
+
+---
+
+## Novu Workflow Management
+
+The API includes a built-in **Novu Workflow Management** module for notification template design, payload validation, and subscriber management.
+
+### Features
+
+- **Workflow Metadata CRUD** — Create, update, archive, duplicate, and publish workflow configurations stored in the local database
+- **Variable Registry** — Define reusable typed variables (`STRING`, `NUMBER`, `BOOLEAN`, `DATE`, `OBJECT`, `ARRAY`) organized in groups
+- **Payload Builder** — Auto-generate JSON Schema and sample payloads from registered variables
+- **Payload Validation** — Validate trigger payloads against variable definitions (required fields, type matching, null checks)
+- **Trigger** — Send notification events via the Novu SDK with built-in payload validation
+- **Subscriber Management** — Identify, update, delete, and retrieve subscribers from Novu
+
+### GraphQL Endpoints
+
+| Query / Mutation                              | Description                          |
+| --------------------------------------------- | ------------------------------------ |
+| `novuWorkflows`                               | List all workflow metadata           |
+| `novuWorkflow(id)`                            | Get single workflow                  |
+| `createNovuWorkflow`                          | Create workflow metadata             |
+| `updateNovuWorkflow`                          | Update workflow metadata             |
+| `deleteNovuWorkflow`                          | Delete workflow metadata             |
+| `archiveNovuWorkflow` / `publishNovuWorkflow` | Change workflow status               |
+| `duplicateNovuWorkflow`                       | Duplicate a workflow                 |
+| `novuVariableGroups`                          | List variable groups                 |
+| `novuVariableGroup(id)`                       | Get group with variables             |
+| `createNovuVariableGroup`                     | Create variable group                |
+| `createNovuVariable`                          | Create variable in a group           |
+| `novuPayloadSchema(workflowId)`               | Get JSON Schema for workflow payload |
+| `novuBuildPayload(workflowId)`                | Build sample payload                 |
+| `novuValidatePayload`                         | Validate payload against definition  |
+| `triggerNovuWorkflow`                         | Trigger a workflow via Novu SDK      |
+| `createNovuSubscriber`                        | Identify a subscriber in Novu        |
 
 ---
 
 ## API
 
-**Endpoint:** `POST http://localhost:4000/`
+**Endpoint:** `POST http://localhost:4000/graphql`
 
 **Sandbox (introspection):** `http://localhost:4000`
 
@@ -197,29 +261,7 @@ Seed accounts below.
 { "Authorization": "Bearer <jwt-token>" }
 ```
 
-See the merged schema in [`schema.graphql`](./schema.graphql) for the complete API reference — ~90+ queries/mutations across all domains.
-
----
-
-## Enums
-
-| Enum                 | Values                                                                                                                                                                                                |
-| -------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `Role`               | `USER`, `ADMIN`, `MODERATOR`                                                                                                                                                                          |
-| `OrderStatus`        | `PENDING`, `CONFIRMED`, `PROCESSING`, `SHIPPED`, `DELIVERED`, `CANCELLED`                                                                                                                             |
-| `PaymentMethod`      | `CREDIT_CARD`, `DEBIT_CARD`, `PAYPAL`, `BANK_TRANSFER`, `CASH_ON_DELIVERY`                                                                                                                            |
-| `PaymentStatus`      | `PENDING`, `COMPLETED`, `FAILED`, `REFUNDED`                                                                                                                                                          |
-| `RefundStatus`       | `PENDING`, `APPROVED`, `REJECTED`, `COMPLETED`                                                                                                                                                        |
-| `ShipmentStatus`     | `PENDING`, `PICKED_UP`, `IN_TRANSIT`, `OUT_FOR_DELIVERY`, `DELIVERED`, `FAILED`                                                                                                                       |
-| `NotificationType`   | `SYSTEM`, `ORDER_UPDATE`, `PAYMENT_RECEIVED`, `SHIPMENT_UPDATE`, `NEW_FOLLOWER`, `NEW_COMMENT`, `NEW_LIKE`, `REVIEW_REPLY`, `PROMOTION`, `NEW_MESSAGE`, `SUBSCRIPTION_EXPIRING`, `DISCOUNT_AVAILABLE` |
-| `SubscriptionPlan`   | `FREE`, `BASIC`, `PREMIUM`, `ENTERPRISE`                                                                                                                                                              |
-| `SubscriptionStatus` | `ACTIVE`, `CANCELLED`, `PAST_DUE`, `EXPIRED`                                                                                                                                                          |
-| `DiscountType`       | `PERCENTAGE`, `FIXED_AMOUNT`                                                                                                                                                                          |
-| `InvoiceStatus`      | `PENDING`, `PAID`, `OVERDUE`, `CANCELLED`, `REFUNDED`                                                                                                                                                 |
-| `ReturnReason`       | `DEFECTIVE`, `WRONG_ITEM`, `NOT_AS_DESCRIBED`, `SIZE_ISSUE`, `LATE_DELIVERY`, `NO_LONGER_NEEDED`, `OTHER`                                                                                             |
-| `ReturnStatus`       | `PENDING`, `APPROVED`, `REJECTED`, `ITEM_RECEIVED`, `REFUND_ISSUED`, `CLOSED`                                                                                                                         |
-| `TicketStatus`       | `OPEN`, `IN_PROGRESS`, `WAITING_ON_CUSTOMER`, `RESOLVED`, `CLOSED`                                                                                                                                    |
-| `TicketPriority`     | `LOW`, `MEDIUM`, `HIGH`, `URGENT`                                                                                                                                                                     |
+See the merged schema in [`schema.graphql`](./schema.graphql) for the complete API reference — ~100+ queries/mutations across all domains.
 
 ---
 
@@ -228,23 +270,36 @@ See the merged schema in [`schema.graphql`](./schema.graphql) for the complete A
 ```
 .
 ├── prisma/
-│   ├── schema.prisma          # 34 models, 8 enums
-│   ├── seed/                  # 26 seed files in 8 phases
-│   └── migrations/            # Created by prisma migrate dev
+│   ├── schema.prisma          # 38 models
+│   ├── data/                  # Reusable fixed seed data
+│   │   ├── users.ts
+│   │   ├── tags.ts
+│   │   ├── coupons.ts
+│   │   └── categories.ts
+│   ├── seed/                  # 30 files in 8 phases
+│   │   ├── index.ts           # Seed orchestrator
+│   │   ├── types.ts           # Typed seed DTOs
+│   │   ├── utils.ts           # Reset + timer utilities
+│   │   ├── seed-users.ts
+│   │   ├── seed-posts.ts
+│   │   ├── seed-products.ts
+│   │   └── ...                # (all other seed files)
+│   └── migrations/            # 38 migration files
 │
 ├── src/
 │   ├── index.ts               # Server entry point
-│   ├── context.ts             # Prisma + JWT context factory
+│   ├── context.ts             # Prisma + Services context factory
 │   ├── plugins/
 │   │   └── graphiql.ts        # Custom GraphiQL landing page
-│   ├── schema/                # 18 .graphql SDL files
-│   │   ├── base.graphql       # Scalars, directives, enums, stubs
-│   │   ├── auth.graphql       # Auth types + mutations
-│   │   ├── post.graphql       # Blog types + queries/mutations
-│   │   ├── product.graphql    # Product + review types
-│   │   ├── order.graphql      # Order, payment, refund, shipment
-│   │   ├── cart.graphql       # Cart + cart items
-│   │   ├── user.graphql       # User + profile
+│   ├── schema/                # 19 .graphql SDL files
+│   │   ├── base.graphql       # Scalars, directives, stubs
+│   │   ├── auth.graphql
+│   │   ├── post.graphql
+│   │   ├── product.graphql
+│   │   ├── order.graphql
+│   │   ├── cart.graphql
+│   │   ├── user.graphql
+│   │   ├── novu.graphql       # Novu workflow management
 │   │   ├── address.graphql
 │   │   ├── conversation.graphql
 │   │   ├── coupon.graphql
@@ -258,62 +313,39 @@ See the merged schema in [`schema.graphql`](./schema.graphql) for the complete A
 │   │   ├── subscription.graphql
 │   │   ├── support.graphql
 │   │   └── wishlist.graphql
+│   ├── lib/
+│   │   ├── Services.ts        # DI container — service instantiation
+│   │   ├── core.ts            # Shared helpers (clean, compact, Prisma types)
+│   │   └── redis.ts           # Redis client (BullMQ)
 │   ├── types/                 # Shared TS types
 │   │   ├── context.ts
 │   │   ├── enums.ts
 │   │   └── graphql.ts
-│   ├── utils/                 # Shared utilities
+│   ├── utils/
 │   │   ├── auth.ts            # JWT + bcrypt
-│   │   ├── clean.ts           # Prisma-safe object cleaners
-│   │   ├── errors.ts          # Custom error classes
-│   │   ├── logger.ts          # Structured logger
-│   │   └── novu.ts            # Novu notification triggers
-│   └── modules/               # Domain modules (26 domains)
+│   │   ├── errors.ts          # AppError, NotFoundError, requireAuth
+│   │   ├── logger.ts          # Structured logger (pino)
+│   │   └── novu.ts            # Novu SDK client init
+│   └── modules/               # 26 domain modules
 │       ├── index.ts           # Central resolver aggregation
 │       ├── auth/              # resolver.ts, service.ts, inputs.ts
 │       ├── blog/
 │       ├── product/
 │       ├── order/
+│       ├── novu/              # Novu workflow + variable registry
 │       ├── ...                # (all other domains)
 │       └── user/
 │
 ├── scripts/
 │   └── merge-schema.ts        # SDL merger
-├── schema.graphql             # Merged schema output
-├── prisma.config.ts           # Prisma 7 config
+├── schema.graphql             # Merged schema output (auto-generated)
+├── prisma.config.ts           # Prisma 7 driver adapter config
 ├── tsconfig.json
 ├── package.json
 └── .env.example
 ```
 
-Each domain module follows the same pattern: `inputs.ts` → `resolver.ts` → `service.ts` (+ optional `types/index.ts`).
-
----
-
-## TODO
-
-### Short-term
-
-- [ ] **Generate initial Prisma migration** — Run `npx prisma migrate dev --name init` to create `prisma/migrations/` so `db:rebuild` works correctly
-- [ ] **Enable offline GraphQL sandbox** — Currently Apollo sandbox uses CDN scripts; bundle GraphiQL locally or use a local asset for offline dev
-- [ ] **Add schema/model change workflow** — Document or script the process of adding/removing columns without migrations (using `prisma db push`)
-
-### Medium-term
-
-- [ ] **Make Novu notifications work** — Implement the new code-level workflow approach (Novu's `@novu/framework` with TypeScript step definitions)
-- [ ] **Reusable src exports in seed** — Extract shared utilities (auth helpers, type constants) from `src/` so `prisma/seed/` can import them without duplication
-- [ ] **Add more auth helpers** — Password reset flow, email verification, refresh tokens, rate limiting on login
-- [ ] **Improve test data realism** — Use Mockaroo or more sophisticated faker patterns for production-like data distributions
-- [ ] **Add tests** — Unit tests for services, integration tests for resolvers, e2e tests for critical flows
-
-### Long-term
-
-- [ ] **Database-level features** — Materialized views (reporting dashboards), stored procedures (complex aggregations), triggers (audit logging), functions (custom business logic)
-- [ ] **Payment integration** — Stripe, PayPal, Apple Pay, local methods (JazzCash, etc.)
-- [ ] **MCP (Model Context Protocol) integration** — Add MCP server for AI-assisted tooling and pgsql MCP for database interaction
-- [ ] **GraphQL subscriptions** — Real-time notifications, live order tracking, chat via WebSocket
-- [ ] **Performance optimization** — DataLoader for N+1 prevention, Redis caching, query complexity analysis, pagination depth limits
-- [ ] **CI/CD pipeline** — GitHub Actions for linting, type-checking, test running, and deployment
+Each domain module follows the same pattern: `resolver.ts` → `service.ts` (+ `inputs.ts` for typed arguments).
 
 ---
 
@@ -359,6 +391,16 @@ Each domain module follows the same pattern: `inputs.ts` → `resolver.ts` → `
 | **Migrations** | Use `prisma migrate deploy` in CI/CD; never run `prisma migrate dev` in production. |
 | **Secrets**    | Use a secrets manager (Vault, AWS Secrets Manager) instead of `.env` files.         |
 
+### Novu
+
+| Area                        | What to do                                                                                    |
+| --------------------------- | --------------------------------------------------------------------------------------------- |
+| **Novu Framework**          | Upgrade to `@novu/framework` for TypeScript-based step definitions instead of the legacy SDK. |
+| **Workflow sync**           | Implement bidirectional sync between local metadata and Novu cloud workflows.                 |
+| **Template preview**        | Add email/SMS template rendering with test payload preview.                                   |
+| **Delivery tracking**       | Store trigger transaction IDs and poll Novu for delivery status updates.                      |
+| **Multi-channel templates** | Support in-app, email, SMS, and push notification templates per workflow.                     |
+
 ---
 
 ## Learning Resources
@@ -397,22 +439,16 @@ Each domain module follows the same pattern: `inputs.ts` → `resolver.ts` → `
 | [TypeScript challenges](https://github.com/type-challenges/type-challenges) | Advanced type exercises       |
 | [Total TypeScript](https://www.totaltypescript.com/)                        | Free TS tutorials and courses |
 
-### Advanced Topics
+### Novu
 
-| Topic                  | Resource                                                                                                           |
-| ---------------------- | ------------------------------------------------------------------------------------------------------------------ |
-| **GraphQL Federation** | [Apollo Federation docs](https://www.apollographql.com/docs/federation/)                                           |
-| **DataLoader**         | [GraphQL N+1 problem & DataLoader](https://www.apollographql.com/docs/apollo-server/data/data-sources/#dataloader) |
-| **Docker + Node**      | [Node.js Docker best practices](https://github.com/nodejs/docker-node/blob/main/docs/BestPractices.md)             |
-| **CI/CD**              | [GitHub Actions docs](https://docs.github.com/en/actions)                                                          |
-| **Stripe integration** | [Stripe API docs](https://stripe.com/docs/api)                                                                     |
-| **Novu notifications** | [Novu framework docs](https://docs.novu.co/)                                                                       |
-| **MCP**                | [Model Context Protocol](https://modelcontextprotocol.io/)                                                         |
-| **Row-level security** | [PostgreSQL RLS docs](https://www.postgresql.org/docs/current/ddl-rowsecurity.html)                                |
+| Resource                                                    | Description                 |
+| ----------------------------------------------------------- | --------------------------- |
+| [Novu docs](https://docs.novu.co/)                          | Official Novu documentation |
+| [Novu Framework](https://docs.novu.co/framework/quickstart) | TypeScript step definitions |
 
 ### Project-specific
 
 - **Explore the merged schema**: [`schema.graphql`](./schema.graphql) — all queries, mutations, types, and fragments in one file
 - **Browse the Prisma schema**: [`prisma/schema.prisma`](./prisma/schema.prisma) — all models, relations, and indexes
 - **Read the seed orchestrator**: [`prisma/seed/index.ts`](./prisma/seed/index.ts) — understand the 8-phase seed flow
-- **Study a module end-to-end**: Pick a domain (e.g. `src/modules/product/`) and read `inputs.ts` → `resolver.ts` → `service.ts` to see the pattern
+- **Study a module end-to-end**: Pick a domain (e.g. `src/modules/novu/`) and read `inputs.ts` → `resolver.ts` → `service.ts` to see the pattern

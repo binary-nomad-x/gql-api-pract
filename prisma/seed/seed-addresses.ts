@@ -21,12 +21,27 @@ export async function seedAddresses(ctx: SeedContext, counts: SeedCounts, userId
     contactPhone: string;
   }[] = [];
 
+  const availableLabels = ["Home", "Work", "Vacation Home", "Other"];
+
   for (const userId of userIds) {
+    const usedLabels = new Set<string>();
     const addressCount = faker.number.int({ min: 2, max: 4 });
+
     for (let i = 0; i < addressCount; i++) {
+      const baseLabel = availableLabels[i] ?? "Address";
+      let label = baseLabel;
+
+      if (usedLabels.has(label)) {
+        let suffix = 2;
+        while (usedLabels.has(`${baseLabel} ${suffix}`)) suffix++;
+        label = `${baseLabel} ${suffix}`;
+      }
+
+      usedLabels.add(label);
+
       data.push({
         userId,
-        label: i === 0 ? "Home" : i === 1 ? "Work" : i === 2 ? "Vacation Home" : "Other",
+        label,
         street: faker.location.streetAddress(),
         addressLine2: Math.random() > 0.4 ? faker.location.secondaryAddress() : null,
         city: faker.location.city(),
@@ -36,12 +51,17 @@ export async function seedAddresses(ctx: SeedContext, counts: SeedCounts, userId
         phone: faker.phone.number(),
         deliveryInstructions:
           Math.random() > 0.5
-            ? faker.helpers.arrayElement(["Leave at front door", "Ring bell twice", "Call upon arrival", "Leave with concierge"])
+            ? faker.helpers.arrayElement([
+              "Leave at front door",
+              "Ring bell twice",
+              "Call upon arrival",
+              "Leave with concierge",
+            ])
             : null,
         latitude: faker.location.latitude(),
         longitude: faker.location.longitude(),
         isDefault: i === 0,
-        isBilling: i === 0 || i === 1,
+        isBilling: i <= 1,
         contactName: faker.person.fullName(),
         contactPhone: faker.phone.number(),
       });

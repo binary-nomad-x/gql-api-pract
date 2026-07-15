@@ -1,5 +1,3 @@
-// --- Type-field resolver helpers ---
-
 export function resolveSupportTicketUser(parent: Record<string, unknown>) {
   return parent.user;
 }

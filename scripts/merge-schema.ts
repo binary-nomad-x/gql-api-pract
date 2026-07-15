@@ -1,8 +1,11 @@
-import { readdirSync, readFileSync, writeFileSync } from "fs";
-import { join } from "path";
+import { readdirSync, readFileSync, writeFileSync } from "node:fs";
+import { dirname, join } from "node:path";
+import { fileURLToPath } from "node:url";
 
-const schemaDir = join(import.meta.dirname, "..", "src", "schema");
-const outFile = join(import.meta.dirname, "..", "schema.graphql");
+const __dirname = dirname(fileURLToPath(import.meta.url));
+
+const schemaDir = join(__dirname, "..", "src", "schema");
+const outFile = join(__dirname, "..", "schema.graphql");
 
 const files = readdirSync(schemaDir).filter((f) => f.endsWith(".graphql"));
 

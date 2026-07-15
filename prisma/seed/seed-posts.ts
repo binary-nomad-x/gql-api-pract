@@ -1,6 +1,5 @@
 import { faker } from "@faker-js/faker";
 import type { SeedContext, SeedCounts } from "./types.js";
-import { randomUUID } from "node:crypto";
 
 export async function seedPosts(
   ctx: SeedContext,
@@ -10,7 +9,8 @@ export async function seedPosts(
   categoryIds: string[],
   count: number,
 ): Promise<string[]> {
-  const postIds = Array.from({ length: count }, () => randomUUID());
+  
+  const postIds = Array.from({ length: count }, () => crypto.randomUUID());
 
   for (let i = 0; i < count; i++) {
     const id = postIds[i];
@@ -20,7 +20,7 @@ export async function seedPosts(
       title
         .toLowerCase()
         .replace(/[^a-z0-9]+/g, "-")
-        .replace(/(^-|-$)/g, "") + `-${randomUUID().slice(0, 6)}`;
+        .replace(/(^-|-$)/g, "") + `-${crypto.randomUUID().slice(0, 6)}`;
 
     await ctx.prisma.post.create({
       data: {

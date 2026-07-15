@@ -4,7 +4,9 @@ import { triggerNovuWorkflow } from "@gql-prisma-api/utils/novu.js";
 import { logger } from "@gql-prisma-api/utils/logger.js";
 
 export class InvoiceService {
+
   constructor(private readonly core: PrismaClient) {}
+  
   resolveInvoiceOrder(orderId: string) {
     return this.core.order.findUnique({ where: { id: orderId } });
   }
@@ -83,6 +85,7 @@ export class InvoiceService {
       where: { id },
       include: { order: { include: { user: true } } },
     });
+
     if (!invoice) throw new Error("Invoice not found");
 
     const updated = await this.core.invoice.update({
@@ -122,4 +125,5 @@ export class InvoiceService {
     logger.info("Invoice cancelled", { invoiceId: id, userId });
     return updated;
   }
+
 }

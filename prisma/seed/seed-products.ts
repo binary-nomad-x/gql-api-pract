@@ -1,9 +1,8 @@
 import { faker } from "@faker-js/faker";
 import type { SeedContext, SeedCounts } from "./types.js";
-import { randomUUID } from "node:crypto";
 
 export async function seedProducts(ctx: SeedContext, counts: SeedCounts, userIds: string[], categoryIds: string[], count: number): Promise<string[]> {
-  const productIds = Array.from({ length: count }, () => randomUUID());
+  const productIds = Array.from({ length: count }, () => crypto.randomUUID());
 
   const productData = productIds.map((id) => {
     const name = faker.commerce.productName();

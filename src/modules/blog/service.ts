@@ -12,7 +12,6 @@ import { logger } from "@gql-prisma-api/utils/logger.js";
 import { clean } from "@gql-prisma-api/lib/core.js";
 
 export class BlogService {
-
   constructor(private readonly core: PrismaClient) {}
 
   resolvePostAuthor(authorId: string) {
@@ -256,5 +255,4 @@ export class BlogService {
   getPost(id: string) {
     return this.core.post.findUnique({ where: { id } });
   }
-  
 }

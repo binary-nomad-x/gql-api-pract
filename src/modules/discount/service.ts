@@ -3,8 +3,7 @@ import type { CreateDiscountInput, UpdateDiscountInput } from "@gql-prisma-api/m
 import { toDiscountCreate, toDiscountUpdate } from "@gql-prisma-api/lib/core.js";
 
 export class DiscountService {
-
-  constructor(private readonly core: PrismaClient) { }
+  constructor(private readonly core: PrismaClient) {}
 
   resolveDiscountProduct(productId: string) {
     return this.core.product.findUnique({ where: { id: productId } });
@@ -49,5 +48,4 @@ export class DiscountService {
       },
     });
   }
-  
 }

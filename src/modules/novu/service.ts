@@ -3,13 +3,7 @@ import type { Novu } from "@novu/node";
 import { logger } from "@gql-prisma-api/utils/logger.js";
 import { AppError, NotFoundError } from "@gql-prisma-api/utils/errors.js";
 import { clean } from "@gql-prisma-api/lib/core.js";
-import type {
-  VariableType,
-  PayloadValidationError,
-  PayloadValidationResult,
-  NovuWorkflowDef,
-  TriggerResult,
-} from "./types/index.js";
+import type { VariableType, PayloadValidationError, PayloadValidationResult, NovuWorkflowDef, TriggerResult } from "./types/index.js";
 import type {
   CreateVariableGroupInput,
   UpdateVariableGroupInput,
@@ -55,10 +49,7 @@ export class NovuService {
     return workflow;
   }
 
-  async updateWorkflow(
-    id: string,
-    data: { name?: string; description?: string | null; tags?: string[]; status?: string; active?: boolean },
-  ) {
+  async updateWorkflow(id: string, data: { name?: string; description?: string | null; tags?: string[]; status?: string; active?: boolean }) {
     const existing = await this.core.novuWorkflow.findUnique({ where: { id } });
     if (!existing) throw new NotFoundError("Workflow");
     const updated = await this.core.novuWorkflow.update({
@@ -247,11 +238,7 @@ export class NovuService {
     });
     const validation = this.validateAgainstVariables(variables, input.payload);
     if (!validation.valid) {
-      throw new AppError(
-        `Payload validation failed: ${validation.errors.map((e) => `${e.path}: ${e.message}`).join("; ")}`,
-        "VALIDATION_ERROR",
-        400,
-      );
+      throw new AppError(`Payload validation failed: ${validation.errors.map((e) => `${e.path}: ${e.message}`).join("; ")}`, "VALIDATION_ERROR", 400);
     }
 
     if (!this.novu) {
@@ -287,11 +274,7 @@ export class NovuService {
         error: error instanceof Error ? error.message : String(error),
         stack: error instanceof Error ? error.stack : undefined,
       });
-      throw new AppError(
-        `Failed to trigger workflow: ${error instanceof Error ? error.message : String(error)}`,
-        "TRIGGER_FAILED",
-        500,
-      );
+      throw new AppError(`Failed to trigger workflow: ${error instanceof Error ? error.message : String(error)}`, "TRIGGER_FAILED", 500);
     }
   }
 
@@ -328,11 +311,7 @@ export class NovuService {
         error: error instanceof Error ? error.message : String(error),
         stack: error instanceof Error ? error.stack : undefined,
       });
-      throw new AppError(
-        `Failed to identify subscriber: ${error instanceof Error ? error.message : String(error)}`,
-        "SUBSCRIBER_ERROR",
-        500,
-      );
+      throw new AppError(`Failed to identify subscriber: ${error instanceof Error ? error.message : String(error)}`, "SUBSCRIBER_ERROR", 500);
     }
   }
 
@@ -361,11 +340,7 @@ export class NovuService {
         error: error instanceof Error ? error.message : String(error),
         stack: error instanceof Error ? error.stack : undefined,
       });
-      throw new AppError(
-        `Failed to update subscriber: ${error instanceof Error ? error.message : String(error)}`,
-        "SUBSCRIBER_ERROR",
-        500,
-      );
+      throw new AppError(`Failed to update subscriber: ${error instanceof Error ? error.message : String(error)}`, "SUBSCRIBER_ERROR", 500);
     }
   }
 
@@ -385,11 +360,7 @@ export class NovuService {
         error: error instanceof Error ? error.message : String(error),
         stack: error instanceof Error ? error.stack : undefined,
       });
-      throw new AppError(
-        `Failed to delete subscriber: ${error instanceof Error ? error.message : String(error)}`,
-        "SUBSCRIBER_ERROR",
-        500,
-      );
+      throw new AppError(`Failed to delete subscriber: ${error instanceof Error ? error.message : String(error)}`, "SUBSCRIBER_ERROR", 500);
     }
   }
 
@@ -479,7 +450,16 @@ export class NovuService {
   }
 
   private toJsonSchema(
-    variables: Array<{ key: string; type: string; label: string | null; description: string | null; required: boolean; defaultValue: string | null; exampleValue: string | null; aliases: string[] }>,
+    variables: Array<{
+      key: string;
+      type: string;
+      label: string | null;
+      description: string | null;
+      required: boolean;
+      defaultValue: string | null;
+      exampleValue: string | null;
+      aliases: string[];
+    }>,
   ): Record<string, unknown> {
     const properties: Record<string, unknown> = {};
     const required: string[] = [];

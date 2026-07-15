@@ -1,9 +1,8 @@
 import type { PrismaClient } from "@prisma/client";
 
 export class NotificationService {
-
   constructor(private readonly core: PrismaClient) {}
-  
+
   resolveNotificationUser(userId: string) {
     return this.core.user.findUnique({ where: { id: userId } });
   }
@@ -35,5 +34,4 @@ export class NotificationService {
   getUnreadNotificationCount(userId: string) {
     return this.core.notification.count({ where: { userId, isRead: false } });
   }
-
 }

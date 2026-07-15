@@ -9,7 +9,6 @@ export async function seedPosts(
   categoryIds: string[],
   count: number,
 ): Promise<string[]> {
-  
   const postIds = Array.from({ length: count }, () => crypto.randomUUID());
 
   for (let i = 0; i < count; i++) {

@@ -3,8 +3,7 @@ import type { CreateCouponInput } from "@gql-prisma-api/modules/coupon/inputs.js
 import { clean } from "@gql-prisma-api/lib/core.js";
 
 export class CouponService {
-
-  constructor(private readonly core: PrismaClient) { }
+  constructor(private readonly core: PrismaClient) {}
 
   resolveCouponOrders(couponId: string) {
     return this.core.order.findMany({ where: { couponId } });
@@ -18,5 +17,4 @@ export class CouponService {
   getCouponByCode(code: string) {
     return this.core.coupon.findUnique({ where: { code } });
   }
-
 }

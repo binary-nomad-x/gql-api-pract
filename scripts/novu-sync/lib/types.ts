@@ -31,6 +31,7 @@ export interface LayoutJson {
   variables?: Array<{ name: string; type: string; defaultValue?: string }>;
   isDefault?: boolean;
   bodyFile?: string;
+  content?: string;
   dashboardHash?: string;
 }
 

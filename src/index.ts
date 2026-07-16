@@ -10,6 +10,7 @@ import { resolvers } from "@gql-prisma-api/modules/index.js";
 import { logger } from "@gql-prisma-api/utils/logger.js";
 import { ApolloServerPluginGraphiQL } from "@gql-prisma-api/plugins/graphiql.js";
 import "@gql-prisma-api/workers/email.worker.js";
+import { startWeatherCron } from "@gql-prisma-api/cron/weather.cron.js";
 
 const PORT = Number(process.env.PORT) || 4000;
 
@@ -105,6 +106,8 @@ httpServer.listen(PORT, () => {
   const url = `http://localhost:${PORT}/graphql`;
   logger.info("Server started", { url });
   console.log(`\n  GraphQL endpoint: ${url}\n`);
+
+  startWeatherCron();
 });
 
 process.on("uncaughtException", (err) => {

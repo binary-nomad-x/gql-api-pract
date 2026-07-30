@@ -18,8 +18,9 @@
     "seed": "tsx prisma/seed/index.ts",
     "seed:reset": "tsx prisma/seed/index.ts --reset",
     "seed:fresh": "tsx prisma/seed/index.ts --fresh",
-    "db:rebuild": "npx prisma db push --force-reset && npm run seed && npm run generate && npm run schema:merge",
+    "db:rebuild": "npx prisma generate && npx prisma db push --force-reset && npm run seed && npm run schema:merge",
     "schema:merge": "tsx scripts/merge-schema.ts",
+    "novu": "tsx scripts/novu-sync/cli.ts",
     "setup": "npm install && npx prisma generate && npx prisma migrate dev && npm run seed",
     "format": "prettier --write \"**/*.{ts,tsx}\"",
     "format:check": "prettier --check \"**/*.{ts,tsx}\""
@@ -38,6 +39,7 @@
     "graphql": "^16.13.2",
     "ioredis": "^5.11.1",
     "jsonwebtoken": "^9.0.3",
+    "node-cron": "^4.6.0",
     "pg": "^8.20.0"
   },
   "devDependencies": {

@@ -16,23 +16,25 @@ import { config } from "./config.js";
 
 function normalizeApiWorkflow(api: Record<string, unknown>): WorkflowJson {
   const steps = (api.steps as Array<Record<string, unknown>> ?? []).map((s) => ({
-    stepId: (s._id ?? s.stepId ?? "") as string,
+    stepId: (s.stepId ?? s.slug ?? s._id ?? "") as string,
     name: (s.name ?? "") as string,
     type: (s.type ?? "") as string,
-    template: s.template as Record<string, unknown> | undefined,
-    controls: s.controls as Record<string, unknown> | undefined,
+    controlValues: s.controlValues as Record<string, unknown> | undefined,
+    variables: s.variables as Record<string, unknown> | undefined,
   }));
 
   const wf: WorkflowJson = {
     name: api.name as string,
     workflowId: api.workflowId as string,
-    slug: api.slug as string,
+    slug: (api.workflowId ?? api.slug ?? api._id ?? "") as string,
     description: api.description as string | undefined,
     tags: api.tags as string[] | undefined,
     active: api.active as boolean | undefined,
-    steps,
+    validatePayload: api.validatePayload as boolean | undefined,
     payloadSchema: api.payloadSchema as Record<string, unknown> | undefined,
     preferences: api.preferences as Record<string, unknown> | undefined,
+    origin: api.origin as string | undefined,
+    steps,
   };
 
   wf.dashboardHash = hashWorkflow(wf);
@@ -103,7 +105,7 @@ export class SyncEngine {
     try {
       const remoteData = await this.api.listWorkflows();
       for (const item of remoteData.data as Array<Record<string, unknown>>) {
-        const slug = item.slug as string;
+        const slug = (item.workflowId ?? item.slug ?? item._id) as string;
         const label = localSlugs.has(slug) ? "both " : "remote";
         this.log.info(`  [${label}] ${slug.padEnd(30)} ${item.name as string}`);
       }
@@ -151,7 +153,18 @@ export class SyncEngine {
       this.log.warn("Could not fetch remote workflows", { error: String(err) });
     }
 
-    const remoteWfBySlug = new Map(remoteWfs.map((w) => [w.slug as string, w]));
+    // Fetch full workflow details so hashes compare accurately (list returns summary steps only)
+    const detailedWfs: Array<Record<string, unknown>> = [];
+    const wfIds = (only
+      ? remoteWfs.filter((w) => (w.workflowId ?? w.slug ?? w._id) === only)
+      : remoteWfs).map((w) => (w.workflowId ?? w.slug ?? w._id) as string);
+    const resultsMap = await Promise.allSettled(wfIds.map((id) => this.api.getWorkflow(id)));
+    for (const r of resultsMap) {
+      if (r.status === "fulfilled") detailedWfs.push(r.value);
+      else this.log.warn("Could not fetch remote workflow detail", { error: String(r.reason) });
+    }
+
+    const remoteWfBySlug = new Map(detailedWfs.map((w) => [(w.workflowId ?? w.slug ?? w._id) as string, w]));
 
     const allWfSlugs = new Set([...localWfBySlug.keys(), ...remoteWfBySlug.keys()]);
 
@@ -280,14 +293,21 @@ export class SyncEngine {
           if (opts.only && wf.slug !== opts.only) continue;
 
           summary.total++;
-          const ok = saveWorkflow(wf, this.log);
-          if (ok) {
-            summary.created++;
-            summary.results.push({ workflowId: wf.workflowId, action: "create", detail: `Pulled ${wf.slug}` });
-            if (opts.dryRun) this.log.info(`[DRY-RUN] Would pull workflow: ${wf.slug}`);
-          } else {
+          try {
+            const full = await this.api.getWorkflow(wf.workflowId || wf.slug);
+            const fullWf = normalizeApiWorkflow(full);
+            const ok = saveWorkflow(fullWf, this.log);
+            if (ok) {
+              summary.created++;
+              summary.results.push({ workflowId: wf.workflowId, action: "create", detail: `Pulled ${wf.slug}` });
+              if (opts.dryRun) this.log.info(`[DRY-RUN] Would pull workflow: ${wf.slug}`);
+            } else {
+              summary.errors++;
+              summary.results.push({ workflowId: wf.workflowId, action: "error", detail: `Failed to save ${wf.slug}` });
+            }
+          } catch (err) {
             summary.errors++;
-            summary.results.push({ workflowId: wf.workflowId, action: "error", detail: `Failed to save ${wf.slug}` });
+            summary.results.push({ workflowId: wf.workflowId, action: "error", detail: String(err) });
           }
         }
       } catch (err) {
@@ -351,8 +371,31 @@ export class SyncEngine {
   }
 
   private async pushWorkflow(wf: WorkflowJson, opts: { force?: boolean; dryRun?: boolean }): Promise<SyncResult> {
+    const workflowId = wf.workflowId || wf.slug;
+    if (!workflowId) {
+      this.log.error(`[workflow] ${wf.slug}: missing workflowId`);
+      return { workflowId: wf.slug, action: "error", detail: "Missing workflowId" };
+    }
+
+    const buildPayload = (): Record<string, unknown> => ({
+      name: wf.name,
+      description: wf.description,
+      tags: wf.tags ?? [],
+      active: wf.active ?? true,
+      validatePayload: wf.validatePayload ?? false,
+      payloadSchema: wf.payloadSchema,
+      preferences: wf.preferences,
+      origin: wf.origin ?? "novu-cloud",
+      steps: wf.steps.map((s) => ({
+        stepId: s.stepId,
+        name: s.name,
+        type: s.type,
+        controlValues: s.controlValues ?? {},
+      })),
+    });
+
     try {
-      const remote = await this.api.getWorkflow(wf.slug);
+      const remote = await this.api.getWorkflow(workflowId);
       const remoteWf = normalizeApiWorkflow(remote);
 
       // Drift guard
@@ -374,26 +417,12 @@ export class SyncEngine {
         return { workflowId: wf.slug, action: "update", detail: "Would push (dry-run)" };
       }
 
-      const stepsPayload = wf.steps.map((s) => ({
-        _id: s.stepId,
-        name: s.name,
-        type: s.type,
-        template: s.template,
-        controls: s.controls,
-      }));
+      const updated = await this.api.updateWorkflow(workflowId, buildPayload());
 
-      const updated = await this.api.updateWorkflow(remote._id as string, {
-        name: wf.name,
-        description: wf.description,
-        tags: wf.tags,
-        active: wf.active,
-        steps: stepsPayload,
-      });
-
-      // Update local dashboard hash
+      // Save the remote response so the local file mirrors what is on the dashboard
       const updatedWf = normalizeApiWorkflow(updated);
-      wf.dashboardHash = updatedWf.dashboardHash;
-      saveWorkflow(wf, this.log);
+      updatedWf.dashboardHash = hashWorkflow(updatedWf);
+      saveWorkflow(updatedWf, this.log);
 
       this.log.info(`[workflow] ${wf.slug}: pushed successfully`);
       return { workflowId: wf.slug, action: "update", detail: "Pushed" };
@@ -405,27 +434,9 @@ export class SyncEngine {
           return { workflowId: wf.slug, action: "create", detail: "Would create (dry-run)" };
         }
 
-        const stepsPayload = wf.steps.map((s) => ({
-          name: s.name,
-          type: s.type,
-          template: s.template,
-          controls: s.controls,
-        }));
-
-        const notificationGroupId = await this.resolveNotificationGroupId();
-        if (!notificationGroupId) {
-          this.log.error(`[workflow] ${wf.slug}: no notification group available to create workflow`);
-          return { workflowId: wf.slug, action: "error", detail: "No notification group available" };
-        }
-
         const created = await this.api.createWorkflow({
-          name: wf.name,
-          slug: wf.slug,
-          description: wf.description,
-          tags: wf.tags,
-          active: wf.active ?? true,
-          notificationGroupId,
-          steps: stepsPayload,
+          ...buildPayload(),
+          workflowId,
         });
 
         const createdWf = normalizeApiWorkflow(created);
@@ -528,23 +539,27 @@ export class SyncEngine {
 
     const wf: WorkflowJson = {
       name: name ?? slug,
-      workflowId: "",
+      workflowId: slug,
       slug,
       description: "",
       tags: [],
       active: true,
+      validatePayload: false,
+      payloadSchema: {},
+      preferences: {},
+      origin: "external",
       steps: [
         {
-          stepId: "step-1",
+          stepId: "email-step",
           name: "Step 1",
           type: "email",
-          bodyFile: "step-1.html",
+          bodyFile: "email-step.html",
         },
       ],
     };
 
     // Write default body
-    writeTextAtomic(resolve(bodiesDir, "step-1.html"), "<p>Hello {{name}}!</p>", this.log);
+    writeTextAtomic(resolve(bodiesDir, "email-step.html"), "<p>Hello {{name}}!</p>", this.log);
     writeJsonAtomic(resolve(wfDir, "workflow.json"), wf, this.log);
     this.log.info(`Created workflow scaffold: ${slug}`);
     return true;
@@ -594,7 +609,7 @@ export class SyncEngine {
     // Remove remotely
     try {
       const remote = await this.api.getWorkflow(slug);
-      await this.api.deleteWorkflow(remote._id as string);
+      await this.api.deleteWorkflow((remote.workflowId ?? remote._id) as string);
       this.log.info(`[workflow] ${slug}: deleted`);
       return { workflowId: slug, action: "delete", detail: "Deleted" };
     } catch (err) {

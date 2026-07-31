@@ -98,25 +98,32 @@ export class NovuApiClient {
     return this.request("GET", "/v1/notification-groups");
   }
 
-  // ─── Workflows (templates) ───────────────────────────────────
+  // ─── Workflows (templates) — Novu v2 API ───────────────────
   async listWorkflows(page = 0, limit = 50): Promise<{ data: Array<Record<string, unknown>>; totalCount: number }> {
-    return this.request("GET", `/v1/workflows?page=${page}&limit=${limit}`);
+    const raw = await this.request<{ data: { workflows: Array<Record<string, unknown>>; totalCount: number } }>(
+      "GET",
+      `/v2/workflows?limit=${limit}`,
+    );
+    return { data: raw.data?.workflows ?? [], totalCount: raw.data?.totalCount ?? 0 };
   }
 
   async getWorkflow(workflowId: string): Promise<Record<string, unknown>> {
-    return this.request("GET", `/v1/workflows/${workflowId}`);
+    const raw = await this.request<{ data: Record<string, unknown> }>("GET", `/v2/workflows/${workflowId}`);
+    return raw.data ?? {};
   }
 
   async createWorkflow(data: Record<string, unknown>): Promise<Record<string, unknown>> {
-    return this.request("POST", "/v1/workflows", data);
+    const raw = await this.request<{ data: Record<string, unknown> }>("POST", "/v2/workflows", data);
+    return raw.data ?? {};
   }
 
   async updateWorkflow(workflowId: string, data: Record<string, unknown>): Promise<Record<string, unknown>> {
-    return this.request("PUT", `/v1/workflows/${workflowId}`, data);
+    const raw = await this.request<{ data: Record<string, unknown> }>("PUT", `/v2/workflows/${workflowId}`, data);
+    return raw.data ?? {};
   }
 
   async deleteWorkflow(workflowId: string): Promise<void> {
-    return this.request("DELETE", `/v1/workflows/${workflowId}`);
+    await this.request("DELETE", `/v2/workflows/${workflowId}`);
   }
 
   // ─── Layouts ─────────────────────────────────────────────────

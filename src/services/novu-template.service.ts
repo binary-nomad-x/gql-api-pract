@@ -67,14 +67,17 @@ function dirnameOf(file: string): string {
 
 function workflowToFile(wf: Record<string, unknown>): Record<string, unknown> {
   return {
-    slug: wf.slug ?? wf.workflowId ?? wf._id ?? "",
+    slug: wf.workflowId ?? wf.slug ?? wf._id ?? "",
     workflowId: wf.workflowId ?? wf._id ?? "",
     name: wf.name ?? "",
     description: wf.description ?? "",
     tags: wf.tags ?? [],
     active: wf.active ?? true,
-    steps: wf.steps ?? [],
+    validatePayload: wf.validatePayload ?? false,
+    payloadSchema: wf.payloadSchema ?? undefined,
     preferences: wf.preferences ?? undefined,
+    origin: wf.origin ?? undefined,
+    steps: wf.steps ?? [],
   };
 }
 
@@ -160,7 +163,7 @@ export class NovuTemplateService {
       logger.warning("Failed to list remote workflows", { error: String(err) });
     }
 
-    const workflowSlugOf = (w: Record<string, unknown>): string => ((w.slug ?? w.workflowId ?? w._id) as string) ?? "";
+    const workflowSlugOf = (w: Record<string, unknown>): string => ((w.workflowId ?? w.slug ?? w._id) as string) ?? "";
     const remoteWorkflowSlugs = new Set(remoteWorkflows.map(workflowSlugOf).filter(Boolean));
     const allWorkflowSlugs = new Set([...localWorkflowSlugs, ...remoteWorkflowSlugs]);
 
@@ -276,55 +279,41 @@ export class NovuTemplateService {
       return { slug, action: "error", detail: "Invalid JSON" };
     }
 
-    const steps = (data.steps as Array<Record<string, unknown>> ?? []).map((s) => ({
-      name: s.name ?? "Step",
-      type: s.type ?? "email",
-      template: s.template ?? {},
-      controls: s.controls ?? {},
-    }));
+    const workflowId = (data.workflowId as string) ?? slug;
+
+    const buildPayload = (): Record<string, unknown> => ({
+      name: data.name,
+      description: data.description,
+      tags: data.tags ?? [],
+      active: data.active ?? true,
+      validatePayload: data.validatePayload ?? false,
+      payloadSchema: data.payloadSchema,
+      preferences: data.preferences,
+      origin: data.origin ?? "novu-cloud",
+      steps: (data.steps as Array<Record<string, unknown>> ?? []).map((s) => ({
+        stepId: s.stepId ?? s.slug ?? s._id ?? "",
+        name: s.name ?? "Step",
+        type: s.type ?? "email",
+        controlValues: s.controlValues ?? {},
+      })),
+    });
 
     try {
-      const remote = await this.api.getWorkflow(slug);
-      await this.api.updateWorkflow(remote._id as string, {
-        name: data.name,
-        description: data.description,
-        tags: data.tags ?? [],
-        active: data.active ?? true,
-        steps,
-      });
+      const remote = await this.api.getWorkflow(workflowId);
+      await this.api.updateWorkflow((remote.workflowId as string) ?? workflowId, buildPayload());
       logger.info("Updated Novu workflow template", { slug });
       return { slug, action: "updated" };
     } catch (err) {
       if (err instanceof NovuApiError && err.statusCode === 404) {
-        const notificationGroupId = (data.notificationGroupId as string) ?? (await this.resolveNotificationGroupId());
-        if (!notificationGroupId) {
-          logger.error("No notification group available for Novu workflow creation", { slug });
-          return { slug, action: "error", detail: "No notification group available" };
-        }
         const created = await this.api.createWorkflow({
-          name: data.name,
-          slug,
-          description: data.description,
-          tags: data.tags ?? [],
-          active: data.active ?? true,
-          notificationGroupId,
-          steps,
+          ...buildPayload(),
+          workflowId,
         });
         logger.info("Created Novu workflow template", { slug });
         return { slug, action: "created", detail: (created.workflowId as string) ?? undefined };
       }
       logger.error("Failed to push Novu workflow template", { slug, error: String(err) });
       return { slug, action: "error", detail: String(err) };
-    }
-  }
-
-  private async resolveNotificationGroupId(): Promise<string | undefined> {
-    try {
-      const groups = await this.api.listNotificationGroups();
-      return (groups[0]?._id as string) ?? undefined;
-    } catch (err) {
-      logger.warning("Failed to list Novu notification groups", { error: String(err) });
-      return undefined;
     }
   }
 
@@ -374,7 +363,7 @@ export class NovuTemplateService {
     try {
       if (type === "workflow") {
         const remote = await this.api.getWorkflow(slug);
-        await this.api.deleteWorkflow(remote._id as string);
+        await this.api.deleteWorkflow((remote.workflowId as string) ?? slug);
       } else {
         const remote = await this.api.getLayout(slug);
         await this.api.deleteLayout(remote._id as string);

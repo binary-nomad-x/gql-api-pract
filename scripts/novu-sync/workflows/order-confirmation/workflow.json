@@ -1,0 +1,641 @@
+{
+  "name": "Order Confirmation",
+  "workflowId": "order-confirmation",
+  "slug": "order-confirmation",
+  "description": "Confirms a completed order in-app, by email, and via push for offline users.",
+  "tags": [
+    "order",
+    "confirmation",
+    "transactional",
+    "ecommerce"
+  ],
+  "active": true,
+  "validatePayload": true,
+  "payloadSchema": {
+    "type": "object",
+    "additionalProperties": true,
+    "properties": {
+      "orderId": {
+        "type": "string"
+      },
+      "orderTotal": {
+        "type": "number"
+      },
+      "currency": {
+        "type": "string"
+      },
+      "actionUrl": {
+        "type": "string"
+      },
+      "orderNumber": {
+        "type": "string"
+      },
+      "customerName": {
+        "type": "string"
+      }
+    },
+    "required": [
+      "orderId",
+      "orderTotal",
+      "currency",
+      "actionUrl"
+    ]
+  },
+  "preferences": {
+    "user": null,
+    "default": {
+      "all": {
+        "enabled": true,
+        "readOnly": false
+      },
+      "channels": {
+        "email": {
+          "enabled": true
+        },
+        "sms": {
+          "enabled": true
+        },
+        "in_app": {
+          "enabled": true
+        },
+        "chat": {
+          "enabled": true
+        },
+        "push": {
+          "enabled": true
+        }
+      }
+    }
+  },
+  "origin": "novu-cloud",
+  "steps": [
+    {
+      "stepId": "order-confirmation-digest",
+      "name": "Digest Step",
+      "type": "digest",
+      "controlValues": {
+        "type": "regular",
+        "amount": 1,
+        "unit": "hours",
+        "digestKey": "payload.orderId",
+        "lookBackWindow": {
+          "amount": 5,
+          "unit": "minutes",
+          "extendToSchedule": false
+        },
+        "extendToSchedule": false
+      },
+      "variables": {
+        "type": "object",
+        "properties": {
+          "workflow": {
+            "type": "object",
+            "description": "Schema representing the workflow entity",
+            "properties": {
+              "workflowId": {
+                "type": "string",
+                "description": "Workflow identifier"
+              },
+              "name": {
+                "type": "string",
+                "description": "Name of the workflow"
+              },
+              "description": {
+                "type": "string",
+                "description": "Description of the workflow"
+              },
+              "tags": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              },
+              "severity": {
+                "type": "string",
+                "enum": [
+                  "high",
+                  "medium",
+                  "low",
+                  "none"
+                ],
+                "enumName": "SeverityLevelEnum",
+                "description": "Severity of the workflow"
+              }
+            },
+            "required": [
+              "workflowId",
+              "name"
+            ]
+          },
+          "subscriber": {
+            "type": "object",
+            "description": "Schema representing the subscriber entity",
+            "properties": {
+              "firstName": {
+                "type": "string",
+                "description": "Subscriber's first name"
+              },
+              "lastName": {
+                "type": "string",
+                "description": "Subscriber's last name"
+              },
+              "email": {
+                "type": "string",
+                "description": "Subscriber's email address"
+              },
+              "phone": {
+                "type": "string",
+                "description": "Subscriber's phone number (optional)"
+              },
+              "avatar": {
+                "type": "string",
+                "description": "URL to the subscriber's avatar image (optional)"
+              },
+              "locale": {
+                "type": "string",
+                "description": "Locale for the subscriber (optional)"
+              },
+              "timezone": {
+                "type": "string",
+                "description": "Timezone for the subscriber (optional)"
+              },
+              "subscriberId": {
+                "type": "string",
+                "description": "Unique identifier for the subscriber"
+              },
+              "isOnline": {
+                "type": "boolean",
+                "description": "Indicates if the subscriber is online (optional)"
+              },
+              "lastOnlineAt": {
+                "type": "string",
+                "format": "date-time",
+                "description": "The last time the subscriber was online (optional)"
+              },
+              "data": {
+                "type": "object",
+                "properties": {},
+                "required": [],
+                "additionalProperties": true
+              }
+            },
+            "required": [
+              "subscriberId"
+            ],
+            "additionalProperties": false
+          },
+          "actor": {
+            "type": "object",
+            "description": "Schema representing the actor entity sent during workflow trigger",
+            "properties": {
+              "firstName": {
+                "type": "string",
+                "description": "Subscriber's first name"
+              },
+              "lastName": {
+                "type": "string",
+                "description": "Subscriber's last name"
+              },
+              "email": {
+                "type": "string",
+                "description": "Subscriber's email address"
+              },
+              "phone": {
+                "type": "string",
+                "description": "Subscriber's phone number (optional)"
+              },
+              "avatar": {
+                "type": "string",
+                "description": "URL to the subscriber's avatar image (optional)"
+              },
+              "locale": {
+                "type": "string",
+                "description": "Locale for the subscriber (optional)"
+              },
+              "timezone": {
+                "type": "string",
+                "description": "Timezone for the subscriber (optional)"
+              },
+              "subscriberId": {
+                "type": "string",
+                "description": "Unique identifier for the subscriber"
+              },
+              "isOnline": {
+                "type": "boolean",
+                "description": "Indicates if the subscriber is online (optional)"
+              },
+              "lastOnlineAt": {
+                "type": "string",
+                "format": "date-time",
+                "description": "The last time the subscriber was online (optional)"
+              },
+              "data": {
+                "type": "object",
+                "properties": {},
+                "required": [],
+                "additionalProperties": true
+              }
+            },
+            "required": [
+              "subscriberId"
+            ],
+            "additionalProperties": false
+          },
+          "steps": {
+            "type": "object",
+            "properties": {},
+            "required": [],
+            "additionalProperties": false,
+            "description": "Previous Steps Results"
+          },
+          "payload": {
+            "type": "object",
+            "additionalProperties": true,
+            "properties": {
+              "orderId": {
+                "type": "string"
+              },
+              "orderTotal": {
+                "type": "number"
+              },
+              "currency": {
+                "type": "string"
+              },
+              "actionUrl": {
+                "type": "string"
+              },
+              "orderNumber": {
+                "type": "string"
+              },
+              "customerName": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "orderId",
+              "orderTotal",
+              "currency",
+              "actionUrl"
+            ]
+          },
+          "context": {
+            "type": "object",
+            "description": "Context data passed at trigger time following ContextPayload structure",
+            "properties": {},
+            "required": [],
+            "additionalProperties": {
+              "type": "object",
+              "description": "Context value - can be accessed as string or object",
+              "properties": {
+                "id": {
+                  "type": "string",
+                  "description": "Context identifier"
+                },
+                "data": {
+                  "type": "object",
+                  "description": "Additional context data",
+                  "properties": {},
+                  "additionalProperties": true
+                }
+              },
+              "required": [],
+              "additionalProperties": false
+            }
+          },
+          "env": {
+            "type": "object",
+            "description": "Environment variables accessible in workflow templates",
+            "properties": {
+              "name": {
+                "type": "string",
+                "description": "Environment variable: name"
+              },
+              "type": {
+                "type": "string",
+                "description": "Environment variable: type"
+              }
+            },
+            "required": [],
+            "additionalProperties": false
+          }
+        },
+        "additionalProperties": false
+      }
+    },
+    {
+      "stepId": "order-confirmation-email",
+      "name": "Email Step",
+      "type": "email",
+      "bodyFile": "order-confirmation-email.html",
+      "controlValues": {
+        "editorType": "html",
+        "subject": "Your order {{ payload.orderNumber }} is confirmed"
+      },
+      "variables": {
+        "type": "object",
+        "properties": {
+          "workflow": {
+            "type": "object",
+            "description": "Schema representing the workflow entity",
+            "properties": {
+              "workflowId": {
+                "type": "string",
+                "description": "Workflow identifier"
+              },
+              "name": {
+                "type": "string",
+                "description": "Name of the workflow"
+              },
+              "description": {
+                "type": "string",
+                "description": "Description of the workflow"
+              },
+              "tags": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              },
+              "severity": {
+                "type": "string",
+                "enum": [
+                  "high",
+                  "medium",
+                  "low",
+                  "none"
+                ],
+                "enumName": "SeverityLevelEnum",
+                "description": "Severity of the workflow"
+              }
+            },
+            "required": [
+              "workflowId",
+              "name"
+            ]
+          },
+          "subscriber": {
+            "type": "object",
+            "description": "Schema representing the subscriber entity",
+            "properties": {
+              "firstName": {
+                "type": "string",
+                "description": "Subscriber's first name"
+              },
+              "lastName": {
+                "type": "string",
+                "description": "Subscriber's last name"
+              },
+              "email": {
+                "type": "string",
+                "description": "Subscriber's email address"
+              },
+              "phone": {
+                "type": "string",
+                "description": "Subscriber's phone number (optional)"
+              },
+              "avatar": {
+                "type": "string",
+                "description": "URL to the subscriber's avatar image (optional)"
+              },
+              "locale": {
+                "type": "string",
+                "description": "Locale for the subscriber (optional)"
+              },
+              "timezone": {
+                "type": "string",
+                "description": "Timezone for the subscriber (optional)"
+              },
+              "subscriberId": {
+                "type": "string",
+                "description": "Unique identifier for the subscriber"
+              },
+              "isOnline": {
+                "type": "boolean",
+                "description": "Indicates if the subscriber is online (optional)"
+              },
+              "lastOnlineAt": {
+                "type": "string",
+                "format": "date-time",
+                "description": "The last time the subscriber was online (optional)"
+              },
+              "data": {
+                "type": "object",
+                "properties": {},
+                "required": [],
+                "additionalProperties": true
+              }
+            },
+            "required": [
+              "subscriberId"
+            ],
+            "additionalProperties": false
+          },
+          "actor": {
+            "type": "object",
+            "description": "Schema representing the actor entity sent during workflow trigger",
+            "properties": {
+              "firstName": {
+                "type": "string",
+                "description": "Subscriber's first name"
+              },
+              "lastName": {
+                "type": "string",
+                "description": "Subscriber's last name"
+              },
+              "email": {
+                "type": "string",
+                "description": "Subscriber's email address"
+              },
+              "phone": {
+                "type": "string",
+                "description": "Subscriber's phone number (optional)"
+              },
+              "avatar": {
+                "type": "string",
+                "description": "URL to the subscriber's avatar image (optional)"
+              },
+              "locale": {
+                "type": "string",
+                "description": "Locale for the subscriber (optional)"
+              },
+              "timezone": {
+                "type": "string",
+                "description": "Timezone for the subscriber (optional)"
+              },
+              "subscriberId": {
+                "type": "string",
+                "description": "Unique identifier for the subscriber"
+              },
+              "isOnline": {
+                "type": "boolean",
+                "description": "Indicates if the subscriber is online (optional)"
+              },
+              "lastOnlineAt": {
+                "type": "string",
+                "format": "date-time",
+                "description": "The last time the subscriber was online (optional)"
+              },
+              "data": {
+                "type": "object",
+                "properties": {},
+                "required": [],
+                "additionalProperties": true
+              }
+            },
+            "required": [
+              "subscriberId"
+            ],
+            "additionalProperties": false
+          },
+          "steps": {
+            "type": "object",
+            "properties": {
+              "order-confirmation-digest": {
+                "type": "object",
+                "properties": {
+                  "eventCount": {
+                    "type": "number"
+                  },
+                  "events": {
+                    "type": "array",
+                    "properties": {
+                      "length": {
+                        "type": "number"
+                      }
+                    },
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "id": {
+                          "type": "string"
+                        },
+                        "time": {
+                          "type": "string"
+                        },
+                        "payload": {
+                          "type": "object",
+                          "additionalProperties": true,
+                          "properties": {
+                            "orderId": {
+                              "type": "string"
+                            },
+                            "orderTotal": {
+                              "type": "number"
+                            },
+                            "currency": {
+                              "type": "string"
+                            },
+                            "actionUrl": {
+                              "type": "string"
+                            },
+                            "orderNumber": {
+                              "type": "string"
+                            },
+                            "customerName": {
+                              "type": "string"
+                            }
+                          },
+                          "required": [
+                            "orderId",
+                            "orderTotal",
+                            "currency",
+                            "actionUrl"
+                          ]
+                        }
+                      },
+                      "required": [
+                        "id",
+                        "time",
+                        "payload"
+                      ],
+                      "additionalProperties": false
+                    }
+                  }
+                },
+                "required": [
+                  "events"
+                ],
+                "additionalProperties": false
+              }
+            },
+            "required": [],
+            "additionalProperties": false,
+            "description": "Previous Steps Results"
+          },
+          "payload": {
+            "type": "object",
+            "additionalProperties": true,
+            "properties": {
+              "orderId": {
+                "type": "string"
+              },
+              "orderTotal": {
+                "type": "number"
+              },
+              "currency": {
+                "type": "string"
+              },
+              "actionUrl": {
+                "type": "string"
+              },
+              "orderNumber": {
+                "type": "string"
+              },
+              "customerName": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "orderId",
+              "orderTotal",
+              "currency",
+              "actionUrl"
+            ]
+          },
+          "context": {
+            "type": "object",
+            "description": "Context data passed at trigger time following ContextPayload structure",
+            "properties": {},
+            "required": [],
+            "additionalProperties": {
+              "type": "object",
+              "description": "Context value - can be accessed as string or object",
+              "properties": {
+                "id": {
+                  "type": "string",
+                  "description": "Context identifier"
+                },
+                "data": {
+                  "type": "object",
+                  "description": "Additional context data",
+                  "properties": {},
+                  "additionalProperties": true
+                }
+              },
+              "required": [],
+              "additionalProperties": false
+            }
+          },
+          "env": {
+            "type": "object",
+            "description": "Environment variables accessible in workflow templates",
+            "properties": {
+              "name": {
+                "type": "string",
+                "description": "Environment variable: name"
+              },
+              "type": {
+                "type": "string",
+                "description": "Environment variable: type"
+              }
+            },
+            "required": [],
+            "additionalProperties": false
+          }
+        },
+        "additionalProperties": false
+      }
+    }
+  ],
+  "dashboardHash": "ac464816f513"
+}

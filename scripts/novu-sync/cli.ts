@@ -196,6 +196,10 @@ ENVIRONMENT
   NOVU_API_SECRET_KEY  (required)  Novu API key from .env
   NOVU_API_HOST_NAME   (optional)  Novu API base URL (default: https://api.novu.co)
 
+API VERSIONS
+  Workflows use the Novu v2 API (/v2/workflows); layouts still use v1 (/v1/layouts).
+  The legacy /v1/workflows endpoint is empty and should not be used.
+
 FILES
   scripts/novu-sync/workflows/<slug>/workflow.json   Workflow definitions
   scripts/novu-sync/workflows/<slug>/bodies/          Step body templates

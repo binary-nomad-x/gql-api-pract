@@ -39,7 +39,7 @@ export function loadWorkflow(workflowDir: string, log?: RunLogger): WorkflowJson
       const bodyPath = resolve(bodiesDir, step.bodyFile);
       const body = readText(bodyPath);
       if (body !== null) {
-        step.template = { ...(step.template ?? {}), body };
+        step.controlValues = { ...(step.controlValues ?? {}), body };
       }
     }
   }
@@ -65,22 +65,22 @@ export function saveWorkflow(wf: WorkflowJson, log: RunLogger): boolean {
   const steps: WorkflowStepJson[] = [];
 
   for (const step of wf.steps) {
-    const body = step.template?.body as string | undefined;
+    const body = step.controlValues?.body as string | undefined;
     let bodyFile: string | undefined;
     if (body && typeof body === "string") {
       ensureDir(bodiesDir);
       bodyFile = `${step.stepId}.html`;
       writeTextAtomic(resolve(bodiesDir, bodyFile), body, log);
     }
-    const tmpl = { ...step.template };
-    delete tmpl.body;
+    const cv = { ...(step.controlValues ?? {}) };
+    delete cv.body;
     steps.push({
       stepId: step.stepId,
       name: step.name,
       type: step.type,
       bodyFile: body ? bodyFile : step.bodyFile,
-      template: Object.keys(tmpl).length > 0 ? tmpl : undefined,
-      controls: step.controls,
+      controlValues: Object.keys(cv).length > 0 ? cv : undefined,
+      variables: step.variables,
     });
   }
 

@@ -39,11 +39,15 @@ function normalizeApiWorkflow(api: Record<string, unknown>): WorkflowJson {
   return wf;
 }
 
+function layoutSlug(api: Record<string, unknown>): string {
+  return (api.slug ?? api.identifier ?? api._id ?? "") as string;
+}
+
 function normalizeApiLayout(api: Record<string, unknown>): LayoutJson {
   const layout: LayoutJson = {
     name: api.name as string,
-    layoutId: api.layoutId as string,
-    slug: api.slug as string,
+    layoutId: (api.layoutId ?? api._id) as string,
+    slug: layoutSlug(api),
     description: api.description as string | undefined,
     contentType: api.contentType as string | undefined,
     variables: api.variables as Array<{ name: string; type: string; defaultValue?: string }> | undefined,
@@ -120,7 +124,7 @@ export class SyncEngine {
     try {
       const remoteData = await this.api.listLayouts();
       for (const item of remoteData.data as Array<Record<string, unknown>>) {
-        const slug = item.slug as string;
+        const slug = (item.slug ?? item.identifier ?? item._id) as string;
         const label = localLayoutSlugs.has(slug) ? "both " : "remote";
         this.log.info(`  [${label}] ${slug.padEnd(30)} ${item.name as string}`);
       }
@@ -180,7 +184,7 @@ export class SyncEngine {
       this.log.warn("Could not fetch remote layouts", { error: String(err) });
     }
 
-    const remoteLayoutBySlug = new Map(remoteLayouts.map((l) => [l.slug as string, l]));
+    const remoteLayoutBySlug = new Map(remoteLayouts.map((l) => [layoutSlug(l), l]));
     const allLayoutSlugs = new Set([...localLayoutBySlug.keys(), ...remoteLayoutBySlug.keys()]);
 
     for (const slug of allLayoutSlugs) {
@@ -276,21 +280,14 @@ export class SyncEngine {
           if (opts.only && wf.slug !== opts.only) continue;
 
           summary.total++;
-          try {
-            const full = await this.api.getWorkflow(wf.workflowId);
-            const fullWf = normalizeApiWorkflow(full);
-            const ok = saveWorkflow(fullWf, this.log);
-            if (ok) {
-              summary.created++;
-              summary.results.push({ workflowId: wf.workflowId, action: "create", detail: `Pulled ${wf.slug}` });
-              if (opts.dryRun) this.log.info(`[DRY-RUN] Would pull workflow: ${wf.slug}`);
-            } else {
-              summary.errors++;
-              summary.results.push({ workflowId: wf.workflowId, action: "error", detail: `Failed to save ${wf.slug}` });
-            }
-          } catch (err) {
+          const ok = saveWorkflow(wf, this.log);
+          if (ok) {
+            summary.created++;
+            summary.results.push({ workflowId: wf.workflowId, action: "create", detail: `Pulled ${wf.slug}` });
+            if (opts.dryRun) this.log.info(`[DRY-RUN] Would pull workflow: ${wf.slug}`);
+          } else {
             summary.errors++;
-            summary.results.push({ workflowId: wf.workflowId, action: "error", detail: String(err) });
+            summary.results.push({ workflowId: wf.workflowId, action: "error", detail: `Failed to save ${wf.slug}` });
           }
         }
       } catch (err) {
@@ -308,21 +305,14 @@ export class SyncEngine {
           if (opts.only && layout.slug !== opts.only) continue;
 
           summary.total++;
-          try {
-            const full = await this.api.getLayout(layout.layoutId);
-            const fullLayout = normalizeApiLayout(full);
-            const ok = saveLayout(fullLayout, this.log);
-            if (ok) {
-              summary.created++;
-              summary.results.push({ workflowId: layout.layoutId, action: "create", detail: `Pulled layout ${layout.slug}` });
-              if (opts.dryRun) this.log.info(`[DRY-RUN] Would pull layout: ${layout.slug}`);
-            } else {
-              summary.errors++;
-              summary.results.push({ workflowId: layout.layoutId, action: "error", detail: `Failed to save layout ${layout.slug}` });
-            }
-          } catch (err) {
+          const ok = saveLayout(layout, this.log);
+          if (ok) {
+            summary.created++;
+            summary.results.push({ workflowId: layout.layoutId, action: "create", detail: `Pulled layout ${layout.slug}` });
+            if (opts.dryRun) this.log.info(`[DRY-RUN] Would pull layout: ${layout.slug}`);
+          } else {
             summary.errors++;
-            summary.results.push({ workflowId: layout.layoutId, action: "error", detail: String(err) });
+            summary.results.push({ workflowId: layout.layoutId, action: "error", detail: `Failed to save layout ${layout.slug}` });
           }
         }
       } catch (err) {
@@ -422,12 +412,19 @@ export class SyncEngine {
           controls: s.controls,
         }));
 
+        const notificationGroupId = await this.resolveNotificationGroupId();
+        if (!notificationGroupId) {
+          this.log.error(`[workflow] ${wf.slug}: no notification group available to create workflow`);
+          return { workflowId: wf.slug, action: "error", detail: "No notification group available" };
+        }
+
         const created = await this.api.createWorkflow({
           name: wf.name,
           slug: wf.slug,
           description: wf.description,
           tags: wf.tags,
           active: wf.active ?? true,
+          notificationGroupId,
           steps: stepsPayload,
         });
 
@@ -493,7 +490,7 @@ export class SyncEngine {
 
         await this.api.createLayout({
           name: layout.name,
-          slug: layout.slug,
+          identifier: layout.slug,
           description: layout.description,
           contentType: layout.contentType,
           variables: layout.variables,
@@ -636,6 +633,16 @@ export class SyncEngine {
   }
 
   // ─── Helpers ────────────────────────────────────────────────
+
+  private async resolveNotificationGroupId(): Promise<string | undefined> {
+    try {
+      const groups = await this.api.listNotificationGroups();
+      return (groups[0]?._id as string) ?? undefined;
+    } catch (err) {
+      this.log.warn("Failed to list Novu notification groups", { error: String(err) });
+      return undefined;
+    }
+  }
 
   private aggregate(summary: SyncSummary, result: SyncResult): void {
     summary.results.push(result);

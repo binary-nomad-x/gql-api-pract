@@ -1,55 +1,51 @@
-import { request as httpsRequest, RequestOptions } from "node:https";
-import { request as httpRequest } from "node:http";
-import { config } from "./config.js";
-import { RunLogger } from "./logger.js";
+import { request as httpsRequest } from "node:https";
+import { request as httpRequest, RequestOptions } from "node:http";
+import { logger } from "@gql-prisma-api/utils/logger.js";
 
-export class ApiError extends Error {
+export class NovuApiError extends Error {
   constructor(
     public readonly statusCode: number,
     message: string,
     public readonly body?: unknown,
   ) {
     super(message);
-    this.name = "ApiError";
+    this.name = "NovuApiError";
   }
 }
 
-function parseUrl(base: string, path: string): URL {
-  return new URL(path, base.endsWith("/") ? base : base + "/");
-}
-
-function httpRequestPromise(url: URL, options: RequestOptions, body?: string): Promise<{ statusCode: number; body: string }> {
+function requestPromise(url: URL, options: RequestOptions, body?: string): Promise<{ statusCode: number; body: string }> {
   return new Promise((resolve, reject) => {
     const mod = url.protocol === "https:" ? httpsRequest : httpRequest;
     const req = mod(url, options, (res) => {
       const chunks: Buffer[] = [];
       res.on("data", (chunk: Buffer) => chunks.push(chunk));
       res.on("end", () => {
-        const body = Buffer.concat(chunks).toString("utf-8");
-        resolve({ statusCode: res.statusCode ?? 500, body });
+        resolve({ statusCode: res.statusCode ?? 500, body: Buffer.concat(chunks).toString("utf-8") });
       });
     });
-    req.on("error", (err) => reject(err));
+    req.on("error", reject);
     if (body) req.write(body);
     req.end();
   });
 }
 
 export class NovuApiClient {
-  private readonly baseUrl: string;
   private readonly apiKey: string;
-  private readonly log: RunLogger;
+  private readonly baseUrl: string;
 
-  constructor(log: RunLogger) {
-    this.log = log;
-    this.apiKey = config.novuApiKey;
-    this.baseUrl = config.novuApiUrl;
+  constructor(apiKey?: string, baseUrl?: string) {
+    this.apiKey = apiKey ?? process.env.NOVU_API_SECRET_KEY ?? "";
+    this.baseUrl = (baseUrl ?? process.env.NOVU_API_HOST_NAME ?? "https://api.novu.co").replace(/\/+$/, "");
+  }
+
+  hasCredentials(): boolean {
+    return this.apiKey.length > 0;
   }
 
   private async request<T>(method: string, path: string, body?: unknown): Promise<T> {
-    if (!this.apiKey) throw new ApiError(401, "NOVU_API_SECRET_KEY is not set in .env");
+    if (!this.apiKey) throw new NovuApiError(401, "NOVU_API_SECRET_KEY is not set");
 
-    const url = parseUrl(this.baseUrl, path);
+    const url = new URL(path, this.baseUrl.endsWith("/") ? this.baseUrl : this.baseUrl + "/");
     const headers: Record<string, string> = {
       Authorization: `ApiKey ${this.apiKey}`,
       "Content-Type": "application/json",
@@ -60,47 +56,36 @@ export class NovuApiClient {
 
     for (let attempt = 1; attempt <= maxRetries; attempt++) {
       try {
-        const options: RequestOptions = {
-          method,
-          headers,
-          timeout: 15000,
-        };
-
         const jsonBody = body ? JSON.stringify(body) : undefined;
         if (jsonBody) headers["Content-Length"] = Buffer.byteLength(jsonBody).toString();
 
-        const res = await httpRequestPromise(url, { ...options, headers }, jsonBody);
+        const res = await requestPromise(url, { method, headers, timeout: 15000 }, jsonBody);
 
         if (res.statusCode === 429 || (res.statusCode >= 500 && res.statusCode < 600)) {
           if (attempt < maxRetries) {
-            const delay = Math.pow(2, attempt) * 1000 + Math.random() * 1000;
-            this.log.warn(`Retry ${attempt}/${maxRetries} after ${res.statusCode}`, { path, delayMs: Math.round(delay) });
+            const delay = Math.pow(2, attempt) * 500 + Math.random() * 1000;
+            logger.warning(`Novu API retry ${attempt}/${maxRetries}`, { status: res.statusCode, delayMs: Math.round(delay) });
             await new Promise((r) => setTimeout(r, delay));
             continue;
           }
         }
 
-        if (res.statusCode === 401) throw new ApiError(401, "Authentication failed — check NOVU_API_SECRET_KEY");
-        if (res.statusCode === 404) throw new ApiError(404, `Not found: ${path}`);
-        if (res.statusCode === 409) throw new ApiError(409, `Conflict: ${res.body}`);
+        if (res.statusCode === 401) throw new NovuApiError(401, "Authentication failed — check NOVU_API_SECRET_KEY");
+        if (res.statusCode === 404) throw new NovuApiError(404, `Not found: ${path}`);
 
         if (res.statusCode! >= 400) {
           let parsed: unknown;
           try { parsed = JSON.parse(res.body); } catch { parsed = res.body; }
-          throw new ApiError(res.statusCode!, `API error: ${res.body}`, parsed);
+          throw new NovuApiError(res.statusCode!, `Novu API error: ${res.body}`, parsed);
         }
 
         if (!res.body) return undefined as T;
         return JSON.parse(res.body) as T;
       } catch (err) {
         lastError = err instanceof Error ? err : new Error(String(err));
-        if (err instanceof ApiError && err.statusCode !== 429 && (err.statusCode < 500 || err.statusCode >= 600)) {
-          throw err;
-        }
+        if (err instanceof NovuApiError && err.statusCode !== 429 && err.statusCode < 500) throw err;
         if (attempt < maxRetries) {
-          const delay = Math.pow(2, attempt) * 500;
-          this.log.warn(`Retry ${attempt}/${maxRetries} after error`, { error: lastError.message, delayMs: delay });
-          await new Promise((r) => setTimeout(r, delay));
+          await new Promise((r) => setTimeout(r, Math.pow(2, attempt) * 500));
         }
       }
     }
@@ -108,12 +93,12 @@ export class NovuApiClient {
     throw lastError ?? new Error("Max retries exceeded");
   }
 
-  // ─── Notification groups ────────────────────────────────────
+  // ─── Notification groups ─────────────────────────────────────
   async listNotificationGroups(): Promise<Array<Record<string, unknown>>> {
     return this.request("GET", "/v1/notification-groups");
   }
 
-  // ─── Workflows ──────────────────────────────────────────────
+  // ─── Workflows (templates) ───────────────────────────────────
   async listWorkflows(page = 0, limit = 50): Promise<{ data: Array<Record<string, unknown>>; totalCount: number }> {
     return this.request("GET", `/v1/workflows?page=${page}&limit=${limit}`);
   }
@@ -132,10 +117,6 @@ export class NovuApiClient {
 
   async deleteWorkflow(workflowId: string): Promise<void> {
     return this.request("DELETE", `/v1/workflows/${workflowId}`);
-  }
-
-  async updateWorkflowStatus(workflowId: string, active: boolean): Promise<Record<string, unknown>> {
-    return this.request("PUT", `/v1/workflows/${workflowId}/status`, { active });
   }
 
   // ─── Layouts ─────────────────────────────────────────────────

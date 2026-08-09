@@ -5,8 +5,8 @@ export interface WorkflowStepJson {
   name: string;
   type: string;
   bodyFile?: string;
-  template?: Record<string, unknown>;
-  controls?: Record<string, unknown>;
+  controlValues?: Record<string, unknown>;
+  variables?: Record<string, unknown>;
 }
 
 export interface WorkflowJson {
@@ -16,9 +16,11 @@ export interface WorkflowJson {
   description?: string;
   tags?: string[];
   active?: boolean;
-  steps: WorkflowStepJson[];
+  validatePayload?: boolean;
   payloadSchema?: Record<string, unknown>;
   preferences?: Record<string, unknown>;
+  origin?: string;
+  steps: WorkflowStepJson[];
   dashboardHash?: string;
 }
 
@@ -45,25 +47,32 @@ export interface NovuApiWorkflow {
   description?: string;
   tags?: string[];
   active: boolean;
-  steps: NovuApiStep[];
+  validatePayload?: boolean;
+  payloadSchema?: Record<string, unknown>;
   preferences?: Record<string, unknown>;
+  origin?: string;
+  status: string;
+  steps: NovuApiStep[];
   createdAt: string;
   updatedAt: string;
 }
 
 export interface NovuApiStep {
   _id: string;
+  stepId: string;
   name: string;
   type: string;
-  template?: Record<string, unknown>;
-  controls?: Record<string, unknown>;
+  slug: string;
+  controlValues?: Record<string, unknown>;
+  variables?: Record<string, unknown>;
 }
 
 export interface NovuApiLayout {
   _id: string;
   name: string;
   layoutId: string;
-  slug: string;
+  identifier?: string;
+  slug?: string;
   description?: string;
   contentType?: string;
   variables?: Array<{ name: string; type: string; defaultValue?: string }>;

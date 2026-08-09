@@ -509,6 +509,49 @@ type NovuSubscriber {
   locale: String
 }
 
+# ─── Template Management Types ─────────────────────────────────
+
+type NovuTemplateSummary {
+  type: String!
+  slug: String!
+  name: String!
+  local: Boolean!
+  remote: Boolean!
+  synced: Boolean!
+}
+
+type NovuTemplateDetail {
+  type: String!
+  slug: String!
+  name: String!
+  local: JSON
+  remote: JSON
+}
+
+type NovuTemplatePushResult {
+  slug: String!
+  action: String!
+  detail: String
+}
+
+type NovuTemplatePullResult {
+  workflows: Int!
+  layouts: Int!
+}
+
+type NovuTemplateDeleteResult {
+  local: Boolean!
+  remote: Boolean!
+}
+
+input NovuTemplateInput {
+  name: String!
+  description: String
+  tags: [String!]
+  active: Boolean
+  data: JSON
+}
+
 # ─── Inputs ──────────────────────────────────────────────────────
 
 input CreateVariableGroupInput {
@@ -584,6 +627,10 @@ extend type Query {
   novuBuildPayload(workflowId: String!): JSON!
   novuPreviewPayload(workflowId: String!): JSON!
   novuSubscriber(subscriberId: String!): NovuSubscriber
+
+  # Template management
+  novuTemplates: [NovuTemplateSummary!]!
+  novuTemplate(type: String!, slug: String!): NovuTemplateDetail
 }
 
 # ─── Mutation extensions ────────────────────────────────────────
@@ -627,6 +674,13 @@ extend type Mutation {
 
   # Sync
   syncNovuWorkflows: [NovuWorkflow!]!
+
+  # Template management
+  pullNovuTemplates(type: String): NovuTemplatePullResult!
+  pullNovuTemplate(type: String!, slug: String!): Boolean!
+  pushNovuTemplates(slug: String): [NovuTemplatePushResult!]!
+  saveNovuTemplate(type: String!, slug: String!, input: NovuTemplateInput!): Boolean!
+  deleteNovuTemplate(type: String!, slug: String!): NovuTemplateDeleteResult!
 }
 
 type Order {

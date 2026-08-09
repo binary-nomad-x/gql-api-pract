@@ -1,0 +1,47 @@
+{
+  "name": "Default Layout",
+  "layoutId": "696e3bc63f635471e3ede4cd",
+  "slug": "novu-default-layout",
+  "description": "The default layout created by Novu",
+  "contentType": "customHtml",
+  "variables": [
+    {
+      "name": "branding.logo",
+      "type": "String",
+      "required": false,
+      "defaultValue": "",
+      "_id": "696e3bc63f635471e3ede4ce"
+    },
+    {
+      "name": "preheader",
+      "type": "Boolean",
+      "required": false,
+      "defaultValue": true,
+      "_id": "696e3bc63f635471e3ede4cf"
+    },
+    {
+      "name": "preheader",
+      "type": "String",
+      "required": false,
+      "defaultValue": "",
+      "_id": "696e3bc63f635471e3ede4d0"
+    },
+    {
+      "name": "branding.color",
+      "type": "Boolean",
+      "required": false,
+      "defaultValue": true,
+      "_id": "696e3bc63f635471e3ede4d1"
+    },
+    {
+      "name": "branding.color",
+      "type": "String",
+      "required": false,
+      "defaultValue": "",
+      "_id": "696e3bc63f635471e3ede4d2"
+    }
+  ],
+  "isDefault": true,
+  "dashboardHash": "53330db59f59",
+  "bodyFile": "novu-default-layout.html"
+}

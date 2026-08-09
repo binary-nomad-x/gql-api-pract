@@ -71,6 +71,16 @@ export const Query = {
     requireAuth(ctx.userId);
     return ctx.services.novu.getSubscriber(args.subscriberId);
   },
+
+  novuTemplates: (_parent: unknown, _args: unknown, ctx: Context) => {
+    requireAuth(ctx.userId);
+    return ctx.services.novuTemplate.list();
+  },
+
+  novuTemplate: (_parent: unknown, args: { type: string; slug: string }, ctx: Context) => {
+    requireAuth(ctx.userId);
+    return ctx.services.novuTemplate.get(args.type as "workflow" | "layout", args.slug);
+  },
 };
 
 export const Mutation = {
@@ -167,5 +177,35 @@ export const Mutation = {
   deleteNovuSubscriber: (_parent: unknown, args: { subscriberId: string }, ctx: Context) => {
     requireAuth(ctx.userId);
     return ctx.services.novu.deleteSubscriber(args.subscriberId);
+  },
+
+  pullNovuTemplates: (_parent: unknown, args: { type?: string | null }, ctx: Context) => {
+    requireAuth(ctx.userId);
+    return ctx.services.novuTemplate.pullAll();
+  },
+
+  pullNovuTemplate: (_parent: unknown, args: { type: string; slug: string }, ctx: Context) => {
+    requireAuth(ctx.userId);
+    if (args.type === "layout") return ctx.services.novuTemplate.pullLayout(args.slug);
+    return ctx.services.novuTemplate.pullWorkflow(args.slug);
+  },
+
+  pushNovuTemplates: (_parent: unknown, args: { slug?: string | null }, ctx: Context) => {
+    requireAuth(ctx.userId);
+    return ctx.services.novuTemplate.push(args.slug ?? undefined);
+  },
+
+  saveNovuTemplate: (_parent: unknown, args: { type: string; slug: string; input: Record<string, unknown> }, ctx: Context) => {
+    requireAuth(ctx.userId);
+    return ctx.services.novuTemplate.createOrUpdateLocal(
+      args.type as "workflow" | "layout",
+      args.slug,
+      args.input as { name: string; description?: string; tags?: string[]; active?: boolean; data?: Record<string, unknown> },
+    );
+  },
+
+  deleteNovuTemplate: (_parent: unknown, args: { type: string; slug: string }, ctx: Context) => {
+    requireAuth(ctx.userId);
+    return ctx.services.novuTemplate.delete(args.type as "workflow" | "layout", args.slug);
   },
 };

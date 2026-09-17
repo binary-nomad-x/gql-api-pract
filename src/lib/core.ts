@@ -1,8 +1,6 @@
 import type { Prisma } from "@prisma/client";
 import type { CreateDiscountInput, UpdateDiscountInput } from "@gql-prisma-api/modules/discount/inputs.js";
 
-// --- Prisma input helpers ---
-
 export function clean<T extends Record<string, unknown>>(obj: T): T {
   const result = { ...obj };
   for (const key of Object.keys(result)) {
@@ -48,3 +46,6 @@ export function toDiscountUpdate(input: UpdateDiscountInput): Prisma.DiscountUpd
   if (input.maxUsage !== undefined && input.maxUsage !== null) data.maxUsage = input.maxUsage;
   return data;
 }
+
+
+

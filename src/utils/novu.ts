@@ -52,7 +52,7 @@ export async function triggerNovuWorkflow(userId: string, eventName: NovuEventNa
   try {
     const result = await novu.trigger(eventName, {
       to: { subscriberId: userId },
-      payload: payload as any,
+      payload: payload as any,  // todo : payload has the shape.. cehck the docs
     });
 
     logger.info("Novu workflow trigger succeeded", {

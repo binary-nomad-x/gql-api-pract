@@ -1,5 +1,5 @@
 {
-  "name": "gql-prisma-api",
+  "name": "omni-graph-api",
   "version": "1.0.0",
   "main": "src/index.ts",
   "type": "module",

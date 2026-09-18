@@ -28,7 +28,7 @@ logs
 .cache/
 
 # IDE / Editor folders
-.vscode/
+# .vscode/
 .idea/
 *.swp
 *.swo

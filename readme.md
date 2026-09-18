@@ -1,4 +1,4 @@
-# 🚀 GraphQL Prisma API
+# 🚀 OmniGraph API
 
 <div align="center">
 

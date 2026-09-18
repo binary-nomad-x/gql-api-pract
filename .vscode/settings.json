@@ -1,0 +1,13 @@
+{
+  "files.autoSave": "afterDelay",
+  "workbench.colorCustomizations": {
+    "titleBar.activeBackground": "#3A302A",
+    "titleBar.activeForeground": "#E8DDD5",
+    "statusBar.background": "#3A302A",
+    "statusBar.foreground": "#E8DDD5",
+    "activityBar.background": "#29231F",
+    "activityBar.foreground": "#C8B5A6",
+    "sideBar.background": "#211E1C",
+    "sideBar.foreground": "#C8B5A6"
+  }
+}
